@@ -1,0 +1,326 @@
+Notes on GSFC 2015 Python boot camp:
+
+Installation:
+For the course, using Anaconda b/c it has more up-to-date ipython than ureka.  
+Ipython needed to run ipyton notebooks used in class 
+ - /Applications/anaconda/bin  (added to path in .cschrc)
+ - Can run everything w "Launcher" in /Applications/anaconda.  
+ - alias to launcher on desktop
+
+Neat trick:  "whos" in ipython shows you what variables are set!!!
+In [15]: whos
+Variable   Type     Data/Info
+-----------------------------
+accel      float    9.8
+t          float    1.0
+
+Operators:
+  ** is the power operator.
+  ^ is NOT POWER!  Be careful.
+  "pow" is power, it's automatic
+  ++ doesn't exist!!
+
+Booleans:
+-True, False, None are booleans
+- example: >type(True), type(False), type(None)   Result: (bool, bool, NoneType)
+-isinstance(1,int)   retunrs True ;
+
+Strings:
+ - Strings are immutable.  This sounds really weird.  They can be redefined, 
+    but individual elements can't be changed.  
+ - r before a string makes it a raw string that ignores special chars:  
+     print r'this is a raw string\n\r'
+     (This is like single quotes in perl).
+ - "eggs"*100 prints eggs a hundred times, duh.
+ - string join operator is +.  Perl . does not work.
+ - s = "spam\n"; print len(s); print s[-1]; print s[2:4]; print s[1:]
+
+# simple example of object that's a string, fnctions that deal with capitalization:
+k = 'godzilla'
+In [81]: (k[3:5].upper()).title()
+Out[81]: 'zi'
+# capitalize(), lower(), upper(), swapcase(), title(), all cute.
+
+There is simple string maniuplation that does simplest part of regexp,
+   may be more readable:
+  x.replace(), x.split(), x.partition()
+  x = "foo x bar"
+  x.partition('x')   # splits on x
+  x.replace(), x.split()
+  partition() only finds the first separator, and keeps it in.  Weird.
+  split() works more like perl split
+  count(), 
+  x.startswith("G") checks whether string x starts w G.
+  x.endswith("endshere")    "ends.
+  x.find()
+
+Simple check for alphanumeric:
+"sdfsfkk**".isalpha() would return False, because this string isn't alphanumeric
+"60".isdigit()  is True, this is a digit.
+.islower(), .isupper()
+
+String formatting:  Note the % char, before the array at the end
+print '%.2f %.3f' % (339,330)
+339.00 330.000
+
+Ignore the string module, it's obsolete.
+
+Get simple input from command line:
+  T = float(raw_input("Enter the teperature in K: "))  #need to cast the input
+  Enter the teperature in K: 100
+
+Importing/running a python script from w/in python:
+  % execfile("temperature.py")
+
+Data structures:
+To find out what variable v is:  > type(v)
+To find out what you can do with a variable, in ipython, type v.TAB
+
+LOOPS:
+Python uses indendations to mark loops, ugh.
+Uses colons to start a loop.
+    while x<5:
+    for x in range(1,10):
+    for i,x in enumerate(a):   # Very useful way to loop and keep track of index
+    	print i, x, len(x)
+    for x in ("this", "is", "an", "example"):
+    	print x
+
+x = range(0,100000,1000);  # range([start,] stop[, step]) -> list of integers
+# This makes a useful lsit of integers, with selectable start, stop, & step
+
+FUNCTIONS:  # Here's how to define one.
+def addnums(x=1,y=2) : 	    #this is the header.  1 and 2 are default values
+        """Documentation string"""
+	return x + y	    #this does the work
+
+# call as
+addnums(y=2,x=3)   	   # let's run the function
+
+Commenting:
+a triple quote """ used in function is a docstring, used elsewhere
+
+NUMPY and MATPLOTLIB:
+numpy arrays need to all have same dataytpe.  
+  can check thusly: print myarray.dtype
+
+new_arr = np.arange(-5,5,1)
+new_arr = np.linspace(-3,3,7)
+new_arr = np.logspace(1,4,4)
+print np.random.rand(10)  # get 10 random numbers.  can also fill a shaped 
+print np.random.randn(10) # 10 numbers chosen from randon normal distrib
+print np.random.normal(mean,stdev, shape-of-resulting-array)
+
+# WHERE to find things in an np array
+redshifts = np.array((3,4,5,6,1,0))
+far = np.where(redshifts >2)
+redshifts[far]
+middle = np.where( (redshifts >= 1) & (redshifts <= 2) )  #ooh! double where!
+print middle
+print redshifts[middle]
+print np.mean(array2)
+numpy has a standard format, np.savetxt('output.txt', array, fmt='%.2e')
+np.loadtxt, np.genfromtext
+
+
+TUPLE:  
+  a tuple is a constant list.  Cannot change elements
+  list -- can change the elements.  ok to have different datatypes
+  array -- numpy, similar to list, but all elelemts have same datatype
+  python prints numpy arrays with no commas.  lists have commas
+  can also type() them
+
+Advanced python: (Day 01)
+
+"list comprehension" is a fast way to make a list, without a for loop.
+      cute but not critical
+
+SCOPE:
+global a   # defines a variable as a global variable
+
+*arg     - a list of arguments.  required
+**kwargs  - a list of keyword key=value pairs.
+
+MODULES:
+ip> from numpy import int[TAB], shows you the numpy  modules starting w int
+reload(module_name) # reload module when you've edited it.
+
+ipython fanciness:
+%lsmagic  # lists all the magic functions
+%quickref  # quick reference on ipython
+%reset
+%doctest_mode
+%history -f logfile.out
+%pdb  - python dbugger
+%load_ext rmagic  # run R from Python
+%save -f saved_work.py  #save your work
+%run saved_work.py      #load it back in
+%%perl, run an ipython cell with perl in a subprocess
+
+%%!  (do stuff in the shell for a while, until a blankline return)
+
+#Lots of great stuff in Jeremy's talk about ipython,
+#especially how to talk to the command line and back.  Flew by fast,
+#so I re-read it carefully at home.
+
+# this is like backticks in perl:
+from_shell = !ls *.cat  
+!touch "$from_shell[0]"."new"
+from_shell?             # tells you about this new variable
+from_shell?? 		# more verbose
+
+%notebook -e mystuff.ipynb   # dumps your term history to an iphython notebook
+	  THIS IS GENIUS FOR DOCUMENTING WHAT YOU DID, if you were farting
+	  in a terminal, figured something out, and want to document it.
+When matplotlib is inline, figures are in notebook.  To save the figures, add:
+    savefig('figure.pdf')  #in same notebook cell as the plotting command
+OK, I'm sold.  the ipython notebook is an excellent way to document the flow
+    of scientiifc analysis.  Esp b/c you can run perl scripts, command line
+    stuff, whatever, with a ! bang
+    I need to start writing every .diary as a _diary.ipynb **  Promise myself this
+
+Why 1 or 2 percent signs:
+ --  one % is the line magic, which acts on one line of code
+ --  two %% acts on a whole cell in an ipython notebook
+%%script perl  : Run some perl code in a cell
+!cat foobar   # the bang lets you work on the command line
+
+%load http://matplotlib.sourceforge.net/mpl_examples/pylab_examples/integral_demo.py   # runs some example code from the internet.  Yowsa
+
+!ipython nbconvert mystuff.ipynb --to pdf   # convert to PDF.
+There is also an online viewing site.  Useful for sharing.
+
+There are shortcut keys to make it much faster to write ipython notebooks.
+ In the notebook, check Help, Keyboard Shortcuts
+
+Licensing:  NASA open source agreement v1.3.  So there are procedures
+ for sharing NASA software.  
+
+Matplotlib:
+running ipython --pylab automaticlly loads numpy as np, matplotlib.pylab as plt
+There's a matplotlibrc file, to make defaults less dumb:  http://matplotlib.org/users/customizing.html
+
+How to format strings like in perl:
+print "%.3f" % (math.pi)    #the % sign is the key operator here.
+print "%010f" % math.pi
+
+"Here is formatted pi: {0:.3f}".format(math.pi)
+#                      place format    what gets formatted
+#   The syntax here is weird.  {place : formatting}  Study this!
+
+Formatting strings, use nameofstring.format()
+"on {1}, I feel {0}".format("saturday", "groovy")
+
+Regular expressions!
+re.split is more powerful than built-in split.  Looks more like perl splitline = "I like the number 234 and 21."
+re.split("([kn])", line)  # splits on either k or n.  Ah, regexp
+re.match("\.","thistringlacksaperiod") will return None, since no match.
+
+# many ways to read a file: read, readlines, asciitable
+ module lets you run subcommands
+os.system("sed s/love/hate/g %s > temp" % infile)
+os.system("sed s/is/not/g temp2 > temp3")
+
+#Lambda functions:
+-lambda is a reserved keyword.  Cannot use it for wavelength.
+- Used for short, one-liner functions.  If longer, name a function
+- very nifty, can do function in 1 line
+(lambda x,y: x**2+y)(2,4.5) # forget about creating a new function name...just do it!!
+
+How to get inline help about a variable:
+xx = 448
+type(xx)
+xx?  # tell me about variable xx
+xx??
+help(xx)  
+xx.<TAB> shows you what you can do w this type of object
+numpy.shape(xx)  # tells you the shape of an array
+dir(xx)  #oh god, all the methods, functions, etc than can be done to xx
+
+How to get help for a built-in function:  help('lambda'), help('&')
+numpy.linspace?  # gives inline help
+numpy.lin<TAB> shows you what functions in numpy start with lin.
+
+
+Python has Map and Filter functions, like perl.  I don't care yet.
+       Filter filters a list, return all elements where function is True
+
+
+#Terri's slides had a very useful way to sort by several different columns
+airline.flights.sort(key=operator.itemgetter(4,1,0))
+
+Should wrap volatile (may fail) code in Try, Except, Finally wrapper
+
+Python can forget about a varible, with del:  "del x" 
+
+To run things in ipython to debug:
+%run OO_breakout.py
+%run -i hello.py  # does some trickery, keeps in namespace?  look up later
+
+
+a=b means that a follows b from here on, HOWEVER b changes later!
+	So it's not the way we normally think of assignment.
+
+Copy does something different:
+c=copy.copy(a)
+
+PANDAS:   I really don't care yet. Not astronomy-specific.
+
+Perl 2 python:  http://everythingsysadmin.com/perl2python.html
+     THIS LOOKS GREAT!  Print it out, bookmark it!
+  Perl/python phrasebook:  https://wiki.python.org/moin/PerlPhrasebook
+
+
+#I asked Jeremy how to organize my Python scripts.  He suggested I 
+#add a local dir to PYTHON_PATH, that has my files.  This will
+#make them globally visible to my python.  Centralize, so I can canibalize.
+
+Scipy is a big module of math and science programs.  
+	-Includes numpy, matplotlib, ipython.
+	-scipy uses numpy arrays
+	-Rpy -- interface to R
+	-zis there an IDLPy wrapper?
+ 
+MPFIT and MPFITFUN *have* been imported to Python, yay.
+	There are other ways of doing things, scipy.optimize.
+
+Terri, Errors, Exceptions, Traceback:
+	
+
+DEBUGGER:
+
+different ways to invoke:
+
+pdb.pm()  is the perl debugger post-mortem:  it's like ILD STOP, but it
+	stops where the code dies, and lets you look around, work
+
+pdb.set_trace()  # sets cookies where you think your code is failing
+
+pdb.run('myexamplecode.main()')
+
+python /usr/stsci/pyssg/Python-2.7/lib/python2.7/pdb.py wed_breakout2.py
+# this runs the python debugger on the command line
+
+
+Andy Ptak's talk on astronomy applications
+
+fits:  
+astropy.io.fits:  FITS file handling.  will subsume pyfits
+asciitable will also be absorbed into astropy
+
+astropy.constants is amazing!  Can convert, combine units wantonly, it 
+	keeps track.
+
+from ds9 import *   # now can display images in ds9, from python
+	#works on xpaset, xpaget, so ds.get(), ds.set()
+
+Other random notes:
+-Convolution in astropy is better than scipy, because it can handle NaNs.
+-python-crontab:  module to handle crontab
+-Class website:  github.com/kialio/python-bootcamp
+-Jeremy Perkins was a gnuplot + perl user, switched to Python. 
+-very good parallelization:  "import cloud"
+
+Astropy has come up with some great tutorials since I last looked.
+  I have worked through them.  They're lovely, good references.
+Just google "astropy tutorials"

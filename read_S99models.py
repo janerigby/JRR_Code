@@ -49,21 +49,12 @@ for thismod in (models[:]) :
         age = convert_age_to_Myr(mytab['AGE'][0,tt])
         label = get_label_from_t_Z(age,metallicity)
         print thismod, metallicity, age, label
-        if(metallicity == 0.02 and age == 1E6) :
-            print "HELLO"
-            wave = mytab['WAVE'][0,:]
-            flam = mytab['FLUX'][0,tt,:]
-            plt.plot(wave, flam)
-            plt.xlabel(r'rest wavelength ($\AA$)')
-            plt.ylabel(r'i think this is $f_{\lambda}$')
-
-            # Make a pandas data frame for this time, this metallicity
-            df[label] = pandas.DataFrame(data=np.transpose([wave.data, flam.data]), columns=['wave', 'flam'])
+        wave = mytab['WAVE'][0,:]
+        flam = mytab['FLUX'][0,tt,:]
+        # Make a pandas data frame for this time, this metallicity
+        df[label] = pandas.DataFrame(data=np.transpose([wave.data, flam.data]), columns=['wave', 'flam'])
         
-            
-            #df = pandas.DataFrame(data=[wave, flam, np.zeros_like(flam)], columns=("wave", "flam", "flam_u"))
-            # Next after lunch:  either use index and make a pandas DF, or just
-            # fit autocont, fit EW, and move on w our lives.
-
 df_all = pandas.concat(df)
-plt.show()
+
+# OK, read into a big dataframe, df_all.  Use as in 3D-HST NB example.  For each, fit autocont, then use
+# Ayan's EW fitter.

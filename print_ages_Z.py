@@ -1,12 +1,12 @@
 import pandas
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from matplotlib.backends.backend_pdf import PdfPages
 #import seaborn as sns
 
 # Before calling this, ran idl> .run .run print_ages_Z.pro, print_ages_Z, and then dumped output to print_ages_Z.out
 # Had to use IDL because I can't figure out how to filter binary fits tables in astropy 
-
 
 figsize = (8,10)
 the_pdf = "print_ages_Z.pdf"
@@ -23,6 +23,7 @@ Npages = 2 # Number of pages
 Ncol = 2 #  metallicity and age
 Nrow = int(np.ceil(len(files) / (Npages*1.0)))
 plotnum = 1 # initialize
+print "DEBUGGING Nrow Ncol Npage", Nrow, Ncol, Npages
 
 fig = plt.figure(figsize=figsize)
 for file in files :
@@ -32,38 +33,47 @@ for file in files :
     # now need to bin by age, metallicity
     Zbins = [0.01, 0.2, 0.4, 1.0, 2.0] # fraction of solar
     groupbyZ = subset.groupby(['metallicity'])['frac_light'].sum()
-    ax = fig.add_subplot(Nrow, Ncol, plotnum)
+    ax1 = fig.add_subplot(Nrow, Ncol, plotnum)
     #plt.scatter(subset.metallicity, subset.frac_light)
     #plt.scatter(groupbyZ.index, groupbyZ.values, color='r')
     width = 0.1
-    plt.bar(groupbyZ.index - width/2., groupbyZ.values, width=0.1) 
     plt.xlabel("metallicity (Fraction of solar)")
-    plt.ylabel("light fraction")
+    plt.bar(groupbyZ.index - width/2., groupbyZ.values, width=0.1) 
+    plt.ylabel("light frac")
+        
     plt.ylim(0,1)
     plt.xlim(-0.05,2.1)
     plt.annotate(file, (0.4,0.8), xycoords="axes fraction", fontsize=12)
+    plt.yticks([0.0,0.3,0.6,0.9],[0.0,0.3,0.6,0.9])
     plotnum += 1
 
-    ax = fig.add_subplot(Nrow, Ncol, plotnum)
+    ax2 = fig.add_subplot(Nrow, Ncol, plotnum)
     groupbyt = subset.groupby(['age'])['frac_light'].sum()
     #plt.scatter(subset.age, subset.frac_light)
     #plt.scatter(groupbyt.index, groupbyt.values, color='r')
     width = 1.0
     plt.bar(groupbyt.index / 1.0E6, groupbyt.values, width=1) 
     plt.xlabel("age (Myr)")
-    plt.ylabel("light fraction")
+    plt.ylabel("light frac")
     plt.ylim(0,1)
     plt.xlim(-0.05,42)
     plt.annotate(file, (0.4,0.8), xycoords="axes fraction", fontsize=12)
+    if plotnum < 2*Nrow-3 :  
+        ax1.xaxis.set_major_formatter(plt.NullFormatter())
+        ax2.xaxis.set_major_formatter(plt.NullFormatter())
+    plt.yticks([0.0,0.3, 0.6], [0.0,0.3, 0.6])
     plotnum +=1
     print plotnum
 
     if plotnum == 2*Nrow+1 :
+        fig.subplots_adjust(hspace=0)
         print "Reached the end of a page", plotnum
         pp.savefig()  # save the plot
         plotnum = 1   # reset
         fig = plt.figure(figsize=figsize)  # start a new figure
 
-if plotnum != 1 :  pp.savefig() # save the last plot
+if plotnum != 1 :
+    fig.subplots_adjust(hspace=0)
+    pp.savefig() # save the last plot
 pp.close()
 

@@ -56,5 +56,5 @@ for thismod in (models[:]) :
         
 df_all = pandas.concat(df)
 
-# OK, read into a big dataframe, df_all.  Use as in 3D-HST NB example.  For each, fit autocont, then use
+# OK, have read into a big dataframe, df_all.  Use as in 3D-HST NB example.  For each, fit autocont, then use
 # Ayan's EW fitter.

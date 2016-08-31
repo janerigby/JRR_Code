@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-'''Quickly estimate wavelength of feature on ESI spectrum.
+'''Quickly estimate wavelength of feature in a Keck ESI echellette spectrum.
    Run on command line as:  >./esi_wavesol.py  order Yval [redshift]
    for example, ./esi_wavesol.py 7 2010.2 [3.14]
    Returns approx observed wavelength, and if redshift entered, approx rest wavelength

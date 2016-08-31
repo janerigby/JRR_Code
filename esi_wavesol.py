@@ -2,7 +2,8 @@
 '''Quickly estimate wavelength of feature on ESI spectrum.
    Run on command line as:  >./esi_wavesol.py  order Yval [redshift]
    for example, ./esi_wavesol.py 7 2010.2 [3.14]
-   Returns approx observed wavelength, and if redshift entered, approx rest wavelength'''
+   Returns approx observed wavelength, and if redshift entered, approx rest wavelength
+   Written by Jane Rigby, Aug 2016.  '''
 import numpy as np
 import sys
 

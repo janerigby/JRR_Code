@@ -12,14 +12,15 @@ figsize = (8,10)
 the_pdf = "print_ages_Z.pdf"
 pp = PdfPages(the_pdf)  # output
 
-infile = "print_ages_Z.out"
-df = pandas.read_table(infile, delim_whitespace=True, comment="#", header=0, names=('filename', 'frac_light', 'uncert', 'age', 'metallicity'))
+#infile = "print_ages_Z.out"
+infile = "print_ages_Z.out2"  # REdoing this on Sept 6 to add stacks by age, metallicity
+df = pandas.read_table(infile, delim_whitespace=True, comment="#", names=('filename', 'frac_light', 'uncert', 'age', 'metallicity'))
 
 #df['filename'] = df['filename'].str.replace("/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/S99/", "")
 df['filename'] = df['filename'].str.replace("-continuum-properties.fits", "")
 files = pandas.Series.unique(df.filename)
 
-Npages = 2 # Number of pages
+Npages = 3 # Number of pages
 Ncol = 2 #  metallicity and age
 Nrow = int(np.ceil(len(files) / (Npages*1.0)))
 plotnum = 1 # initialize
@@ -75,5 +76,54 @@ for file in files :
 if plotnum != 1 :
     fig.subplots_adjust(hspace=0)
     pp.savefig() # save the last plot
-pp.close()
 
+    
+# Let's measure some properties of the different components, using pandas
+print "These are the components that are old (4E7 Myr)"
+oldcomps = df[df['age'].eq(4E7)].sort_values(by='metallicity')
+print oldcomps
+
+age_breakdown = (8E6, 16E6)
+young_comps = df[df['age'].lt(age_breakdown[0]) & ~df['filename'].str.contains('tack')].sort_values(by='metallicity')
+print "Light-weighted metallicity for young, lt ", age_breakdown[0], "yr: ",
+print (young_comps['frac_light'] * young_comps['metallicity']).sum() / young_comps['frac_light'].sum() 
+
+midage_comps = df[df['age'].between(age_breakdown[0], age_breakdown[1])  & ~df['filename'].str.contains('tack')].sort_values(by='metallicity')
+print "Light-weighted metallicity for middle-age components, between", age_breakdown, "yr: ",
+print (midage_comps['frac_light'] * midage_comps['metallicity']).sum() / midage_comps['frac_light'].sum()
+
+old_comps = df[df['age'].gt(age_breakdown[1]) & ~df['filename'].str.contains('tack')].sort_values(by='metallicity')
+print "Light-weighted metallicity for old, gt ", age_breakdown[1], "yr: ",
+print (old_comps['frac_light'] * old_comps['metallicity']).sum() / old_comps['frac_light'].sum() 
+
+# Want a plot that shows relative contribution of both Z and age models.
+# First, exclude stack 
+groupby_tZ = df[~df['filename'].str.contains('tack')].groupby(by=('metallicity', 'age'))
+bytZ = groupby_tZ.sum()  # Sum over same age, metallicity
+sum_to_norm = bytZ.frac_light.sum()
+print "sum of frac_light:", sum_to_norm, "should be ~14"
+pandas.set_option('display.multi_sparse', False)
+print bytZ
+
+#                   age                         metallicity
+scatscale = 8000
+fig = plt.figure(figsize=(8,8))
+plt.scatter(bytZ.index.get_level_values(1)/1E6, bytZ.index.get_level_values(0), s=((bytZ.frac_light.values/sum_to_norm)**2)*scatscale)
+plt.xlabel("age (Myr)", fontsize=20)
+plt.ylabel("Metallicity (fraction of solar)", fontsize=20)
+plt.xlim(-0.5,41)
+plt.ylim(-0.05,2.1)
+plt.xticks(size=18)
+plt.yticks(size=18)
+# Show what size of scatter points means:
+ptsize =np.array((0.14, 0.7, 1.4, 2.8))   # this is 1%, 5%, 10%, 20% of the sample
+plt.scatter( np.ones_like(ptsize)*30, np.linspace(1.7,2,num=len(ptsize)), s=((ptsize/sum_to_norm)**2*scatscale) )
+plt.annotate(" 1%", (31,1.68), xycoords="data", fontsize=14)
+plt.annotate(" 5%", (31,1.78), xycoords="data", fontsize=14)
+plt.annotate("10%", (31,1.88), xycoords="data", fontsize=14)
+plt.annotate("20%", (31,1.98), xycoords="data", fontsize=14)
+plt.plot( (27,35,35,27,27), (1.6,1.6,2.1,2.1,1.6), color='k', linewidth=2)    
+
+pp.savefig()
+
+pp.close()

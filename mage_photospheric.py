@@ -23,7 +23,7 @@ line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24, 
                   1620.40,     1662.32,   1717.90,      1930.39,               1953.33, 2297.58))
 line_label_renorm = line_center_p > 1600.   # Normalization issues w S99 models for wave>1600.  So, renormalize within the plot window.
 
-S99fits = ('stack-A', 'S0004-0103', 'S0957+0509', 'S2111-0114', 'S0033+0242', 'S1226+2152', 'cosmiceye', 'S0108+0624', 'S1429+1202', 'Horseshoe', 'S0900+2234', 'S1527+0652', 'rcs0327-knotE', 'rcs0327-knotG', 'rcs0327-knotU')
+S99fits = ('stack-A', 'stack-bystars', 'stack-highz', 'stack-lowz', 'stack-young', 'stack-mid', 'stack-old', 'S0004-0103', 'S0957+0509', 'S2111-0114', 'S0033+0242', 'S1226+2152', 'cosmiceye', 'S0108+0624', 'S1429+1202', 'Horseshoe', 'S0900+2234', 'S1527+0652', 'rcs0327-knotE', 'rcs0327-knotG', 'rcs0327-knotU')
 
 sorted_by_age = ('S0033+0242', 'rcs0327-knotE', 'rcs0327-knotG', 'S0108+0624', 'S0957+0509', 'Horseshoe', 'rcs0327-knotU', 'S2111-0114', 'S1429+1202', 'S0004-0103','S0900+2234', 'stack-A', 'S1527+0652', 'S1226+2152') # 'S1458-0023', 
 

@@ -9,7 +9,9 @@ from os.path import expanduser
 
 homedir = expanduser("~")
 workdir = homedir + "/WORK/S2222_QSO_intervening/all_1D_spectra/"
-spectra = ('merged_spectra/manual_combspec_sgas2222_qsoA_N.fits', 'merged_spectra/manual_combspec_sgas2222_qsoB_N.fits', "sgas2222_15BQ27m02_21_F.fits")
+#spectra = ('merged_spectra/manual_combspec_sgas2222_qsoA_N.fits', 'merged_spectra/manual_combspec_sgas2222_qsoB_N.fits', "sgas2222_15BQ27m02_21_F.fits")
+spectra = ('merged_spectra/manual_combspec_sgas2222_qsoA_F.fits', 'merged_spectra/manual_combspec_sgas2222_qsoB_N.fits', "sgas2222_15BQ27m02_21_F.fits")
+
 label = ['QSO_A', 'QSO_B', 'QSO_C']
 colors= ('k', 'b', 'g')
 

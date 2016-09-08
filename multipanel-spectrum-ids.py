@@ -1,5 +1,14 @@
-# This python script plots a MagE/Magellan echelle spectrum that spans 
-# many panels and pages.  Written jrigby 4/2012, edited 10/2013. 
+'''This python script plots a MagE/Magellan echelle spectrum that spans 
+many panels and pages.  Written jrigby 4/2012, edited 10/2013. 
+
+**********************************************************************
+UPDATE 9/2016:  THIS SCRIPT IS DEPRECATED!!!!  
+I WROTE IT A LONG TIME AGO,  BEFORE I KNEW ANY PYTHON.  
+I REWROTE THE ALGORITHM INTO A FUNCTION, NOW IN jrr.plot.echelle_spectrum().
+HERE ARE TWO EXAMPLES OF CALLING THAT FUNCTION:
+JRR_Code/multipanel-stacks.py and JRR_Code/multipanel-redo_as_function.py
+**********************************************************************
+
 # 
 # This script needs a concatenated linelist, with redshifts customized for the spectrum.
 # BEFORE YOU RUN THIS SCRIPT, you must use concat-linelist.pl to generate such a linelist.
@@ -8,6 +17,7 @@
 # 1) The spectrum to plot.  That's it.
 #
 #example:   python multipanel-spectrum-ids.py "RCS0327/KnotE/rcs0327-knotE-allres-comb.txt" 
+'''
 
 import jrr
 import matplotlib.pyplot as plt

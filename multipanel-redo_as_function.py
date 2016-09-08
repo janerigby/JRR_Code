@@ -15,5 +15,6 @@ for label in short_labels :
     the_dfs = [sp]
     the_zzs = [z_systemic]  
     the_pdf =  "PDF_Out2/multipanel_" + label + '.pdf'
-    jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title=(label+" "+str(the_zzs)), topfid=(1.1,1))#, waverange=(1000,3000))
+    zzstr = str(["{0:0.8f}".format(i) for i in the_zzs])
+    jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title=(label+" "+zzstr), topfid=(1.1,1))#, waverange=(1000,3000))
 plt.clf()

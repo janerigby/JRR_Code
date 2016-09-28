@@ -46,4 +46,6 @@ for method in methods:
     (spec_path, line_path) = jrr.mage.getpath(mage_mode)
     (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
     jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Standard stack"+method, waverange=(1000,3000))
+    # make plain stack to drop into paper
+    jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title=(), waverange=(1000,3000), annotate=())
 plt.clf()

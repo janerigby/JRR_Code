@@ -12,15 +12,15 @@ mage_mode = "reduction"
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 
 
-def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, vwin, Ncol, label="", LL=[], z_sys=0.0, ylims=(0.0,1.5)) :
+def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, vwin, Ncol, label="", LL=[], z_sys=0.0, ylims=(0.0,1.5), colortab=False) :
     ''' thewaves, thefnus, thedfnus, thezs are TUPLES of arrays of wavelength, fnu, sigma, and redshift.  If only plotting one, use thewaves=(wave_array,) '''
-    jrr.mage.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, ylims=ylims)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, ylims=ylims, colortab=colortab)
     plt.savefig(prefix + "a.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close()
-    jrr.mage.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_b, line_center_b, vwin, Ncol, LL, extra_label=label, ylims=ylims)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_b, line_center_b, vwin, Ncol, LL, extra_label=label, ylims=ylims, colortab=colortab)
     plt.savefig(prefix + "b.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close()
-    jrr.mage.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_c, line_center_c, vwin, Ncol, LL, extra_label=label, ylims=ylims)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_c, line_center_c, vwin, Ncol, LL, extra_label=label, ylims=ylims, colortab=colortab)
     plt.savefig(prefix + "c.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close()
 
@@ -60,26 +60,21 @@ plot_winds_neutral_stellar("MagEmedian/", (sp.wave,), (sp.X_median,), (sp.X_jack
 plt.clf
 
 print "STATUS:  Plotting wind lines for S99 fit to MagE Stack A"
-S99 = jrr.mage.open_S99_spectrum("stack-A", 0.0)  
-plot_winds_neutral_stellar("S99fit/", (S99.wave,), (S99.fnu,), (S99.fnu_u), (0.0,0.0), vwin, Ncol, "S99 fit", LL, z_sys)
+(S99, zz) = jrr.mage.open_S99_spectrum("stack-A", 0.0)  
+plot_winds_neutral_stellar("S99fit/", (S99.rest_wave,), (S99.rest_fnu_s99,), (S99.rest_fnu_s99_u,), (0.0,0.0), vwin, Ncol, "S99 fit", LL, z_sys)
 plt.clf
 
 # Renormalizing the spectra with autocont, for better plotting...
 print "STATUS: Overplotting MagE stack and S99 fit to Mage Stack, for wind lines"
 alt_file = "magestack_byneb_ChisholmstackA_spectrum.txt"  # this is the spectrum that JChisholm fit
 altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file)
-plot_winds_neutral_stellar("MageES99/", (altsp.wave, S99.wave), (altsp.X_avg, S99.fnu), (altsp.X_sigma, S99.fnu*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
+plot_winds_neutral_stellar("MageES99/", (altsp.wave, S99.rest_wave), (altsp.X_avg, S99.rest_fnu_s99), (altsp.X_sigma, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
 
-print "STATUS: Trying to overplot MagE stacks for lowZ, high Z, for wind lines"
-st1 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_highZ_spectrum.txt")
-st2 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_lowZ_spectrum.txt")
-plot_winds_neutral_stellar("MagEstack_byZ/", (st1.wave, st2.wave), (st1.X_avg,st2.X_avg), (st1.X_sigma, st2.X_sigma,), (0.0, 0.0), vwin, Ncol, "high Z (black), lowZ (blue) ", LL, 0.0)
 # Same, but by age
 st1 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_younglt8Myr_spectrum.txt")
 st2 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_midage8to16Myr_spectrum.txt")
 st3 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_oldgt16Myr_spectrum.txt")
-plot_winds_neutral_stellar("MagEstack_byage/", (st1.wave, st2.wave, st3.wave), (st1.X_avg,st2.X_avg,st3.X_avg), (st1.X_sigma, st2.X_sigma,st3.X_sigma), (0.0, 0.0, 0.0), vwin, Ncol, "stacked by age", LL, 0.0, ylims=(0.,2.))
-
+plot_winds_neutral_stellar("MagEstack_byage/", (st1.wave, st2.wave, st3.wave), (st1.X_avg,st2.X_avg,st3.X_avg), (st1.X_sigma, st2.X_sigma,st3.X_sigma), (0.0, 0.0, 0.0), vwin, Ncol, "stacked by age: young (blue), middle (black), old (red)", LL, 0.0, ylims=(0.,2.), colortab=('blue', 'black', 'red'))
 
 print "STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample"
 line_label_Heck  = ('S II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  

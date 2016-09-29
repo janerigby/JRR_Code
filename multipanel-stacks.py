@@ -19,7 +19,7 @@ for method in methods :
     the_pdf =  'PDF_Out2/multipanel_stacked_'+method+'_byZ.pdf'
     (spec_path, line_path) = jrr.mage.getpath(mage_mode)
     (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-    jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Compare lowZ and highZ stacks "+method)
+    jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, colortab=('black', 'mediumblue'), title="Compare highZ (black) and lowZ (blue) stacks "+method)
 plt.clf()
 
 # Compare young, middle-age, and old stacks
@@ -45,5 +45,5 @@ for method in methods:
     the_pdf =  'PDF_Out2/multipanel_stacked_'+method+'_standard.pdf'
     (spec_path, line_path) = jrr.mage.getpath(mage_mode)
     (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-    jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Standard stack"+method, waverange=(1000,3000))
+    jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Standard stack"+method)
 plt.clf()

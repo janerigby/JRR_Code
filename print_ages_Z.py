@@ -20,6 +20,8 @@ df = pandas.read_table(infile, delim_whitespace=True, comment="#", names=('filen
 df['filename'] = df['filename'].str.replace("-continuum-properties.fits", "")
 files = pandas.Series.unique(df.filename)
 
+ticked =[0.0,0.3, 0.6,0.9]
+
 Npages = 3 # Number of pages
 Ncol = 2 #  metallicity and age
 Nrow = int(np.ceil(len(files) / (Npages*1.0)))
@@ -38,14 +40,14 @@ for file in files :
     #plt.scatter(subset.metallicity, subset.frac_light)
     #plt.scatter(groupbyZ.index, groupbyZ.values, color='r')
     width = 0.1
-    plt.xlabel("metallicity (Fraction of solar)")
+    plt.xlabel("metallicity (fraction of solar)")
     plt.bar(groupbyZ.index - width/2., groupbyZ.values, width=0.1) 
     plt.ylabel("light frac")
         
     plt.ylim(0,1)
     plt.xlim(-0.05,2.1)
     plt.annotate(file, (0.4,0.8), xycoords="axes fraction", fontsize=12)
-    plt.yticks([0.0,0.3,0.6,0.9],[0.0,0.3,0.6,0.9])
+    plt.yticks(ticked, ticked)
     plotnum += 1
 
     ax2 = fig.add_subplot(Nrow, Ncol, plotnum)
@@ -55,14 +57,14 @@ for file in files :
     width = 1.0
     plt.bar(groupbyt.index / 1.0E6, groupbyt.values, width=1) 
     plt.xlabel("age (Myr)")
-    plt.ylabel("light frac")
+    #plt.ylabel("light frac")
     plt.ylim(0,1)
     plt.xlim(-0.05,42)
     plt.annotate(file, (0.4,0.8), xycoords="axes fraction", fontsize=12)
-    if plotnum < 2*Nrow-3 :  
-        ax1.xaxis.set_major_formatter(plt.NullFormatter())
-        ax2.xaxis.set_major_formatter(plt.NullFormatter())
-    plt.yticks([0.0,0.3, 0.6], [0.0,0.3, 0.6])
+#    if plotnum < 2*Nrow-3 :  
+#        ax1.xaxis.set_major_formatter(plt.NullFormatter())
+#        ax2.xaxis.set_major_formatter(plt.NullFormatter())
+    plt.yticks(ticked, ticked)
     plotnum +=1
     print plotnum
 
@@ -77,6 +79,35 @@ if plotnum != 1 :
     fig.subplots_adjust(hspace=0)
     pp.savefig() # save the last plot
 
+    
+# Manually add the rollup of all individual galaxies
+fig = plt.figure(figsize=figsize)  # start a new figure
+not_stack = df[~df['filename'].str.contains('tack')]  # First, exclude stack
+groupbyZ = not_stack.groupby(['metallicity'])['frac_light'].sum()
+ax1 = fig.add_subplot(Nrow, Ncol, plotnum)
+width = 0.1
+plt.xlabel("metallicity (fraction of solar)")
+plt.bar(groupbyZ.index - width/2., groupbyZ.values/not_stack.frac_light.sum(), width=0.1) 
+plt.ylabel("light frac")
+plt.ylim(0,1)
+plt.xlim(-0.05,2.1)
+plt.annotate("Full sample", (0.4,0.8), xycoords="axes fraction", fontsize=12)
+plt.yticks(ticked, ticked)
+plotnum += 1
+
+ax2 = fig.add_subplot(Nrow, Ncol, plotnum)
+groupbyt = not_stack.groupby(['age'])['frac_light'].sum()
+width = 1.0
+plt.bar(groupbyt.index / 1.0E6, groupbyt.values/ not_stack.frac_light.sum(), width=1) 
+plt.xlabel("age (Myr)")
+#plt.ylabel("light frac")
+plt.ylim(0,1)
+plt.xlim(-0.05,42)
+plt.annotate("Full sample", (0.4,0.8), xycoords="axes fraction", fontsize=12)
+plt.yticks(ticked, ticked)
+fig.subplots_adjust(hspace=0)
+pp.savefig() # save the last plot
+    
     
 # Let's measure some properties of the different components, using pandas
 print "These are the components that are old (4E7 Myr)"
@@ -96,15 +127,14 @@ old_comps = df[df['age'].gt(age_breakdown[1]) & ~df['filename'].str.contains('ta
 print "Light-weighted metallicity for old, gt ", age_breakdown[1], "yr: ",
 print (old_comps['frac_light'] * old_comps['metallicity']).sum() / old_comps['frac_light'].sum() 
 
+
 # Want a plot that shows relative contribution of both Z and age models.
-# First, exclude stack 
-groupby_tZ = df[~df['filename'].str.contains('tack')].groupby(by=('metallicity', 'age'))
+groupby_tZ = not_stack.groupby(by=('metallicity', 'age'))
 bytZ = groupby_tZ.sum()  # Sum over same age, metallicity
 sum_to_norm = bytZ.frac_light.sum()
 print "sum of frac_light:", sum_to_norm, "should be ~14"
 pandas.set_option('display.multi_sparse', False)
 print bytZ
-
 #                   age                         metallicity
 scatscale = 8000
 fig = plt.figure(figsize=(8,8))
@@ -123,7 +153,15 @@ plt.annotate(" 5%", (31,1.78), xycoords="data", fontsize=14)
 plt.annotate("10%", (31,1.88), xycoords="data", fontsize=14)
 plt.annotate("20%", (31,1.98), xycoords="data", fontsize=14)
 plt.plot( (27,35,35,27,27), (1.6,1.6,2.1,2.1,1.6), color='k', linewidth=2)    
-
 pp.savefig()
-
 pp.close()
+
+# Do simple math that Rongmon suggested, to get numbers for the paper.
+Zcuts = (0.01, 0.1, 0.5)
+for Zcut in Zcuts :
+    print "Fraction of sample's stellar light fit by >", Zcut, "solar metallicity: ",
+    print not_stack[not_stack['metallicity'] > Zcut].frac_light.sum()  / not_stack.frac_light.sum()
+agecuts = (10., 20., 30.)
+for agecut in agecuts:
+    print "Fraction of sample's stellar light fit by >", agecut, "Myr age:",
+    print not_stack[not_stack['age'] > agecut*1E6].frac_light.sum()  / not_stack.frac_light.sum()

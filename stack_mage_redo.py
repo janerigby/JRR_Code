@@ -81,8 +81,8 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     mask2 = np.isnan(nfnu_u_stack)  # ditto for uncertainty
     crazy_high = 1000.
     mask3 = np.greater(nfnu_stack, crazy_high) + np.less(nfnu_stack, -1*crazy_high)  # flag crazy flux values.
-    print "DEBUGGING mask3", mask3.sum()
     mask = mask1 + mask2 + mask3
+    print "DEBUGGING mask3", mask3.sum(), mask.sum()
     masked_spectrum   = np.ma.array(nfnu_stack, mask=mask)
     nfnu_clip  = sigma_clip(masked_spectrum, sig=sig2clip, iters=None, axis=0)   ## Sigma clipping
     X_avg,     sumweight1   = np.ma.average(masked_spectrum, axis=0, weights=weight_stack, returned=True) # weighted avg of continuum-normalized spectra

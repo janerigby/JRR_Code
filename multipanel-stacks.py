@@ -28,6 +28,8 @@ for ii in range(0, len(colfnu)):
     plt.clf()
 
     # Compare young, middle-age, and old stacks
+    label_age = "Compare young (blue), middle-age (black), and old (red) stacks"
+    colortab_age=('blue', 'black', 'red')
     for method in methods:
         stacks = ['magestack_'+method+'_younglt8Myr_spectrum.txt', 'magestack_'+method+'_midage8to16Myr_spectrum.txt', 'magestack_'+method+'_oldgt16Myr_spectrum.txt']
         sp1 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
@@ -38,7 +40,7 @@ for ii in range(0, len(colfnu)):
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_byage.pdf'
         (spec_path, line_path) = jrr.mage.getpath(mage_mode)
         (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Compare young (blue), middle-age (black), and old (red) stacks "+method, colortab=('blue', 'black', 'red'), waverange=(1000,3000))
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title=label_age + " "+method, colortab=colortab_age, waverange=(1000,3000))
     plt.clf()
 
     # Plot the standard stacks
@@ -56,3 +58,7 @@ for ii in range(0, len(colfnu)):
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_standard_nolabels.pdf'
         jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, waverange=(1000,3000), annotate=())
     plt.clf()
+
+
+
+

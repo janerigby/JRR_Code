@@ -4,7 +4,7 @@ jrigby, Oct 2016. '''
 import jrr
 import matplotlib.pyplot as plt
 import numpy as np
-mage_mode = "reduction"  
+mage_mode = "released"  
 methods = ('bystars', 'byneb')  # method of determining systemic redshift
 
 line_label_a  = ["Lya", "C III] 1906", "He II 1640", "C II] 2323", "[O II] 2470", "Fe II 2365", "Fe II 2396"]
@@ -27,6 +27,6 @@ for method in methods:
     thedfnus = (sp1.X_sigma/sp1.fnu_autocont, sp2.X_sigma/sp2.fnu_autocont, sp3.X_sigma/sp3.fnu_autocont)
     thezs = (0., 0., 0.)
     the_pdf =  'Boxplots_for_stacks/boxplot_'+method+'_byage_emission.pdf'
-    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=10., Ncol=1, LL=LL, extra_label=label_age, figsize=(8,12), vel_plot=False, ylims=(0,3), colortab=colortab_age)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=20., Ncol=1, LL=LL, extra_label=label_age, figsize=(8,12), vel_plot=False, colortab=colortab_age)
     plt.savefig(the_pdf, orientation='portrait', bbox_inches='tight', pad_inches=0.1)
     plt.close()

@@ -82,7 +82,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     crazy_high = 1000.
     mask3 = np.greater(nfnu_stack, crazy_high) + np.less(nfnu_stack, -1*crazy_high)  # flag crazy flux values.
     mask = mask1 + mask2 + mask3
-    print "DEBUGGING masks", mask1.sum(), mask2.sum(), mask3.sum(), mask.sum(), len(mask)
+    print "DEBUGGING masks", mask1.sum(), mask2.sum(), mask3.sum(), mask.sum(), mask.shape
     masked_spectrum   = np.ma.array(nfnu_stack, mask=mask)
     nfnu_clip  = sigma_clip(masked_spectrum, sig=sig2clip, iters=None, axis=0)   ## Sigma clipping
     X_avg,     sumweight1   = np.ma.average(masked_spectrum, axis=0, weights=weight_stack, returned=True) # weighted avg of continuum-normalized spectra
@@ -94,7 +94,6 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
 
     plt.step(wave_stack, X_avg, color="black", linewidth=3)
     plt.ylim( -1, 3)
-    #plt.xlim(1200, 1400)
     plt.xlim(1000, 1200)
     plt.draw()
     plt.show()
@@ -107,7 +106,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         print "Jackknife, dropping ", specs['short_label'][ii], " from the stack"
         dropit = np.zeros(shape=nfnu_stack.shape, dtype=bool)
         dropit[ii] = True  # Mask out the ii-th spectrum
-        jack_mask = mask1 + dropit
+        jack_mask = mask + dropit
         masked_spectrum   = np.ma.array(nfnu_stack, mask=jack_mask)
         jackknife[ii], weight = np.ma.average(masked_spectrum, axis=0, weights=weight_stack, returned=True)  # all the work is done here.
         jack_var += (jackknife[ii] - X_avg)**2

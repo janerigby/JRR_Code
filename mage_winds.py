@@ -68,7 +68,7 @@ plt.clf
 print "STATUS: Overplotting MagE stack and S99 fit to Mage Stack, for wind lines"
 alt_file = "magestack_byneb_ChisholmstackA_spectrum.txt"  # this is the spectrum that JChisholm fit
 altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file)
-plot_winds_neutral_stellar("MageES99/", (altsp.wave, S99.rest_wave), (altsp.X_avg/altsp.fnu_autocont, S99.rest_fnu_s99/S99.fnu_autocont), (altsp.X_sigma/altsp.fnu_autocont, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
+plot_winds_neutral_stellar("MageES99/", (altsp.wave, S99.rest_wave), (altsp.X_avg/altsp.fnu_autocont, S99.rest_fnu_s99/S99.rest_fnu_s99_autocont), (altsp.X_sigma/altsp.fnu_autocont, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
 
 # Same, but by age
 st1 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_younglt8Myr_spectrum.txt")

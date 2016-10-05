@@ -7,8 +7,8 @@ from numpy import zeros_like
 from matplotlib import pyplot as plt
 import pandas
 import numpy as np
-mage_mode = "reduction"
-#mage_mode = "released"
+#mage_mode = "reduction"
+mage_mode = "released"
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 
 
@@ -75,6 +75,11 @@ st1 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_younglt8Myr_s
 st2 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_midage8to16Myr_spectrum.txt")
 st3 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_oldgt16Myr_spectrum.txt")
 plot_winds_neutral_stellar("MagEstack_byage/", (st1.wave, st2.wave, st3.wave), (st1.X_avg/st1.fnu_autocont,st2.X_avg/st2.fnu_autocont,st3.X_avg/st3.fnu_autocont), (st1.X_sigma/st1.fnu_autocont, st2.X_sigma/st2.fnu_autocont,st3.X_sigma/st3.fnu_autocont), (0.0, 0.0, 0.0), vwin, Ncol, "stacked by age: young (blue), middle (black), old (red)", LL, 0.0, colortab=('blue', 'black', 'red'))
+
+# same, but by metallicity
+st1 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_lowZ_spectrum.txt")
+st2 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_highZ_spectrum.txt")
+plot_winds_neutral_stellar("MagEstack_byZ/", (st1.wave, st2.wave), (st1.X_avg/st1.fnu_autocont,st2.X_avg/st2.fnu_autocont), (st1.X_sigma/st1.fnu_autocont, st2.X_sigma/st2.fnu_autocont), (0.0, 0.0, 0.0), vwin, Ncol, "stacked by Z: lowZ (blue), highZ (black)", LL, 0.0, colortab=('blue', 'black'))
 
 print "STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample"
 line_label_Heck  = ('S II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  

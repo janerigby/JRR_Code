@@ -26,11 +26,22 @@ for method in methods:
     thewaves = (sp1.rest_wave, sp2.rest_wave, sp3.rest_wave)
     thefnus  = (sp1.X_avg/sp1.fnu_autocont, sp2.X_avg/sp2.fnu_autocont, sp3.X_avg/sp3.fnu_autocont)
     thedfnus = (sp1.X_sigma/sp1.fnu_autocont, sp2.X_sigma/sp2.fnu_autocont, sp3.X_sigma/sp3.fnu_autocont)
-    thezs = (0., 0., 0.)
-    
+    thezs = (0., 0., 0.)    
     the_pdf =  'Boxplots_for_stacks/boxplot_'+method+'_byage_emission.pdf'
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=14., Ncol=1, LL=(), extra_label=label_age, figsize=(4,12), vel_plot=False, colortab=colortab_age)
-
-    # Could add some additional plots on extra pages here...
+    plt.savefig(the_pdf, orientation='portrait', bbox_inches='tight', pad_inches=0.1)
+    plt.close()
+    
+#repeat, for metallicity
+for method in methods:
+    stacks = ['magestack_'+method+'_lowZ_spectrum.txt', 'magestack_'+method+'_highZ_spectrum.txt']
+    sp1 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0])
+    sp2 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[1])
+    thewaves = (sp1.rest_wave, sp2.rest_wave)
+    thefnus  = (sp1.X_avg/sp1.fnu_autocont, sp2.X_avg/sp2.fnu_autocont)
+    thedfnus = (sp1.X_sigma/sp1.fnu_autocont, sp2.X_sigma/sp2.fnu_autocont)
+    thezs = (0., 0.)    
+    the_pdf =  'Boxplots_for_stacks/boxplot_'+method+'_byZ_emission.pdf'
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=14., Ncol=1, LL=(), extra_label=label_age, figsize=(4,12), vel_plot=False, colortab=('blue', 'black'))
     plt.savefig(the_pdf, orientation='portrait', bbox_inches='tight', pad_inches=0.1)
     plt.close()

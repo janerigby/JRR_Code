@@ -6,7 +6,7 @@ import jrr
 import matplotlib.pyplot as plt
 import numpy as np
 mage_mode = "reduction"  
-mage_mode = "released"
+#mage_mode = "released"
 methods = ('bystars', 'byneb')  # method of determining systemic redshift
 
 # For sanity checking, make plots of the weighted avg(std), but also the median and sqrt(jackknife variance)

@@ -15,6 +15,7 @@ label_age = ""
 colortab_age=('blue', 'black', 'red')
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
+ymax = [20., 1.5, 2., 1.5, 1.5, 1.5]
 
 for method in methods:
     stacks = ['magestack_'+method+'_younglt8Myr_spectrum.txt', 'magestack_'+method+'_midage8to16Myr_spectrum.txt', 'magestack_'+method+'_oldgt16Myr_spectrum.txt']
@@ -28,7 +29,7 @@ for method in methods:
     thedfnus = (sp1.X_sigma/sp1.fnu_autocont, sp2.X_sigma/sp2.fnu_autocont, sp3.X_sigma/sp3.fnu_autocont)
     thezs = (0., 0., 0.)    
     the_pdf =  'Boxplots_for_stacks/boxplot_'+method+'_byage_emission.pdf'
-    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=14., Ncol=1, LL=(), extra_label=label_age, figsize=(4,12), vel_plot=False, colortab=colortab_age)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=14., Ncol=1, LL=(), extra_label=label_age, figsize=(4,12), vel_plot=False, ymax=ymax, colortab=colortab_age)
     plt.savefig(the_pdf, orientation='portrait', bbox_inches='tight', pad_inches=0.1)
     plt.close()
     
@@ -42,6 +43,6 @@ for method in methods:
     thedfnus = (sp1.X_sigma/sp1.fnu_autocont, sp2.X_sigma/sp2.fnu_autocont)
     thezs = (0., 0.)    
     the_pdf =  'Boxplots_for_stacks/boxplot_'+method+'_byZ_emission.pdf'
-    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=14., Ncol=1, LL=(), extra_label=label_age, figsize=(4,12), vel_plot=False, colortab=('blue', 'black'))
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, win=14., Ncol=1, LL=(), extra_label=label_age, figsize=(4,12), vel_plot=False, ymax=ymax, colortab=('blue', 'black'))
     plt.savefig(the_pdf, orientation='portrait', bbox_inches='tight', pad_inches=0.1)
     plt.close()

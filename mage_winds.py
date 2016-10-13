@@ -38,8 +38,8 @@ line_label_c  = ("N V 1238", "Si IV 1393", "C IV 1548", "Al III 1854")
 line_center_c = array((1238.82, 1393.76, 1548.19, 1854.72))
 
 
-line_label_extra  = ("OVI 1031", "OVI 1037", "CIII] 1907", "C II] 2326", "OIII] 1660", "O II] 2470", "SiII] 2335", "HeII1640", "SiIII 1882", "SiIII 1892", "LyB")
-line_center_extra =array((1031.9261, 1037.6167, 1906.68, 2326.00, 1660.81, 2470.97, 2335.123, 1640.42,  1883.00, 1892.03, 1025.7223))
+line_label_extra  = ("OVI 1031", "OVI 1037", "CIII] 1907", "C II] 2326", "OIII] 1660", "O II] 2470", "SiII] 2335", "HeII1640", "SiIII 1882", "SiIII 1892", "LyB", "SiIV")
+line_center_extra =array((1031.9261, 1037.6167, 1906.68, 2326.00, 1660.81, 2470.97, 2335.123, 1640.42,  1883.00, 1892.03, 1025.7223, 1402.770))
 
 line_label_all  = line_label_a  + line_label_b  + line_label_c + line_label_extra
 line_center_all = concatenate((line_center_a, line_center_b, line_center_c, line_center_extra))
@@ -128,7 +128,7 @@ for ii in range(0, len(specs)) :
     prefix = "All_Mage/" + label
     plot_winds_neutral_stellar(prefix, (sp.wave,), (fnu_norm,), (fnu_norm_u,), (zz,), vwin, Ncol, label, LL, z_sys)    
 
-plot_onepagers = False  # This step is SLOW.  Turn off while debugging above.
+plot_onepagers = True  # This step is SLOW.  Turn off while debugging above.
 if plot_onepagers :
     print "STATUS: Making velocity plots of all the MagE spectra on one page, for a bunch of lines"
     for ii in range(0, len(line_label_all)) :

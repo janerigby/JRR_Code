@@ -1,7 +1,7 @@
 '''jwstify_lensed_galaxies.py
 This code takes the source-plane reconstruction of a lensed galaxy, convolves it to 
 the normal diffraction limit of a telescope without lensing, then bins it to a more
-normal pixel scale.  Now running with hacked PSFs for LUVOR, taken from HST and then resized.
+normal pixel scale.  Now running with hacked PSFs for LUVOIR, taken from HST and then resized.
 jrigby, 7/2016, based on candelized_lensed_galaxies.py
 '''
 from astropy.io import fits

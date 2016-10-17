@@ -165,7 +165,7 @@ plt.close()
 (line_label, line_center) = ("OVI 1031", 1031.9261)
 labels = ['S1226+2152', 'S1527+0652', 'S1527+0652-fnt', 'S1429+1202', 'S1458-0023', 'S2111-0114',  'S0033+0242']
 specs =  jrr.mage.getlist_labels(mage_mode, labels)
-jrr.mage.plot_1line_manyspectra(line_center, line_label, 20., False, mage_mode, specs, size=(8,16))
+jrr.mage.plot_1line_manyspectra(line_center, line_label, 20., False, mage_mode, specs, size=(8,16), fontsize=20)
 plt.tight_layout()
 plt.savefig("OVI_just_decentSNR.pdf", orientation='portrait', bbox_inches=None, pad_inches=0.) 
  

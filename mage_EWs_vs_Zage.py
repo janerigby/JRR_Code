@@ -51,17 +51,20 @@ if plot_debug :
     # Why don't the EWr_fit and EWr_sum agree?  Have asked Ayan.  Maybe b/c _sum is affected by blend?
 
 # Now, do a bunch of other lines as a loop
-# Stopped here, is it getting the right CII line??? 
 line_labs = ("CIII]1906", "CIII]1908", "Ly-alpha", "HeII1640", "CII2325c", "OII2470mid")
 for line_lab in line_labs :
     subset = dfL[dfL['line_lab'].eq(line_lab)]
     subset.set_index('label', inplace=True)
     df = pandas.concat([dftZ, subset], axis=1)
     ax = df.plot(x='age', y='EWr_fit', yerr='EWr_fit_u', kind='scatter', color='blue', title=line_lab)
-    if line_lab == "Ly-alpha" : plt.ylim(-100,0)
-    else : plt.ylim(-3,0)
+    if line_lab == "Ly-alpha" : plt.ylim(-100,1)
+    else : plt.ylim(-3,0.5)
     thepdf = line_lab + "_vs_age.pdf"
     plt.savefig(thepdf)
     plt.figure()
-    ax2 = df.plot(x='metallicity', y='EWr_fit', yerr='EWr_fit_u', kind='scatter', color='blue')
+    ax2 = df.plot(x='metallicity', y='EWr_fit', yerr='EWr_fit_u', kind='scatter', color='blue', title=line_lab)
+    if line_lab == "Ly-alpha" : plt.ylim(-100,1)
+    else : plt.ylim(-3,0.5)
     thepdf = line_lab + "_vs_Z.pdf"
+    plt.savefig(thepdf)
+

@@ -78,6 +78,7 @@ altsp['temp_cont'] = altsp['fnu_autocont']
 altsp['temp_fnu']  = altsp['X_median']             
 altsp['temp_fnuu']  = altsp['X_jack_std']             
 jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_wtdavg_stack_wS99.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
+jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_wtdavg_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
 
 # Same, but for median spectrum.  Not sure how well the autocont will line up
 altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file,  colfnu='X_median', colfnuu='X_jack_std')
@@ -91,7 +92,8 @@ altsp['temp_cont'] = altsp['fnu_autocont']
 altsp['temp_fnu']  = altsp['X_median']             
 altsp['temp_fnuu']  = altsp['X_jack_std']             
 jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_median_stack_wS99.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
-
+jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_median_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
+# Above is debugging, look at on Tuesday. Do I trust the automatic re-normalization of continuum by autocont?
 
 
 ### Obsolete, a bad alley I walked down, and got wiser.

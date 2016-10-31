@@ -75,6 +75,10 @@ altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file,  colfnu='X_median', 
 # Above should put the median in _fnu, and do autocont on it.  Let's see...
 plot_winds_neutral_stellar("MageES99_median/", (altsp.wave, S99.rest_wave), (altsp.X_median/altsp.fnu_autocont, S99.rest_fnu_s99/S99.rest_fnu_s99_autocont), (altsp.X_jack_std/altsp.fnu_autocont, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
                            
+# I wonder how bad the continuum fit is, generally.  Should go take a look.  let's plot the whole thing
+jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_median_stack_wS99.pdf", title="", norm_by_cont=True, plot_cont=True)
+
+
 
 ### Obsolete, a bad alley to walk down.
 ## Same, but by age
@@ -136,7 +140,7 @@ for ii in range(0, len(specs)) :
     prefix = "All_Mage/" + label
     plot_winds_neutral_stellar(prefix, (sp.wave,), (fnu_norm,), (fnu_norm_u,), (zz,), vwin, Ncol, label, LL, z_sys)    
 
-plot_onepagers = True  # This step is SLOW.  Turn off while debugging above.
+plot_onepagers = False  # This step is SLOW.  Turn off while debugging above.
 if plot_onepagers :
     print "STATUS: Making velocity plots of all the MagE spectra on one page, for a bunch of lines"
     for ii in range(0, len(line_label_all)) :

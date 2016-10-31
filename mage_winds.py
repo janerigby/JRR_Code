@@ -47,6 +47,7 @@ line_center_all = concatenate((line_center_a, line_center_b, line_center_c, line
 # housekeeping
 redshift = 0.0  # stacked spectrum is already in rest frame wavelength
 vwin = 4000. # +- velocity window (km/s) to consider a line
+vwin=8000. #temp, debugging****
 Ncol = 1
 
 print "STATUS:  Plotting wind lines for MagE stack"

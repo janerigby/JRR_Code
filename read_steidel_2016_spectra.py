@@ -30,6 +30,8 @@ def read_chuck_UV_spec(infile, uncert_file=None, outfile=None) :
     if not outfile :
         outfile = sub(".fits", ".p", infile)
     df.to_pickle(outfile)
+    txtfile = sub(".fits", ".csv", infile)
+    df.to_csv(txtfile)    
     return(df)
 
 
@@ -61,12 +63,11 @@ infile = "KBSS-LM1.uv.fnu.fits"
 uncert_file = "KBSS-LM1.uv.fnu.sig.fits"
 df = read_chuck_UV_spec(infile, uncert_file)
 
-
-
 mosfire = ("KBSS-LM1.H.flam.fits", "KBSS-LM1.J.flam.fits", "KBSS-LM1.K.flam.fits")
 for infile in mosfire :
     df2 = read_mosfire_temp(infile)
-
+    txtfile = sub(".fits", ".csv", infile)
+    df2.to_csv(txtfile)    
 
 
 

@@ -70,13 +70,32 @@ alt_file = "magestack_byneb_ChisholmstackA_spectrum.txt"  # this is the spectrum
 altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file)
 plot_winds_neutral_stellar("MageES99/", (altsp.wave, S99.rest_wave), (altsp.X_avg/altsp.fnu_autocont, S99.rest_fnu_s99/S99.rest_fnu_s99_autocont), (altsp.X_sigma/altsp.fnu_autocont, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
 
+S99['temp_cont']   = S99['rest_fnu_s99_autocont']
+S99['temp_fnu']    = S99['rest_fnu_s99']
+S99['temp_fnuu']    = S99['rest_fnu_s99'] * 0.0
+altsp['temp_cont'] = altsp['fnu_autocont']
+altsp['temp_fnu']  = altsp['X_median']             
+altsp['temp_fnuu']  = altsp['X_jack_std']             
+# I wonder how bad the continuum fit is, generally.  Should go take a look.  let's plot the whole thing
+jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_wtdavg_stack_wS99.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
+
+
+
 # Same, but for median spectrum.  Not sure how well the autocont will line up
 altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file,  colfnu='X_median', colfnuu='X_jack_std')
 # Above should put the median in _fnu, and do autocont on it.  Let's see...
 plot_winds_neutral_stellar("MageES99_median/", (altsp.wave, S99.rest_wave), (altsp.X_median/altsp.fnu_autocont, S99.rest_fnu_s99/S99.rest_fnu_s99_autocont), (altsp.X_jack_std/altsp.fnu_autocont, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
-                           
+
+S99['temp_cont']   = S99['rest_fnu_s99_autocont']
+S99['temp_fnu']    = S99['rest_fnu_s99']
+S99['temp_fnuu']    = S99['rest_fnu_s99'] * 0.0
+altsp['temp_cont'] = altsp['fnu_autocont']
+altsp['temp_fnu']  = altsp['X_median']             
+altsp['temp_fnuu']  = altsp['X_jack_std']             
 # I wonder how bad the continuum fit is, generally.  Should go take a look.  let's plot the whole thing
-jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_median_stack_wS99.pdf", title="", norm_by_cont=True, plot_cont=True)
+jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_median_stack_wS99.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
+
+
 
 
 

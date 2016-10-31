@@ -14,6 +14,7 @@ pp = PdfPages(the_pdf)  # output
 
 #infile = "print_ages_Z.out"
 infile = "print_ages_Z.out2"  # REdoing this on Sept 6 to add stacks by age, metallicity
+infile = "print_ages_Z.out3"  # REdoing this on Oct 31 to remove now-depracated stacks by age,Z
 df = pandas.read_table(infile, delim_whitespace=True, comment="#", names=('filename', 'frac_light', 'uncert', 'age', 'metallicity'))
 
 #df['filename'] = df['filename'].str.replace("/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/S99/", "")
@@ -24,7 +25,8 @@ ticked =[0.0,0.3, 0.6,0.9]
 
 Npages = 3 # Number of pages
 Ncol = 2 #  metallicity and age
-Nrow = int(np.ceil(len(files) / (Npages*1.0)))
+#Nrow = int(np.ceil(len(files) / (Npages*1.0)))
+Nrow = 7 # JRR KLUDGE
 plotnum = 1 # initialize
 print "DEBUGGING Nrow Ncol Npage", Nrow, Ncol, Npages
 

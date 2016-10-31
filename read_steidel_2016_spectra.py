@@ -62,6 +62,8 @@ def read_mosfire_temp(infile, outfile=None) :
 infile = "KBSS-LM1.uv.fnu.fits"
 uncert_file = "KBSS-LM1.uv.fnu.sig.fits"
 df = read_chuck_UV_spec(infile, uncert_file)
+txtfile = sub(".fits", ".csv", infile)
+df.to_csv(txtfile, sep='\t')    
 
 mosfire = ("KBSS-LM1.H.flam.fits", "KBSS-LM1.J.flam.fits", "KBSS-LM1.K.flam.fits")
 for infile in mosfire :

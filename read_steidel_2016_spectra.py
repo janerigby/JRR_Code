@@ -66,7 +66,7 @@ df = read_chuck_UV_spec(infile, uncert_file)
 mosfire = ("KBSS-LM1.H.flam.fits", "KBSS-LM1.J.flam.fits", "KBSS-LM1.K.flam.fits")
 for infile in mosfire :
     df2 = read_mosfire_temp(infile)
-    txtfile = sub(".fits", ".csv", infile)
+    txtfile = sub(".fits", ".csv", infile, sep='\t')
     df2.to_csv(txtfile)    
 
 

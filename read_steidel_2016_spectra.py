@@ -7,9 +7,9 @@ from re import sub
 def read_chuck_UV_spec(infile, uncert_file=None, outfile=None) :
     ''' Takes a 1D spectrum with the wavelength stuck in the WCS header,          
     gets the wavelength array out, and packages the spectrum into a nice          
-    pandas data frame.  Returns DF, and dumps a pickle file too.                  
-    This was written to reach Chuck Steidel's stacked spectrum, and may           
-    not yet be general enough, for example the wcs.dropaxis munge.'''
+    pandas data frame.  Returns DF, and dumps a pickle file and csv file too.                  
+    This was written to reach Chuck Steidel's stacked spectrum, and is not
+    general enough to make into a function.  Example of munging: the wcs.dropaxis business.'''
     sp = fits.open(infile)
     header = sp[0].header
     wcs = WCS(header)
@@ -36,11 +36,6 @@ def read_chuck_UV_spec(infile, uncert_file=None, outfile=None) :
 
 
 def read_mosfire_temp(infile, outfile=None) :
-    ''' Takes a 1D spectrum with the wavelength stuck in the WCS header,
-    gets the wavelength array out, and packages the spectrum into a nice 
-    pandas data frame.  Returns DF, and dumps a pickle file too.
-    This was written to reach Chuck Steidel's stacked spectrum, and may
-    not yet be general enough, for example the wcs.dropaxis munge.'''
     sp = fits.open(infile)
     header = sp[0].header
     wcs = WCS(header)

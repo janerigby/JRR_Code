@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.backends.backend_pdf import PdfPages
 #import seaborn as sns
+import re
 
 # Before calling this, ran idl> .run .run print_ages_Z.pro, print_ages_Z, and then dumped output to print_ages_Z.out
 # Had to use IDL because I can't figure out how to filter binary fits tables in astropy 
@@ -12,21 +13,28 @@ figsize = (8,10)
 the_pdf = "print_ages_Z.pdf"
 pp = PdfPages(the_pdf)  # output
 
-#infile = "print_ages_Z.out"
-infile = "print_ages_Z.out2"  # REdoing this on Sept 6 to add stacks by age, metallicity
-infile = "print_ages_Z.out3"  # REdoing this on Oct 31 to remove now-depracated stacks by age,Z
+infile = "print_ages_Z.out"
 df = pandas.read_table(infile, delim_whitespace=True, comment="#", names=('filename', 'frac_light', 'uncert', 'age', 'metallicity'))
+
 
 #df['filename'] = df['filename'].str.replace("/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/S99/", "")
 df['filename'] = df['filename'].str.replace("-continuum-properties.fits", "")
+df['age'] /= 1E6  # convert from yr to Myr
 files = pandas.Series.unique(df.filename)
+
+# Make a table out of the fits
+aslatex = df.to_latex()
+f = open('print_ages_Z.tex', 'w')
+f.write(aslatex)  # Not sure I will use this in the paper, it's long and i don't know that we trust fits that far
+f.close()
+
 
 ticked =[0.0,0.3, 0.6,0.9]
 
 Npages = 3 # Number of pages
 Ncol = 2 #  metallicity and age
 #Nrow = int(np.ceil(len(files) / (Npages*1.0)))
-Nrow = 7 # JRR KLUDGE
+Nrow = 8 # JRR KLUDGE
 plotnum = 1 # initialize
 print "DEBUGGING Nrow Ncol Npage", Nrow, Ncol, Npages
 
@@ -34,6 +42,9 @@ fig = plt.figure(figsize=figsize)
 for file in files :
     subset = df[df['filename'].eq(file)]
     #print subset.shape
+    pretty_label = re.sub("_", " ", file)
+
+    #print to a file
     print subset.head(2)
     # now need to bin by age, metallicity
     Zbins = [0.01, 0.2, 0.4, 1.0, 2.0] # fraction of solar
@@ -48,7 +59,7 @@ for file in files :
         
     plt.ylim(0,1)
     plt.xlim(-0.05,2.1)
-    plt.annotate(file, (0.4,0.8), xycoords="axes fraction", fontsize=12)
+    plt.annotate(pretty_label, (0.4,0.8), xycoords="axes fraction", fontsize=12)
     plt.yticks(ticked, ticked)
     plotnum += 1
 
@@ -57,12 +68,12 @@ for file in files :
     #plt.scatter(subset.age, subset.frac_light)
     #plt.scatter(groupbyt.index, groupbyt.values, color='r')
     width = 1.0
-    plt.bar(groupbyt.index / 1.0E6, groupbyt.values, width=1) 
+    plt.bar(groupbyt.index, groupbyt.values, width=1) 
     plt.xlabel("age (Myr)")
     #plt.ylabel("light frac")
     plt.ylim(0,1)
     plt.xlim(-0.05,42)
-    plt.annotate(file, (0.4,0.8), xycoords="axes fraction", fontsize=12)
+    plt.annotate(pretty_label, (0.4,0.8), xycoords="axes fraction", fontsize=12)
 #    if plotnum < 2*Nrow-3 :  
 #        ax1.xaxis.set_major_formatter(plt.NullFormatter())
 #        ax2.xaxis.set_major_formatter(plt.NullFormatter())
@@ -70,7 +81,7 @@ for file in files :
     plotnum +=1
     print plotnum
 
-    if plotnum == 2*Nrow+1 :
+    if plotnum == 2*Nrow+1 or file == "S1226+2152":
         fig.subplots_adjust(hspace=0)
         print "Reached the end of a page", plotnum
         pp.savefig()  # save the plot
@@ -84,7 +95,7 @@ if plotnum != 1 :
     
 # Manually add the rollup of all individual galaxies
 fig = plt.figure(figsize=figsize)  # start a new figure
-not_stack = df[~df['filename'].str.contains('tack')]  # First, exclude stack
+not_stack = df[~df['filename'].str.contains('tack') & ~df['filename'].str.contains('teidel')]  # First, exclude stack
 groupbyZ = not_stack.groupby(['metallicity'])['frac_light'].sum()
 ax1 = fig.add_subplot(Nrow, Ncol, plotnum)
 width = 0.1
@@ -100,7 +111,7 @@ plotnum += 1
 ax2 = fig.add_subplot(Nrow, Ncol, plotnum)
 groupbyt = not_stack.groupby(['age'])['frac_light'].sum()
 width = 1.0
-plt.bar(groupbyt.index / 1.0E6, groupbyt.values/ not_stack.frac_light.sum(), width=1) 
+plt.bar(groupbyt.index, groupbyt.values/ not_stack.frac_light.sum(), width=1) 
 plt.xlabel("age (Myr)")
 #plt.ylabel("light frac")
 plt.ylim(0,1)
@@ -112,11 +123,11 @@ pp.savefig() # save the last plot
     
     
 # Let's measure some properties of the different components, using pandas
-print "These are the components that are old (4E7 Myr)"
-oldcomps = df[df['age'].eq(4E7)].sort_values(by='metallicity')
-print oldcomps
+print "These are the components that are old (40 Myr)"
+oldcomps = df[df['age'].eq(40)].sort_values(by='metallicity')
+print oldcomps.sort_values("frac_light")
 
-age_breakdown = (8E6, 16E6)
+age_breakdown = (8, 16)
 young_comps = df[df['age'].lt(age_breakdown[0]) & ~df['filename'].str.contains('tack')].sort_values(by='metallicity')
 print "Light-weighted metallicity for young, lt ", age_breakdown[0], "yr: ",
 print (young_comps['frac_light'] * young_comps['metallicity']).sum() / young_comps['frac_light'].sum() 
@@ -140,7 +151,7 @@ print bytZ
 #                   age                         metallicity
 scatscale = 8000
 fig = plt.figure(figsize=(8,8))
-plt.scatter(bytZ.index.get_level_values(1)/1E6, bytZ.index.get_level_values(0), s=((bytZ.frac_light.values/sum_to_norm)**2)*scatscale)
+plt.scatter(bytZ.index.get_level_values(1), bytZ.index.get_level_values(0), s=((bytZ.frac_light.values/sum_to_norm)**2)*scatscale)
 plt.xlabel("age (Myr)", fontsize=20)
 plt.ylabel("Metallicity (fraction of solar)", fontsize=20)
 plt.xlim(-0.5,41)
@@ -166,4 +177,4 @@ for Zcut in Zcuts :
 agecuts = (10., 20., 30.)
 for agecut in agecuts:
     print "Fraction of sample's stellar light fit by >", agecut, "Myr age:",
-    print not_stack[not_stack['age'] > agecut*1E6].frac_light.sum()  / not_stack.frac_light.sum()
+    print not_stack[not_stack['age'] > agecut].frac_light.sum()  / not_stack.frac_light.sum()

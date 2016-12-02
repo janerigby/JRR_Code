@@ -47,10 +47,9 @@ def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, ou
     for ii, thisfile in enumerate(input_images) :#
         diff_lim = waves[ii] * 1E-6 / D_luvoir * 206265.  # Diffraction limit FWHM (")
         out_pixscale = diff_lim /2.0  # nyquist sampled
-        print D_luvoir, waves[ii], diff_lim,
+        print D_luvoir, waves[ii], np.round(diff_lim, decimals=4), 
         data_in, header_in = fits.getdata(indir + thisfile, header=True)
         psf_file = psf_dir + ref_PSF
-        #print "DEBUGGING, psf file is", psf_file
         psf_in =  fits.getdata(psf_file)
         scale_kate_psf = 0.03 / in_pixscale  # Kate's PSFs are 0.03"/pix.  Input src plane is finer
         scale_from_hst = (D_hst / D_luvoir) * waves[ii]/ref_wave  # scaling from HST psf
@@ -63,14 +62,14 @@ def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, ou
         header_in['pix_scl'] = in_pixscale
         fits.writeto(newname, data_out, header_in, clobber=True)
         # rebin
-        binby = int(out_pixscale / in_pixscale)  # this is the bin factor needed by rebinned
+        binby = int(round(out_pixscale / in_pixscale))  # this is the bin factor needed by rebinned
         # THIS IS A KLUDGE, because block_reduce can only handle integer downsampling factors.  Should do something more sophisticated.
-        #print "Binning by", binby, ", but should be by", out_pixscale/in_pixscale
         rebinned = block_reduce(data_out, block_size=(binby,binby), func=np.sum)  # in skimage
         newname = outdir + filts[ii]  + "_" + str(D_luvoir) + "m_conv_rebin.fits"   # output is convolved by PSF and rebinned
         header_in['pix_scl'] = in_pixscale * binby
         fits.writeto(newname, rebinned, header_in, clobber=True)
-        print in_pixscale, out_pixscale,  in_pixscale * binby
+        print in_pixscale, np.round(out_pixscale, decimals=4),  np.round(in_pixscale * binby, decimals=4), 
+        print "   BINBY", binby, ", wanted", np.round(out_pixscale/in_pixscale, decimals=4)
 
         # Add some noise.
         noise_center = 0.0
@@ -80,14 +79,10 @@ def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, ou
         noisy = rebinned + np.random.normal(noise_center, noise_std, rebinned.shape)
         newname = outdir + filts[ii]  + "_" + str(D_luvoir) + "m_conv_rebin_noisy.fits"
         fits.writeto(newname, noisy, header_in, clobber=True)
-        
-    print "Wrote LUVOIR-ified images (convolved to LUVOIR PSF, binned to pixel scale", out_pixscale
-    print "They are the _conv_rebin.fits images in "
-    print "\t", outdir
     return(0)  # success
 
     
-apertures = (2.4003, 4.0, 6.0, 8., 10., 12.)
+apertures = (2.4003, 4.0, 6.0, 8., 10., 12., 14., 16.)
 for aperture in apertures:
     indir  = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/drizzled_source_images_23Feb2016/Ab/"
     outdir  = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/LUVOIRify/Ab/"
@@ -96,8 +91,10 @@ for aperture in apertures:
     waves = np.array((0.390, 0.606, 1.05))
     in_pixscale = 0.1 * 0.03  #(arcsec/pixel)   The pixel scale of the input source plane reconstructions
     # From Keren: pixel scale = 0.1 of image plane pixel scale (0.03") = 0.003"/pix
-    out_pixscale = 0.003  # just a guess
     srcplane_to_luvoir(indir, input_images, filts, waves, in_pixscale,  aperture, outdir)
+print "Wrote LUVOIR-ified images (convolved to LUVOIR PSF, binned to pixel scale)"
+print "They are the _conv_rebin.fits images in \t", outdir
+
 
 for aperture in apertures:
     indir  = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/source_plane_model/"
@@ -109,7 +106,6 @@ for aperture in apertures:
     # From Keren: pixel scale = 0.1 of image plane pixel scale (0.03") = 0.003"/pix
     out_pixscale = 0.003  # just a guess
     srcplane_to_luvoir(indir, input_images, filts, waves, in_pixscale,  aperture, outdir)
-
-
-    #
+print "Wrote LUVOIR-ified images (convolved to LUVOIR PSF, binned to pixel scale)"
+print "They are the _conv_rebin.fits images in \t", outdir
 print "ALL DONE."

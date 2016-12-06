@@ -25,7 +25,6 @@ def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, vwin,
     plt.savefig(prefix + "c.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close()
 
-        
 # Define the lines to plot
 line_label_a  = ('Lya', 'C II 1334',  'Si II 1260', 'Si II 1526', 'Al II 1670')
   #, 'O I 1302')  # Nino and Marc R. say these trace neutral gas.  

@@ -14,7 +14,7 @@ mage_mode = "released"
 
 def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, vwin, Ncol, label="", LL=[], z_sys=0.0, colortab=False) :
     ''' thewaves, thefnus, thedfnus, thezs are TUPLES of arrays of wavelength, fnu, sigma, and redshift.  If only plotting one, use thewaves=(wave_array,) '''
-    ymax= [1.3]
+    ymax= [1.5]
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax)
     plt.savefig(prefix + "a.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close()
@@ -64,8 +64,10 @@ print "STATUS:  Plotting wind lines for S99 fit to MagE Stack A"
 plot_winds_neutral_stellar("S99fit/", (S99.rest_wave,), (S99.rest_fnu_s99,), (S99.rest_fnu_s99_u,), (0.0,0.0), vwin, Ncol, "S99 fit", LL, z_sys)
 plt.clf
 
-# *** It is not at all clear whether its better to renormalize the spectra and the S99 fits, or not. Need to really sit down and figure this out.
-# Jrigby, 2 Dec 2016
+# *** It is not at all clear whether its better to renormalize the spectra and the S99 fits, or not. Need to really sit down and figure this out.  
+# Jrigby, 2 Dec 2016a
+# Update: Now that JC has changed the fits, revisit whether any renormalization is necessary.  However, also
+# Need to figure out whether JC's output is Flambda, or Fnu.  Later.  Now, Magellan plots.
 
 # Renormalizing the spectra with autocont, for better plotting...
 print "STATUS: Overplotting MagE stack and S99 fit to Mage Stack, for wind lines"
@@ -73,8 +75,8 @@ alt_file = "magestack_byneb_ChisholmstackA_spectrum.txt"  # this is the spectrum
 altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file)
 plot_winds_neutral_stellar("MageES99/", (altsp.wave, S99.rest_wave), (altsp.X_avg/altsp.fnu_autocont, S99.rest_fnu_s99/S99.rest_fnu_s99_autocont), (altsp.X_sigma/altsp.fnu_autocont, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
 # try again, w no renormalization
-plot_winds_neutral_stellar("MageES99_norenorm/", (altsp.wave, S99.rest_wave), (altsp.X_avg, S99.rest_fnu_s99), (altsp.X_sigma, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
-
+plot_winds_neutral_stellar("MageES99_norenorm/", (S99.rest_wave, S99.rest_wave), (S99.rest_fnu_data, S99.rest_fnu_s99), (S99.rest_fnu_s99*-001, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, 0.0)
+# is there a weird fnu, flambda thing here?  If I plot altsp vs S99, it looks weird.
 
 # I wonder how bad the continuum fit is, generally.  Should go take a look.  let's plot the whole thing
 S99['temp_cont']   = S99['rest_fnu_s99_autocont']

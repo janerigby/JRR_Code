@@ -54,15 +54,15 @@ linelist = line_path + "stacked.linelist"
 (LL, z_sys) = jrr.mage.get_linelist(linelist)
 (sp) = jrr.mage.open_stacked_spectrum(mage_mode)
 plot_winds_neutral_stellar("MagEstack/", (sp.wave,), (sp.X_avg,), (sp.X_sigma,), (redshift,), vwin, Ncol, "MagE stack", LL, z_sys)
-plt.clf()
+plt.close()
 print "STATUS:  Repating, for median MagE rather than X_avg"
 plot_winds_neutral_stellar("MagEmedian/", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (redshift,), vwin, Ncol, "MagE median", LL, z_sys)
-plt.clf
+plt.close()
 
 print "STATUS:  Plotting wind lines for S99 fit to MagE Stack A"
 (S99, zz) = jrr.mage.open_S99_spectrum("stack-A", 0.0)  
 plot_winds_neutral_stellar("S99fit/", (S99.rest_wave,), (S99.rest_fnu_s99,), (S99.rest_fnu_s99_u,), (0.0,0.0), vwin, Ncol, "S99 fit", LL, z_sys)
-plt.clf
+plt.close()
 
 # *** It is not at all clear whether its better to renormalize the spectra and the S99 fits, or not. Need to really sit down and figure this out.  
 # Jrigby, 2 Dec 2016a
@@ -73,10 +73,8 @@ plt.clf
 print "STATUS: Overplotting MagE stack and S99 fit to Mage Stack, for wind lines"
 alt_file = "magestack_byneb_ChisholmstackA_spectrum.txt"  # this is the spectrum that JChisholm fit
 altsp = jrr.mage.open_stacked_spectrum(mage_mode, alt_file)
-plot_winds_neutral_stellar("MageES99/", (altsp.wave, S99.rest_wave), (altsp.X_avg/altsp.fnu_autocont, S99.rest_fnu_s99/S99.rest_fnu_s99_autocont), (altsp.X_sigma/altsp.fnu_autocont, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, z_sys)
-# try again, w no renormalization
 plot_winds_neutral_stellar("MageES99_norenorm/", (S99.rest_wave, S99.rest_wave), (S99.rest_fnu_data, S99.rest_fnu_s99), (S99.rest_fnu_s99*-001, S99.rest_fnu_s99*-0.01), (0.0, 0.0), vwin, Ncol, "Stack and S99 fit", LL, 0.0)
-# is there a weird fnu, flambda thing here?  If I plot altsp vs S99, it looks weird.
+
 
 # I wonder how bad the continuum fit is, generally.  Should go take a look.  let's plot the whole thing
 S99['temp_cont']   = S99['rest_fnu_s99_autocont']
@@ -102,19 +100,6 @@ altsp['temp_fnuu']  = altsp['X_jack_std']
 jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_median_stack_wS99.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
 jrr.plot.echelle_spectrum((altsp,S99), (0.0,0.0), outfile="multipanel_median_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnuu', colcont='temp_cont')
 # Above is debugging, look at on Tuesday. Do I trust the automatic re-normalization of continuum by autocont?
-
-
-### Obsolete, a bad alley I walked down, and got wiser.
-## Same, but by age
-#st1 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_younglt8Myr_spectrum.txt")
-#st2 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_midage8to16Myr_spectrum.txt")
-#st3 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_oldgt16Myr_spectrum.txt")
-#plot_winds_neutral_stellar("MagEstack_byage/", (st1.wave, st2.wave, st3.wave), (st1.X_avg/st1.fnu_autocont,st2.X_avg/st2.fnu_autocont,st3.X_avg/st3.fnu_autocont), (st1.X_sigma/st1.fnu_autocont, st2.X_sigma/st2.fnu_autocont,st3.X_sigma/st3.fnu_autocont), (0.0, 0.0, 0.0), vwin, Ncol, "stacked by age: young (blue), middle (black), old (red)", LL, 0.0, colortab=('blue', 'black', 'red'))
-#
-## same, but by metallicity
-#st1 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_lowZ_spectrum.txt")
-#st2 = jrr.mage.open_stacked_spectrum(mage_mode, "magestack_bystars_highZ_spectrum.txt")
-#plot_winds_neutral_stellar("MagEstack_byZ/", (st1.wave, st2.wave), (st1.X_avg/st1.fnu_autocont,st2.X_avg/st2.fnu_autocont), (st1.X_sigma/st1.fnu_autocont, st2.X_sigma/st2.fnu_autocont), (0.0, 0.0, 0.0), vwin, Ncol, "stacked by Z: lowZ (blue), highZ (black)", LL, 0.0, colortab=('blue', 'black'))
 
 
 print "STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample"
@@ -148,7 +133,7 @@ plt.savefig("MagEstack/like-heckman2015fig1-onlytrans_redwardlya.pdf", bbox_inch
 # Stopped here, got stuck -- not continuum normalized.  ** resume from here.
 #plot_winds_neutral_stellar("Crowther2016/", (sp.wave,), (sp.fnu,), (sp.X_jack_std,), (redshift,), vwin, Ncol, "MagE median", LL, z_sys)
 #plt.clf
-
+S
 
 print "STATUS:  Making velocity plots of wind lines  for all the MagE spectra.  May see something in those w high SNR"
 (specs) = jrr.mage.getlist_wcont(mage_mode) 
@@ -163,6 +148,7 @@ for ii in range(0, len(specs)) :
     fnu_norm_u = jrr.util.sigma_adivb(sp.fnu, sp.fnu_u, sp.fnu_cont, sp.fnu_cont_u)
     prefix = "All_Mage/" + label
     plot_winds_neutral_stellar(prefix, (sp.wave,), (fnu_norm,), (fnu_norm_u,), (zz,), vwin, Ncol, label, LL, z_sys)    
+plt.close()
 
 plot_onepagers = False  # This step is SLOW.  Turn off while debugging above.
 if plot_onepagers :
@@ -175,7 +161,6 @@ if plot_onepagers :
         plt.savefig(outfile, orientation='portrait', bbox_inches='tight', pad_inches=0.1)
         plt.close()
     #    jrr.mage.plot_1line_manyspectra(1334.5323, 'C II 1334', 4000.)   #velocity plot
-
 
 print "STATUS: Just plot CIV for a few spectra"
 labels = ['rcs0327-E', 'S0900+2234', 'S1527+0652', 'S1429+1202', 'S1226+2152', 'Cosmic~Eye', 'S1458-0023']

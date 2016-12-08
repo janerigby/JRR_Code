@@ -13,6 +13,12 @@ import pdb
 
 debug = True
 
+def byspline_norm_func(wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_region) :
+    # Normalization method by the spline fit continuum
+    temp_norm_fnu = rest_fnu / rest_cont
+    temp_norm_sig = jrr.util.sigma_adivb(rest_fnu, rest_fnu_u,   rest_cont, rest_cont_u) # propogate uncertainty in continuum fit.
+    return(temp_norm_fnu, temp_norm_sig)
+
 # July 2016, I want to make many different stacks.  Therefore, I'm going to rewrite this code,
 # with the stacking done in function make_a_stack, so that I can call it multiple times.
 # I also split the normalization out as a function, norm_func, so that I can modify it.
@@ -186,25 +192,18 @@ labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234', 
 rootname = "standard"
 norm_method_text = "Normalized by Janes hand-fit spline continuua, so both value and shape are normalized."
 norm_region_dum = (1000.0, 1001.0) # dummy value, in this case not used by byspline_norm_func
-def byspline_norm_func(wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_region) :
-    temp_norm_fnu = rest_fnu / rest_cont
-    temp_norm_sig = jrr.util.sigma_adivb(rest_fnu, rest_fnu_u,   rest_cont, rest_cont_u) # propogate uncertainty in continuum fit.
-    return(temp_norm_fnu, temp_norm_sig)
 make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "stars")
 make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "neb")
+
 
 # Stack A for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
 # Use same labels as the standard stack
 rootname = "ChisholmstackA"
-norm_regionA = (1267.0, 1276.0)  # Region where John Chisholm says to normalize
+norm_regionA = jrr.mage.Chisholm_norm_regionA()
 norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
-def norm_by_median(wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_region) :
-    normalization = np.median(rest_fnu[wave.between(*norm_region)])
-    #print "normalization was", normalization, type(normalization)
-    return(rest_fnu / normalization,  rest_fnu_u / normalization)
-make_a_stack(labels, rootname, norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(labels, rootname, norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'neb')
+make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'stars')
+make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'neb')
 
 # Stack B for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -214,8 +213,8 @@ labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S14
 rootname = "ChisholmstackB"
 norm_regionB = (1040.0, 1045.0)  # Region where John Chisholm says to normalize
 norm_method_textB = "Flux normalized to median in spectral region " + str(norm_regionB)  + "but spectral shape not flattened."
-make_a_stack(labels_censored, rootname, norm_regionB, norm_by_median, norm_method_textB, mage_mode, 'stars')
-make_a_stack(labels_censored, rootname, norm_regionB, norm_by_median, norm_method_textB, mage_mode, 'neb')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
 
 # Stack C for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -223,31 +222,10 @@ make_a_stack(labels_censored, rootname, norm_regionB, norm_by_median, norm_metho
 labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S1429+1202', 'S1458-0023', 'S2111-0114', 'S1527+0652']
 # dropped s1226 from the stack, bc we're considering it individually.  Dropped Cosmic eye bc of DLA there.
 rootname = "ChisholmstackC"
-make_a_stack(labels_censored, rootname, norm_regionB, norm_by_median, norm_method_textB, mage_mode, 'stars')
-make_a_stack(labels_censored, rootname, norm_regionB, norm_by_median, norm_method_textB, mage_mode, 'neb')
-
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
 
 # Note:  I am passing a function to make_a_stack, which is the function that says how to
 # normalize each input spectrum and uncertainty spectrum.
 #(temp_nfnu, temp_sig) = norm_func(rest_wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_region)
 
-# Stack in bins of light-weighted age
-young  = [ 'S0033+0242', 'rcs0327-E', 'rcs0327-G', 'S0108+0624', 'S0957+0509']  # < 8 Myr light-weighted age from JChisholm's S99 fits
-old    = [ 'S1458-0023', 'Cosmic~Eye',  'S0900+2234','S1527+0652','S1226+2152'] # >16 Myr "
-midage = ['Horseshoe',  'rcs0327-U', 'S2111-0114', 'S1429+1202', 'S0004-0103']  # 8<t<16 Myr
-# omitted bc no good S99 fit:  'S1050+0017'
-make_a_stack(young,  'younglt8Myr',    norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(old,    'oldgt16Myr',     norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(midage, 'midage8to16Myr', norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(young,  'younglt8Myr',    norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'neb')
-make_a_stack(old,    'oldgt16Myr',     norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'neb')
-make_a_stack(midage, 'midage8to16Myr', norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'neb')
-
-# Stack in bins of metallicity, high or low
-low_Z  = ['S1458-0023', 'S0957+0509', 'rcs0327-U', 'S2111-0114', 'S0004-0103', 'S0900+2234','S1226+2152', 'S1527+0652'] #Z<0.3 solar
-high_Z = [ 'rcs0327-G', 'S1429+1202', 'S0108+0624',  'Cosmic~Eye', 'rcs0327-E', 'Horseshoe', 'S0033+0242'] #Z>0.3 solar
-# omitted bc no good S99 fit:  'S1050+0017'
-make_a_stack(low_Z,  'lowZ',   norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(high_Z, 'highZ',  norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(low_Z,  'lowZ',   norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'neb')
-make_a_stack(high_Z, 'highZ',  norm_regionA, norm_by_median, norm_method_textA, mage_mode, 'neb')

@@ -10,7 +10,6 @@ jrigby, 9Dec2016
 import jrr
 import  matplotlib.pyplot  as plt
 from matplotlib.backends.backend_pdf import PdfPages
-
 xlo=1000.
 xhi=2000.
 
@@ -40,6 +39,22 @@ def check_reading_in_S99_obs(rootname) :
     plt.title(rootname)
     #plt.show()
     return(0)
+
+# doublecheck that John's S99 spectrum matches Chuck's  ** In progress**
+rootname = "chuck"
+chuck =  jrr.mage.read_chuck_UVspec()
+(sp, LL) = jrr.mage.redo_open_S99_spectrum(rootname, denorm=True)
+sp.rest_fnu_data.median()
+chuck.fnu.median()
+plt.plot(chuck.wave, chuck.fnu, linewidth=2, color='black')
+plt.plot(sp.rest_wave, sp.rest_fnu_data, linewidth=0.5, color="red")
+plt.plot(sp.rest_wave, sp.rest_fnu_s99, linewidth=1, color="green")
+#plt.xlim(1400,1460)
+plt.xlim(xlo, xhi)
+plt.ylim(0.0, 1E-28)
+plt.title(rootname)
+
+ 
     
 the_pdf = "test_readinS99_rest.pdf"
 pp = PdfPages(the_pdf)  # output   

@@ -7,13 +7,10 @@ import jrr
 
 #infile = "KBSS-LM1.uv.fnu.fits"
 #uncert_file = "KBSS-LM1.uv.fnu.sig.fits"
-df = jrr.mage.read_chuck_UV_spec()  #infile, uncert_file)
+df = jrr.mage.convert_chuck_UVspec()
 
 mosfire = ("KBSS-LM1.H.flam.fits", "KBSS-LM1.J.flam.fits", "KBSS-LM1.K.flam.fits")
 for infile in mosfire :
-    df2 = jrr.mage.read_chuck_mosfire(infile)
+    df2 = jrr.mage.convert_chuck_mosfire(infile)
     txtfile = sub(".fits", ".csv", infile)
     df2.to_csv(txtfile, sep='\t')    
-
-
-

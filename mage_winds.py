@@ -142,7 +142,7 @@ def plot_wind_indy(sanitycheck_S99=False) :
     (specs) = jrr.mage.getlist_wcont(mage_mode) 
     for ii in range(0, len(specs)) :
         label = specs['short_label'][ii]
-        (sp, resoln, dresoln, LL, z_sys, boxcar) =  jrr.mage.wrap_open_spectrum(label, mage_mode, addS99=True)
+        (sp, resoln, dresoln, LL, z_sys) =  jrr.mage.wrap_open_spectrum(label, mage_mode, addS99=True)
         sp['fnu_norm']   = sp.fnu / sp.fnu_cont
         sp['fnu_norm_u'] = jrr.util.sigma_adivb(sp.fnu, sp.fnu_u, sp.fnu_cont, sp.fnu_cont_u)    
         prefix = "All_Mage/" + label

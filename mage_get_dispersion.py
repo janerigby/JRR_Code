@@ -11,5 +11,5 @@ print "Other summary info: "
 print specs_wcont.info()
 
 for label in specs_wcont['short_label'] :
-    (sp, resoln, dresoln, LL, zz_syst, boxcar) = jrr.mage.wrap_open_spectrum(label, mage_mode) 
+    (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(label, mage_mode) 
     print sp['disp'].mean(), sp['disp'].median(), sp['disp'].min(), sp['disp'].max(), "IQR:", jrr.util.IQR(sp['disp'])

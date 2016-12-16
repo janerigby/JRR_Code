@@ -16,7 +16,7 @@ labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234', 
 
 labels = ['S1226+2152']  # Open a MagE spectrum
 for label in labels :
-    (st, resoln, dresoln, LL, z_systemic,boxcar)=jrr.mage.wrap_open_spectrum(label, mage_mode)
+    (st, resoln, dresoln, LL, z_systemic)=jrr.mage.wrap_open_spectrum(label, mage_mode)
 
 # Open its S99 fit
 linelist = line_path + "stacked.linelist"

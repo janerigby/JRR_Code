@@ -15,7 +15,7 @@ xhi=2000.
 
 def check_reading_in_S99_rest(rootname) :
     (sp, LL) = jrr.mage.redo_open_S99_spectrum(rootname)
-    (orig_sp, orig_resoln, orig_dresoln, orig_LL, orig_zz_syst, orig_boxcar)  =  jrr.mage.wrap_open_spectrum(rootname, "released")
+    (orig_sp, orig_resoln, orig_dresoln, orig_LL, orig_zz_syst)  =  jrr.mage.wrap_open_spectrum(rootname, "released")
     sp.rest_fnu_data.median()
     orig_sp.rest_fnu.median()
     plt.plot(orig_sp.rest_wave, orig_sp.rest_fnu, linewidth=2, color='black')
@@ -30,7 +30,7 @@ def check_reading_in_S99_rest(rootname) :
 
 def check_reading_in_S99_obs(rootname) :
     (sp, LL) = jrr.mage.redo_open_S99_spectrum(rootname)
-    (orig_sp, orig_resoln, orig_dresoln, orig_LL, orig_zz_syst, orig_boxcar)  =  jrr.mage.wrap_open_spectrum(rootname, "released")
+    (orig_sp, orig_resoln, orig_dresoln, orig_LL, orig_zz_syst)  =  jrr.mage.wrap_open_spectrum(rootname, "released")
     plt.plot(orig_sp.wave, orig_sp.rest_fnu, linewidth=2, color='black')
     plt.plot(sp.wave, sp.rest_fnu_data, linewidth=0.5, color="red")
     plt.plot(sp.wave, sp.rest_fnu_s99, linewidth=1, color="green")

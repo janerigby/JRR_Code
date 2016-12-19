@@ -44,7 +44,7 @@ print "All done"
 plt.title("All the MagE spectra")
 plt.show()
 
-(sp) = jrr.mage.open_stacked_spectrum(mage_mode)
+(sp, LL) = jrr.mage.open_stacked_spectrum(mage_mode)
 plt.plot(sp.restwave, sp.X_avg)
 plt.title("stacked spectrum")
 plt.show()

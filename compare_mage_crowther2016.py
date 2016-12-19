@@ -8,11 +8,7 @@ from matplotlib import pyplot as plt
 mage_mode = "reduction"
 #mage_mode = "released"
 
-(spec_path, line_path) = jrr.mage.getpath(mage_mode)
- 
-linelist = line_path + "stacked.linelist"
-(LL, z_sys) = jrr.mage.get_linelist(linelist)
-(sp) = jrr.mage.open_stacked_spectrum(mage_mode)
+(sp, LL) = jrr.mage.open_stacked_spectrum(mage_mode)
 plt.plot(sp.restwave, sp.X_avg)
 plt.plot(sp.restwave, sp.X_sigma)
 plt.xlim(1150, 1700)

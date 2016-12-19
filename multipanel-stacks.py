@@ -18,7 +18,7 @@ avg_or_med = ('wtdavg', 'median')
 for ii in range(0, len(colfnu)):
     for method in methods: 
         stacks = ['magestack_'+method+'_standard_spectrum.txt']
-        sp1   = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        sp1, dummyLL   = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
         chuck = jrr.mage.read_chuck_UV_spec()
         shap  = jrr.mage.read_shapley_composite() 
         the_dfs = [sp1, chuck, shap]
@@ -35,8 +35,8 @@ if False :   # Don't do these right now, they soak up time, and I no longer trus
     # Compare high and low metallicity stacks
     for method in methods :
         stacks = ['magestack_'+method+'_highZ_spectrum.txt', 'magestack_'+method+'_lowZ_spectrum.txt']
-        sp1 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        sp2 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[1], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        sp1, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        sp2, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[1], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
         the_dfs = [sp1, sp2]
         the_zzs = [0.0, 0.0]  # Stacked spectra are already in rest frame.
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_byZ.pdf'
@@ -50,9 +50,9 @@ if False :   # Don't do these right now, they soak up time, and I no longer trus
     colortab_age=('blue', 'black', 'red')
     for method in methods:
         stacks = ['magestack_'+method+'_younglt8Myr_spectrum.txt', 'magestack_'+method+'_midage8to16Myr_spectrum.txt', 'magestack_'+method+'_oldgt16Myr_spectrum.txt']
-        sp1 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        sp2 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[1], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        sp3 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[2], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        sp1, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        sp2, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[1], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        sp3, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[2], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
         the_dfs = [sp1, sp2, sp3]
         the_zzs = [0.0, 0.0, 0.0]  # Stacked spectra are already in rest frame.
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_byage.pdf'
@@ -66,7 +66,7 @@ if False :   # Don't do these right now, they soak up time, and I no longer trus
 for ii in range(0, len(colfnu)):
     for method in methods:
         stacks = ['magestack_'+method+'_standard_spectrum.txt']
-        sp1 = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        sp1, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
         the_dfs = [sp1]
         the_zzs = [0.0]  # Stacked spectra are already in rest frame.
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_standard.pdf'

@@ -60,7 +60,7 @@ plt.clf()
 
 rootname = "ChisholmstackA"   # doublecheck that John's S99 spectrum matches my stack-A
 alt_file = "magestack_byneb_ChisholmstackA_spectrum.txt"  # this is the spectrum that JChisholm fit
-stack = jrr.mage.open_stacked_spectrum("reduction", alt_file)
+(stack, dumLL) = jrr.mage.open_stacked_spectrum("reduction", alt_file)
 (sp, LL) = jrr.mage.redo_open_S99_spectrum("Stack-A", denorm=True)
 sp.rest_fnu_data.median()
 stack.rest_fnu.median()

@@ -101,12 +101,19 @@ def plot_wind_stack() :
         jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
         plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
         plt.clf()
+        if which_stack == "Stack-A" :
+            jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
+            plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1_S99.pdf", bbox_inches='tight', pad_inches=0.1)
+            plt.clf()
         print "STATUS: again, but removing the transitions blueward of Lya."
         line_label_Heck  = ('S II 1260', 'C II 1334',  'Si IV 1393')  
         line_center_Heck = array((1260.4221, 1334.5323, 1393.76))  
         jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
         plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya.pdf", bbox_inches='tight', pad_inches=0.1)
         plt.clf()
+        if which_stack == "Stack-A" :
+            jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
+            plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya_S99.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close("all")
     return(0)
     

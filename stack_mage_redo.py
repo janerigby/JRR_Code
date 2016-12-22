@@ -3,13 +3,14 @@
 '''
 import jrr
 from   astropy.stats import sigma_clip
-import matplotlib
+import extinction
+import pandas
 import matplotlib.pyplot as plt
 import numpy as np
-import subprocess
 import time
 import re
 import pdb
+from os.path import expanduser
 
 debug = True
 
@@ -30,7 +31,7 @@ def byspline_norm_func(wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_
 #   norm_method_text # string that describes how the individual spectra were normalized.  For header.
 #   mage_mode   # same as other mage functions.  Where to look for spectra
 #   zchoice     # How to set systemic redshift.  Choices are "stars", or "neb"
-def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice) :
+def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, deredden=False, EBV=[]) :
     plt.close('all')
     plt.ion()
     plt.figure(figsize=(20,5))
@@ -72,6 +73,15 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         print filename, label, len(rest_wave),
         print "  %.2f  %.2f" % (  rest_wave[0], rest_wave[-1:])
 
+        if deredden and len(EBV) :
+            this_ebv =  S99.loc[label,  'E(B-V)']
+            Rv = 4.05
+            Av = -1 * Rv * this_ebv  # stupidity w .Series and .as_matrix() is bc extinction package barfs on pandas. pandas->np->pandas
+            rest_fnu    = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_fnu.as_matrix()))
+            rest_fnu_u  = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_fnu_u.as_matrix()))
+            rest_cont   = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_cont.as_matrix()))
+            rest_cont_u = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_cont_u.as_matrix()))
+        
         # Normalize the spectrum and error spectrum
         (temp_norm_fnu, temp_sig) = norm_func(rest_wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_region)
         nfnu_stack[ii]   = jrr.spec.rebin_spec_new(rest_wave, temp_norm_fnu,   wave_stack) # normalized fnu, rebinned
@@ -192,9 +202,8 @@ labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234', 
 rootname = "standard"
 norm_method_text = "Normalized by Janes hand-fit spline continuua, so both value and shape are normalized."
 norm_region_dum = (1000.0, 1001.0) # dummy value, in this case not used by byspline_norm_func
-make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "stars")
-make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "neb")
-
+#make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "stars")
+#make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "neb")
 
 # Stack A for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -202,8 +211,8 @@ make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method
 rootname = "ChisholmstackA"
 norm_regionA = jrr.mage.Chisholm_norm_regionA()
 norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
-make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'neb')
+#make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'stars')
+#make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'neb')
 
 # Stack B for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -213,8 +222,8 @@ labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S14
 rootname = "ChisholmstackB"
 norm_regionB = (1040.0, 1045.0)  # Region where John Chisholm says to normalize
 norm_method_textB = "Flux normalized to median in spectral region " + str(norm_regionB)  + "but spectral shape not flattened."
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
+#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
+#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
 
 # Stack C for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -222,10 +231,23 @@ make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, n
 labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S1429+1202', 'S1458-0023', 'S2111-0114', 'S1527+0652']
 # dropped s1226 from the stack, bc we're considering it individually.  Dropped Cosmic eye bc of DLA there.
 rootname = "ChisholmstackC"
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
+#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
+#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
 
 # Note:  I am passing a function to make_a_stack, which is the function that says how to
 # normalize each input spectrum and uncertainty spectrum.
 #(temp_nfnu, temp_sig) = norm_func(rest_wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_region)
 
+
+# Stack the derreddened spectra.  Same as Stack A, but deredden first.
+#   Get E(B-V) values that J Chisholm measured
+S99_sumfile = expanduser('~') + "/Dropbox/MagE_atlas/Contrib/S99/New_right_flam/sb99_overview2.txt"
+S99 = pandas.read_table(S99_sumfile, delim_whitespace=True, comment="#")
+S99.set_index('name', inplace=True, drop=False)
+deredden_labels = labels
+deredden_labels.remove('S1050+0017')
+rootname = "dereddened_StackA"
+norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
+norm_method_textA += "\nBefore stacking, dereddened by E(B-V) values measured by Chisholm, as of 9 Dec 2016, in sb99_overview2.txt ."
+make_a_stack(deredden_labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'stars', deredden=True, EBV=S99)
+make_a_stack(deredden_labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'neb',   deredden=True, EBV=S99)

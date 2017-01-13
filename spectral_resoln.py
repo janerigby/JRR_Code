@@ -49,7 +49,6 @@ else :    # Normal mode
     infile = specs['filename']
 
 
-
 for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spectrum
     (specdir, linedir) = jrr.mage.getpath(mage_mode)
     label     = specs['short_label'][jj]
@@ -66,7 +65,7 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
     (sp_temp, resoln, dresoln) = jrr.mage.open_spectrum(filename, zz, mage_mode)
     print("I opened file ", filename) 
 
-    sp = sp_temp[sp_temp['obswave'].gt(5000)].copy()   # Don't look for skylines in the blue
+    sp = sp_temp[sp_temp['wave_sky'].gt(5000)].copy()   # Don't look for skylines in the blue
     #sp['fnu_sky'].fillna(-99, None, inplace=True)  # correct for some infinite values
     sp.fnu_sky.replace([np.inf, -np.inf], np.nan, inplace=True)  # replace inf w NaN to keep mad happy
     delta = sp.fnu_sky.mad()  * 2 # delta for peakfinder
@@ -78,15 +77,15 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
 #    peak_ind = signal.find_peaks_cwt(sp.fnu_sky, np.arange(1,30), min_snr=20)  #wavelet is in pixels.  #method 2
 #    # wavelet range:  disp is constant 0.2A.  1000<R<4000, 4000<lambda<8000, so wavelets from 5 to 40
 #
-#    max, min = peakdetect.peakdetect(avgsky, obswave, 30, 0)  # method 3
+#    max, min = peakdetect.peakdetect(avgsky, wave_sky, 30, 0)  # method 3
 #    xm = [p[0] for p in max]
 #    ym = [p[1] for p in max]
     
     plt.clf()
     #plt.ylim(0,5E-15)
     plt.xlim(5000,8500)
-    plt.plot(sp.obswave, sp.fnu_sky)  # Show the sky spectrum, and flag detected peaks
-    plt.scatter(sp['obswave'].iloc[peak_ind], sp['fnu_sky'].iloc[peak_ind])
+    plt.plot(sp.wave_sky, sp.fnu_sky)  # Show the sky spectrum, and flag detected peaks
+    plt.scatter(sp['wave_sky'].iloc[peak_ind], sp['fnu_sky'].iloc[peak_ind])
     plt.xlabel("Observed wavelength (A)")
     plt.ylabel("fnu of sky spectrum")
     plt.draw()
@@ -94,44 +93,43 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
 
     goodpeaks = [] # empty list of good peaks
     RR = []        # empty list of resolutions
-    #DEBUG print "Found peaks at ", sp.obswave[peak_ind] 
+    #DEBUG print "Found peaks at ", sp.wave_sky[peak_ind] 
     guess = []
-    win = 15 # window of pixels around the peak
+    win = 15 # window of pixels around the 
 #    print "#lambda(A)  FWHM(A)   R(lambda/fwhm)";
     for index,item in enumerate(peak_ind) :   # step through the peaks
-        plt.plot(sp.obswave.iloc[item-win:item+win], sp.fnu_sky.iloc[item-win:item+win], color='b')
+        plt.plot(sp.wave_sky.iloc[item-win:item+win], sp.fnu_sky.iloc[item-win:item+win], color='b')
         plt.title("Fitting peak " + str(item))
 
         if ((item == 0) or (item == peak_ind[-1])) :
             dist2blue = 1000.
             dist2red  = 1000.
         else : 
-            dist2blue = sp.obswave.iloc[item] - sp.obswave.iloc[peak_ind[index-1]] 
-            dist2red  = sp.obswave.iloc[peak_ind[index+1]] - sp.obswave.iloc[item]
+            dist2blue = sp.wave_sky.iloc[item] - sp.wave_sky.iloc[peak_ind[index-1]] 
+            dist2red  = sp.wave_sky.iloc[peak_ind[index+1]] - sp.wave_sky.iloc[item]
         minsep = 10.0 #A, test
         #print "DEBUGGING dist2blue dist2red ", dist2blue, dist2red
         if((dist2blue < minsep) or (dist2red < minsep)) :
             pass
-            #print "DEBUG Skipping peak at ", sp.obswave[item], " because other peak nearby ", dist2blue, dist2red
+            #print "DEBUG Skipping peak at ", sp.wave_sky[item], " because other peak nearby ", dist2blue, dist2red
         else :
             try:
-                guess = [sp.obswave.iloc[item], sp.fnu_sky.iloc[item], 3, delta*5]
-                popt, pcov = curve_fit(MyGaussian, sp.obswave.iloc[item-win:item+win], sp.fnu_sky.iloc[item-win:item+win], p0=guess)
-                fit = MyGaussian(sp.obswave.iloc[item-win:item+win], *popt)
+                guess = [sp.wave_sky.iloc[item], sp.fnu_sky.iloc[item], 3, delta*5]
+                popt, pcov = curve_fit(MyGaussian, sp.wave_sky.iloc[item-win:item+win], sp.fnu_sky.iloc[item-win:item+win], p0=guess)
+                fit = MyGaussian(sp.wave_sky.iloc[item-win:item+win], *popt)
                 fwhm = 2*sqrt(2.*log(2)) * abs(popt[2])   # convert sig to FWHM
                 RR.append(popt[0]/fwhm)  # save the R  for later.
-                goodpeaks.append(sp.obswave.iloc[item])
-                plt.plot(sp.obswave.iloc[item-win:item+win], fit, color='r')
-                plt.show()
-
-                plt.scatter(sp.obswave.iloc[peak_ind], sp.fnu_sky.iloc[peak_ind])
-                plt.xlim(sp.obswave.iloc[item-win],sp.obswave.iloc[item+win])
+                goodpeaks.append(sp.wave_sky.iloc[item])
+                plt.plot(sp.wave_sky.iloc[item-win:item+win], fit, color='r')
+                #plt.show()
+                plt.scatter(sp.wave_sky.iloc[peak_ind], sp.fnu_sky.iloc[peak_ind])
+                plt.xlim(sp.wave_sky.iloc[item-win],sp.wave_sky.iloc[item+win])
                 plt.ylim(0, sp.fnu_sky.iloc[item]*1.3)
-                plt.draw()
+                #plt.draw()
                 if GOSLOW :
                     sleep(0.5)
             except:
-                print "skipping peak at ", sp.obswave.iloc[item], "because bad fit"
+                print "skipping peak at ", sp.wave_sky.iloc[item], "because bad fit"
     plt.clf()
     # Now, plot the measured R vs wavelength, and fit a simple func to it.
     plt.scatter(goodpeaks,  RR)
@@ -141,13 +139,13 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
     plt.ylim(1000,7000)
     plt.text(5000,5500, "Median " + str(median) + " +/- " + str(mad))
     plt.text(5000,5700, filename)
-    plt.show()
-    plt.draw()
+    #plt.show()
+    #plt.draw()
     plt.savefig(outpng)
     sleep(1.)
     if GOSLOW :
         sleep(2.)
-    ascii.write([goodpeaks,  RR], outfile, names=['obswave', 'Resoln'])
+    ascii.write([goodpeaks,  RR], outfile, names=['wave_sky', 'Resoln'])
     with open(outfile, "a") as myfile:
         myfile.write("#Measured from isolated skylines, from sky spectrum which was combined with same weighting as object spectra, ")
         myfile.write("\n#  but using observed wavelength, with no barycentric correction.") 
@@ -158,11 +156,10 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
     system("cat " + outfile)
 
     # More pythonic way to write the measured spectral resolution to the header
-    jrr.util.replace_text_in_file_like_sed("RESOLUTIONGOESHERE", str(median), filename)
-    jrr.util.replace_text_in_file_like_sed("MADGOESHERE", str(mad), filename)
-
+    jrr.util.replace_text_in_file("RESOLUTIONGOESHERE", str(median), filename)
+    jrr.util.replace_text_in_file("MADGOESHERE", str(mad), filename)
     if re.search("wC1", filename) :         #  Change the *comb1.txt file as well.
         comb1 = re.sub("wC1", "1", filename)
-        jrr.util.replace_text_in_file_like_sed("RESOLUTIONGOESHERE", str(median), comb1)
-        jrr.util.replace_text_in_file_like_sed("MADGOESHERE", str(mad), comb1)
+        jrr.util.replace_text_in_file("RESOLUTIONGOESHERE", str(median), comb1)
+        jrr.util.replace_text_in_file("MADGOESHERE", str(mad), comb1)
         

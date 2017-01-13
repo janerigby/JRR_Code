@@ -10,18 +10,18 @@ import numpy as np
 mage_mode = "released"
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 
-def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, label="", LL=[], z_sys=0.0, colortab=False) :
+def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, label="", LL=[], z_sys=0.0, colortab=False, drawunity=False) :
     ''' thewaves, thefnus, thedfnus, thezs are TUPLES of arrays of wavelength, fnu, sigma, and redshift.  If only plotting one, use thewaves=(wave_array,) '''
     ymax= [1.5]
     vwin = 4000. # +- velocity window (km/s) to consider a line
     Ncol = 1
-    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
     plt.savefig(prefix + "a.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
-    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_b, line_center_b, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_b, line_center_b, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
     plt.savefig(prefix + "b.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
-    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_c, line_center_c, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False)
+    jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_c, line_center_c, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
     plt.savefig(prefix + "c.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     plt.close("all")
@@ -65,19 +65,21 @@ pdir = "Photospheric"
 def plot_wind_stack() :
     stack_choices = ("standard", "Stack-A")  
     outdir = ("StdStack", "StackA")
+    newlabel = ("shape-normalized", r'$\lambda_{pivot}$-normalized')
+    unity = (True, False)
     linelist = line_path + "stacked.linelist"
     (LL, zz) = jrr.mage.get_linelist(linelist)
     for ii, which_stack in enumerate(stack_choices) :
         print "STATUS:  Plotting wind lines for MagE stack ", outdir[ii]
         (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack=which_stack, addS99=True)
-        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,), (zz,), "MagE wtdavg "+outdir[ii], LL, zz)       
-        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "MagE median "+ outdir[ii], LL, zz)
+        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,), (zz,), "wtdavg "+newlabel[ii], LL, zz, drawunity=unity[ii])       
+        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "median "+ newlabel[ii], LL, zz, drawunity=unity[ii])       
         plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,),       (zz,), "", LL, zz)
         plot_photospheric_lines(pdir+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "", LL, zz)
         if which_stack == "Stack-A"  :  # S99 was fit to Stack-A, not to the standard stack
-            plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgwS99-", (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "MagE wtdavg StackA", LL, zz)
+            plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgwS99-", (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "wtdavg "+newlabel[1], LL, zz)
             plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavgwS99-",          (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "", LL, zz)
-            plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-medianwS99-", (sp.wave,sp.wave), (sp.X_median, sp.fnu_s99model), (sp.X_jack_std, sp.wave*0), (zz,zz), "MagE median StackA", LL, zz)
+            plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-medianwS99-", (sp.wave,sp.wave), (sp.X_median, sp.fnu_s99model), (sp.X_jack_std, sp.wave*0), (zz,zz), "median "+newlabel[1], LL, zz)
             plot_photospheric_lines(pdir+"/"+outdir[ii]+"-medianwS99-",          (sp.wave,sp.wave), (sp.X_median, sp.fnu_s99model), (sp.X_jack_std, sp.wave*0), (zz,zz), "", LL, zz)
             print "STATUS:  Making plot.echelle_spectrum multipage plots for Stack-A, w S99 fits"
             sp2 = sp.copy(deep=True)
@@ -94,25 +96,27 @@ def plot_wind_stack() :
             sp['temp_fnu_u'] = sp['X_jack_std']
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_norm.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
-                
+
+        mycol = ("goldenrod", "green", "red")
+        mycol2 = ("goldenrod", "green", "purple", "red", "blue") 
         print "STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample"
         line_label_Heck  = ('S II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  
         line_center_Heck = array((1260.4221, 1334.5323,   1206.500, 1393.76, 1084.5659))  
-        jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
+        jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol2)
         plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
         plt.clf()
         if which_stack == "Stack-A" :
-            jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
+            jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol2)
             plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1_S99.pdf", bbox_inches='tight', pad_inches=0.1)
             plt.clf()
         print "STATUS: again, but removing the transitions blueward of Lya."
         line_label_Heck  = ('S II 1260', 'C II 1334',  'Si IV 1393')  
         line_center_Heck = array((1260.4221, 1334.5323, 1393.76))  
-        jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
+        jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol)
         plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya.pdf", bbox_inches='tight', pad_inches=0.1)
         plt.clf()
         if which_stack == "Stack-A" :
-            jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5))
+            jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol)
             plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya_S99.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close("all")
     return(0)

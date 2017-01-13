@@ -35,7 +35,8 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     plt.close('all')
     plt.ion()
     plt.figure(figsize=(20,5))
-    specs = jrr.mage.getlist_labels(mage_mode, labels)
+#    specs = jrr.mage.getlist_labels(mage_mode, labels)
+    specs = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=labels)
     Nspectra = len(specs)
     print "DEBUG, Nspectra is", Nspectra
     stacklo =  800. #A      # Create a rest-frame wavelength array to stack into

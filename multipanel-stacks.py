@@ -19,7 +19,7 @@ for ii in range(0, len(colfnu)):
     for method in methods: 
         stacks = ['magestack_'+method+'_standard_spectrum.txt']
         sp1, dummyLL   = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        chuck = jrr.mage.read_chuck_UV_spec()
+        chuck = jrr.mage.read_chuck_UVspec(autofitcont=True)
         shap  = jrr.mage.read_shapley_composite() 
         the_dfs = [sp1, chuck, shap]
         the_zzs = [0.0, 0.0]
@@ -27,40 +27,8 @@ for ii in range(0, len(colfnu)):
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_standard_comparetoSteidel2016.pdf'
         (spec_path, line_path) = jrr.mage.getpath(mage_mode)
         (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Standard stack"+method, waverange=(1000,3000), colortab=colortab)
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='rest_fnu_autocont', title="Standard stack"+method, waverange=(1000,3000), colortab=colortab)
     plt.clf()
-
-#for ii in range(0, len(colfnu)):
-if False :   # Don't do these right now, they soak up time, and I no longer trust them.
-    # Compare high and low metallicity stacks
-    for method in methods :
-        stacks = ['magestack_'+method+'_highZ_spectrum.txt', 'magestack_'+method+'_lowZ_spectrum.txt']
-        sp1, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        sp2, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[1], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        the_dfs = [sp1, sp2]
-        the_zzs = [0.0, 0.0]  # Stacked spectra are already in rest frame.
-        the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_byZ.pdf'
-        (spec_path, line_path) = jrr.mage.getpath(mage_mode)
-        (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, colortab=('black', 'mediumblue'), title="Compare highZ (black) and lowZ (blue) stacks "+method)
-    plt.clf()
-
-    # Compare young, middle-age, and old stacks
-    label_age = "Compare young (blue), middle-age (black), and old (red) stacks"
-    colortab_age=('blue', 'black', 'red')
-    for method in methods:
-        stacks = ['magestack_'+method+'_younglt8Myr_spectrum.txt', 'magestack_'+method+'_midage8to16Myr_spectrum.txt', 'magestack_'+method+'_oldgt16Myr_spectrum.txt']
-        sp1, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        sp2, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[1], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        sp3, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[2], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
-        the_dfs = [sp1, sp2, sp3]
-        the_zzs = [0.0, 0.0, 0.0]  # Stacked spectra are already in rest frame.
-        the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_byage.pdf'
-        (spec_path, line_path) = jrr.mage.getpath(mage_mode)
-        (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title=label_age + " "+method, colortab=colortab_age, waverange=(1000,3000))
-    plt.clf()
-
 
 # Plot the standard stacks
 for ii in range(0, len(colfnu)):

@@ -203,8 +203,8 @@ labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234', 
 rootname = "standard"
 norm_method_text = "Normalized by Janes hand-fit spline continuua, so both value and shape are normalized."
 norm_region_dum = (1000.0, 1001.0) # dummy value, in this case not used by byspline_norm_func
-#make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "stars")
-#make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "neb")
+make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "stars")
+make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "neb")
 
 # Stack A for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -212,8 +212,8 @@ norm_region_dum = (1000.0, 1001.0) # dummy value, in this case not used by byspl
 rootname = "ChisholmstackA"
 norm_regionA = jrr.mage.Chisholm_norm_regionA()
 norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
-#make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'stars')
-#make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'neb')
+make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'stars')
+make_a_stack(labels, rootname, norm_regionA, jrr.mage.norm_by_median, norm_method_textA, mage_mode, 'neb')
 
 # Stack B for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -223,8 +223,8 @@ labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S14
 rootname = "ChisholmstackB"
 norm_regionB = (1040.0, 1045.0)  # Region where John Chisholm says to normalize
 norm_method_textB = "Flux normalized to median in spectral region " + str(norm_regionB)  + "but spectral shape not flattened."
-#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
-#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
 
 # Stack C for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -232,8 +232,8 @@ norm_method_textB = "Flux normalized to median in spectral region " + str(norm_r
 labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S1429+1202', 'S1458-0023', 'S2111-0114', 'S1527+0652']
 # dropped s1226 from the stack, bc we're considering it individually.  Dropped Cosmic eye bc of DLA there.
 rootname = "ChisholmstackC"
-#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
-#make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'stars')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.mage.norm_by_median, norm_method_textB, mage_mode, 'neb')
 
 # Note:  I am passing a function to make_a_stack, which is the function that says how to
 # normalize each input spectrum and uncertainty spectrum.

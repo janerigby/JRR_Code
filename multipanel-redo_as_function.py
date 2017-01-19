@@ -8,7 +8,7 @@ mage_mode = "reduction"
 #mage_mode = "released"
 methods = ('bystars', 'byneb')  # method of determining systemic redshift
 
-specs = jrr.mage.getlist_wcont(mage_mode, drop_s2243=True)
+specs = jrr.mage.wrap_getlist(mage_mode, which_list="wcont", drop_s2243=True)
 short_labels = specs['short_label'].unique()
 for label in short_labels :
     (sp, resoln, dresoln, LL, z_systemic) = jrr.mage.wrap_open_spectrum(label, mage_mode) 
@@ -17,4 +17,4 @@ for label in short_labels :
     the_pdf =  "PDF_Out2/multipanel_" + label + '.pdf'
     zzstr = str(["{0:0.8f}".format(i) for i in the_zzs])
     jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title=(label+" "+zzstr), topfid=(1.1,1))#, waverange=(1000,3000))
-plt.clf()
+    plt.clf()

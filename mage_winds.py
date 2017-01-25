@@ -6,23 +6,23 @@ from numpy import zeros_like
 from matplotlib import pyplot as plt
 import pandas
 import numpy as np
-#mage_mode = "reduction"
-mage_mode = "released"
+mage_mode = "reduction"
+#mage_mode = "released"
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 
 def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, label="", LL=[], z_sys=0.0, colortab=False, drawunity=False) :
     ''' thewaves, thefnus, thedfnus, thezs are TUPLES of arrays of wavelength, fnu, sigma, and redshift.  If only plotting one, use thewaves=(wave_array,) '''
     ymax= [1.5]
-    vwin = 4000. # +- velocity window (km/s) to consider a line
+    vwin = 6000. # +- velocity window (km/s) to consider a line
     Ncol = 1
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
-    plt.savefig(prefix + "a.pdf", bbox_inches='tight', pad_inches=0.1)
+    plt.savefig(prefix + "a6K.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_b, line_center_b, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
-    plt.savefig(prefix + "b.pdf", bbox_inches='tight', pad_inches=0.1)
+    plt.savefig(prefix + "b6K.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_c, line_center_c, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
-    plt.savefig(prefix + "c.pdf", bbox_inches='tight', pad_inches=0.1)
+    plt.savefig(prefix + "c6K.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     plt.close("all")
     return(0)
@@ -40,13 +40,12 @@ def plot_photospheric_lines(prefix, thewaves, thefnus, thedfnus, thezs, label=""
     return(0)
     
 # Define the lines to plot
-line_label_a  = ('Lya', 'Si II 1260', 'O I 1302',  'C II 1334', 'Si II 1526', 'Al II 1670') # Nino and Marc R. say these trace neutral gas.
-  #Added SiII1260, AlII, AlIII at Rongmon's suggestion
-line_center_a = array((1215.6701, 1260.4221, 1302.1685, 1334.5323,  1526.7066, 1670.7874))
+line_label_a         = ('Lya', 'O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
+line_center_a = array((1215.6701, 1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))
 line_label_b  =  ('MgII2796', 'FeII2344', 'FeII2383')
 line_center_b = array((2796.352,  2344.214,  2382.765))
-line_label_c  = ("N V 1238", "Si IV 1393", "C IV 1548", "Al III 1854")
-line_center_c = array((1238.82, 1393.76, 1548.19, 1854.72))
+line_label_c     = ("Al III 1854", "Si IV 1393", "C IV 1548", "N V 1238")
+line_center_c = array((1854.72, 1393.76, 1548.19,  1238.82))
 line_label_extra  = ("OVI 1031", "OVI 1037", "CIII] 1907", "C II] 2326", "OIII] 1660", "O II] 2470", "SiII] 2335", "HeII1640", "SiIII 1882", "SiIII 1892", "LyB", "SiIV1402", "Fe II 2600", "S II 1259")
 line_center_extra =array((1031.9261, 1037.6167, 1906.68, 2326.00, 1660.81, 2470.97, 2335.123, 1640.42,  1883.00, 1892.03, 1025.7223, 1402.770, 2600.1729, 1259.519))
 line_label_all  = line_label_a  + line_label_b  + line_label_c + line_label_extra
@@ -63,10 +62,10 @@ zz = 0.0  # stacked spectrum is already in rest frame wavelength
 pdir = "Photospheric"
 
 def plot_wind_stack() :
-    stack_choices = ("standard", "Stack-A")  
-    outdir = ("StdStack", "StackA")
-    newlabel = ("shape-normalized", r'$\lambda_{pivot}$-normalized')
-    unity = (True, False)
+    stack_choices = ("standard", "Stack-A", "divbys99")
+    outdir = ("StdStack", "StackA", "divbys99")
+    newlabel = ("shape-normalized", r'$\lambda_{pivot}$-normalized', "each input-normalized by S99")
+    unity = (True, False, True)
     linelist = line_path + "stacked.linelist"
     (LL, zz) = jrr.mage.get_linelist(linelist)
     for ii, which_stack in enumerate(stack_choices) :
@@ -78,8 +77,10 @@ def plot_wind_stack() :
         plot_photospheric_lines(pdir+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "", LL, zz)
         if which_stack == "Stack-A"  :  # S99 was fit to Stack-A, not to the standard stack
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgwS99-", (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "wtdavg "+newlabel[1], LL, zz)
-            plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavgwS99-",          (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "", LL, zz)
+            plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgdivbyS99-", (sp.wave,), (sp.X_avg/sp.fnu_s99model,), (sp.X_sigma/sp.fnu_s99model,), (zz,), "wtdavgdivbyS99 "+newlabel[1], LL, zz, drawunity=True)
+            plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavgwS99-",          (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "", LL, zz)            
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-medianwS99-", (sp.wave,sp.wave), (sp.X_median, sp.fnu_s99model), (sp.X_jack_std, sp.wave*0), (zz,zz), "median "+newlabel[1], LL, zz)
+            plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-mediandivbyS99-", (sp.wave,), (sp.X_median/sp.fnu_s99model,), (sp.X_jack_std/sp.fnu_s99model,), (zz,), "mediandivbyS99 "+newlabel[1], LL, zz, drawunity=True)
             plot_photospheric_lines(pdir+"/"+outdir[ii]+"-medianwS99-",          (sp.wave,sp.wave), (sp.X_median, sp.fnu_s99model), (sp.X_jack_std, sp.wave*0), (zz,zz), "", LL, zz)
             print "STATUS:  Making plot.echelle_spectrum multipage plots for Stack-A, w S99 fits"
             sp2 = sp.copy(deep=True)

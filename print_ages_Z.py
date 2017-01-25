@@ -43,7 +43,12 @@ for file in files :
     subset = df[df['filename'].eq(file)]
     #print subset.shape
     pretty_label = re.sub("_", " ", file)
-
+    if pretty_label == "Stack-A" :  pretty_label = r'$\lambda_{pivot}$-norm. stack'
+    if pretty_label == "chuck"   :  pretty_label = "Steidel et al. 2016"
+    if pretty_label == "Cosmic~Eye":  pretty_label = "Cosmic Eye"
+    
+        
+        
     #print to a file
     print subset.head(2)
     # now need to bin by age, metallicity

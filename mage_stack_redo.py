@@ -31,7 +31,7 @@ def byspline_norm_func(wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_
 #   norm_method_text # string that describes how the individual spectra were normalized.  For header.
 #   mage_mode   # same as other mage functions.  Where to look for spectra
 #   zchoice     # How to set systemic redshift.  Choices are "stars", or "neb"
-def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, deredden=False, EBV=[]) :
+def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, deredden=False, EBV=[], colcont="fnu_cont") :
     plt.close('all')
     plt.ion()
     plt.figure(figsize=(20,5))
@@ -58,17 +58,18 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         elif(zchoice == "neb") :
             zz =  specs['z_neb'][ii]  # Old, what I used prior to 21 july 2016.
         else : raise ValueError('Error, I do not recognize input zchoice (choice to set systemic redshift) as stars or neb')
-
-        (sp, resoln, dresoln)  = jrr.mage.open_spectrum(filename, zz, mage_mode)
+        # OLD (sp, resoln, dresoln)  = jrr.mage.open_spectrum(filename, zz, mage_mode)
+        (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(label, mage_mode, addS99=True)
+         
         # set uncertainties high near skylines [O I] 5577\AA\ and [O I]~6300\AA,
         skyline = (5577., 6300.)
         skywidth = 10.0  # flag spectrum +- skywidth of the skyline
         sp.fnu_u[sp['wave'].between(skyline[0]-skywidth, skyline[0]+skywidth)] = 1.0 # huge uncert near skylines
         sp.fnu_u[sp['wave'].between(skyline[1]-skywidth, skyline[1]+skywidth)] = 1.0 # huge uncert near skylines
-        sp.fnu_u[sp['fnu_cont'].eq(9999)] = 1.0  # Set huge uncertainties where continuum undefined
+        sp.fnu_u[sp[colcont].eq(9999)] = 1.0  # Set huge uncertainties where continuum undefined
 
         (rest_wave, rest_fnu, rest_fnu_u) = jrr.spec.convert2restframe(sp.wave, sp.fnu,  sp.fnu_u,  zz, 'fnu')
-        (junk   , rest_cont, rest_cont_u) = jrr.spec.convert2restframe(sp.wave, sp.fnu_cont, sp.fnu_cont_u, zz, 'fnu')
+        (junk   , rest_cont, rest_cont_u) = jrr.spec.convert2restframe(sp.wave, sp[colcont], sp.fnu_cont_u, zz, 'fnu')
         # should now have arrays of rest wavelength, fnubda, and continuum, as
         # rest_wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u
         print filename, label, len(rest_wave),
@@ -205,6 +206,13 @@ norm_method_text = "Normalized by Janes hand-fit spline continuua, so both value
 norm_region_dum = (1000.0, 1001.0) # dummy value, in this case not used by byspline_norm_func
 make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "stars")
 make_a_stack(labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "neb")
+
+# stopped here...
+ws99labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234',  'S0957+0509', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye']
+rootname = "divbyS99"  # Experimental: for each input spectrum, divide by the s99 continuum to normalize.
+norm_method_text = "Normalized by John Chisholms S99 fits to each spectrum, so both value and shape are normalized."
+make_a_stack(ws99labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "stars", colcont='fnu_s99model')
+make_a_stack(ws99labels, rootname, norm_region_dum, byspline_norm_func,  norm_method_text, mage_mode, "neb", colcont='fnu_s99model')
 
 # Stack A for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region

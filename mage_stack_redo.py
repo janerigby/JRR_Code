@@ -68,6 +68,11 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         sp.fnu_u[sp['wave'].between(skyline[1]-skywidth, skyline[1]+skywidth)] = 1.0 # huge uncert near skylines
         sp.fnu_u[sp[colcont].eq(9999)] = 1.0  # Set huge uncertainties where continuum undefined
 
+        # Mask out known intervening absorbers
+        vmask = 200. # +-200km/s
+        jrr.mage.flag_near_lines(sp, LL, vmask, colwave='wave', linetype=('INTERVE',))
+        sp.fnu_u[sp['linemask']] = 1. # Set huge uncertainties at positions of known intervening absorbers
+        
         (rest_wave, rest_fnu, rest_fnu_u) = jrr.spec.convert2restframe(sp.wave, sp.fnu,  sp.fnu_u,  zz, 'fnu')
         (junk   , rest_cont, rest_cont_u) = jrr.spec.convert2restframe(sp.wave, sp[colcont], sp.fnu_cont_u, zz, 'fnu')
         # should now have arrays of rest wavelength, fnubda, and continuum, as

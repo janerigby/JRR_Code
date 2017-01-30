@@ -24,7 +24,8 @@ line_label_p  = ("CIII 1247", "C_III 1296", "CII 1323", "OIV 1343", "SiIII 1417"
 line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24,    1485.40,        1501.76,
                   1620.40,     1662.32,   1717.90,      1930.39,               1953.33, 2297.58))
 
-S99fits = ('Stack-A', 'chuck', 'S0004-0103', 'S0957+0509', 'S2111-0114', 'S0033+0242', 'S1226+2152', 'Cosmic~Eye', 'S0108+0624', 'S1429+1202', 'Horseshoe', 'S0900+2234', 'S1527+0652', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U')
+S99fits = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U',
+'S0900+2234','S0957+0509', 'Horseshoe', 'S1226+2152','S1429+1202', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye','Stack-A', 'chuck')
 
 sorted_by_age = ('S2111-0114', 'rcs0327-E' , 'S1458-0023', 'Cosmic~Eye', 'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0957+0509', 'chuck', 'S0033+0242', 'Stack-A', 'S1429+1202', 'S0900+2234', 'S1226+2152')
 # sorted by new ages, 9 dec 2016
@@ -41,13 +42,13 @@ gallist_to_process.append("chuck")
 gallist_to_process.append("Stack-A")
 print "DEBUGGING", gallist_to_process
  
-def local_s99_compare_manyspectra(filelist, line_cen, line_label, win, label, Ncol=1, vel_plot=False, mage_mode="reduction", size=(8,8)) :
+def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol=1, vel_plot=False, mage_mode="reduction", size=(8,8)) :
     ''' Plot one transition for many MagE galaxies on a page, one page per transition.  Compare spectra and S99 fit'''
-    Nrow = int(np.ceil( (len(filelist)*1.0) / Ncol))  # Calculate how many rows to generate
+    Nrow = int(np.ceil( (len(labels)*1.0) / Ncol))  # Calculate how many rows to generate
     fig = plt.figure(figsize=size)
-    plt.suptitle(label, fontsize=18)
-    for ii, label in enumerate(filelist) :
-        print label,
+    #plt.suptitle(label, fontsize=18)
+    for ii, label in enumerate(labels) :
+        print "DEBUG", label, ii
         sp = df[label]
         ax = fig.add_subplot(Nrow, Ncol, ii+1)
         if(vel_plot) :   # x axis is velocity (km/s)
@@ -60,7 +61,10 @@ def local_s99_compare_manyspectra(filelist, line_cen, line_label, win, label, Nc
             plt.plot( (0., 0.), (0.0,2), color=color3, linewidth=2)  # plot tics at zero velocity
             plt.xlim(-1*win, win)
         else :           # x axis is wavelength
-            plt.annotate(label, (0.5,0.85), xycoords="axes fraction")
+            if label == "chuck"     : pretty_label = "Steidel et al. 2016"
+            elif label == "Stack-A" : pretty_label = r'$\lambda_{pivot}$-norm. stack'
+            else                    : pretty_label = label
+            plt.annotate(pretty_label, (0.52,0.85), xycoords="axes fraction")
             in_win = sp.rest_wave.between(line_cen - win, line_cen + win)
             plt.step(sp.rest_wave[in_win], sp.rest_fnu[in_win]          / sp.rest_fnu_autocont[in_win], color=color1)
             plt.step(sp.rest_wave[in_win], sp.rest_fnu_u[in_win]        / sp.rest_fnu_autocont[in_win], color=color2)
@@ -68,13 +72,15 @@ def local_s99_compare_manyspectra(filelist, line_cen, line_label, win, label, Nc
                 plt.step(sp.rest_wave[in_win], sp.rest_fnu_s99model[in_win] / sp.rest_fnu_autocont[in_win], color=color4)
             plt.plot( (line_cen, line_cen), (0.0,2), color=color3, linewidth=2)  # plot tics at zero velocity
             plt.xlim(line_cen - win, line_cen + win)
+            plt.locator_params(axis='x', nbins=4)
+            plt.locator_params(axis='y', nbins=3)
         plt.ylim(0.0, 1.5)  # May need to change these limits
         jrr.mage.plot_linelist(big_LL[label], big_zz_sys[label], True, False)  # plot the line IDs
-    if vel_plot :
-        plt.xlabel("rest-frame velocity (km/s)")  
-    else :
-        plt.xlabel(r'rest-frame wavelength ($\rm \AA$)')                                
-#        fig.(hspace=0)
+        if ii == len(labels)-1 or ii == len(labels)-2 :
+            print "AHA, ii was", ii
+            if vel_plot :  plt.xlabel("rest-frame velocity (km/s)")  
+            else :         plt.xlabel(r'rest-frame wavelength ($\rm \AA$)')                                
+    fig.subplots_adjust(hspace=0)
     return(0)
             
 # housekeeping
@@ -107,8 +113,30 @@ def line_per_page_sortbyage() :
     plt.clf()
     return(0)
 
+def plot_all_CIV() :
+    pp = PdfPages("CIV_all_wSteidelStack.pdf")
+    local_s99_compare_manyspectra(S99fits[0:8], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
+    pp.savefig()
+    local_s99_compare_manyspectra(S99fits[8:16], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
+    pp.savefig()
+    pp.close()
+    pp = PdfPages("CIV_all.pdf")
+    local_s99_compare_manyspectra(S99fits[0:7], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
+    pp.savefig()
+    local_s99_compare_manyspectra(S99fits[7:14], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
+    pp.savefig()
+    pp.close()
+    pp = PdfPages("CIV_all_onepage.pdf")
+    local_s99_compare_manyspectra(S99fits[0:14], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,12))
+    pp.savefig()
+    pp.close() 
+    plt.clf()
+    
 ###############################
 # Actually run things
-line_per_page()
-line_per_page_sortbyage()
+#line_per_page()
+#line_per_page_sortbyage()
+
+# Make 1 page of CIV plots, with S99:
+plot_all_CIV()
 ###############################

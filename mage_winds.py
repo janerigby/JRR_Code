@@ -64,7 +64,7 @@ pdir = "Photospheric"
 def plot_wind_stack() :
     stack_choices = ("standard", "Stack-A", "divbys99")
     outdir = ("StdStack", "StackA", "divbys99")
-    newlabel = ("shape-normalized", r'$\lambda_{pivot}$-normalized', "each input-normalized by S99")
+    newlabel = ("shape-normalized", r'$\lambda_{pivot}$-normalized', "S99-normalized") # last has each input normalized by S99
     unity = (True, False, True)
     linelist = line_path + "stacked.linelist"
     (LL, zz) = jrr.mage.get_linelist(linelist)
@@ -209,7 +209,7 @@ def plot_OVI_forJC() :
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
 plot_wind_stack()     # outdir = ("StdStack", "StackA")
-#plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
+plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/
 #plot_some_CIV()     # .
 #plot_OVI_forJC()     # .

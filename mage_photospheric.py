@@ -27,8 +27,14 @@ line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24, 
 S99fits = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U',
 'S0900+2234','S0957+0509', 'Horseshoe', 'S1226+2152','S1429+1202', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye','Stack-A', 'chuck')
 
-sorted_by_age = ('S2111-0114', 'rcs0327-E' , 'S1458-0023', 'Cosmic~Eye', 'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0957+0509', 'chuck', 'S0033+0242', 'Stack-A', 'S1429+1202', 'S0900+2234', 'S1226+2152')
+sortedbyage = ('S2111-0114', 'rcs0327-E' , 'S1458-0023', 'Cosmic~Eye', 'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0957+0509', 'chuck', 'S0033+0242', 'Stack-A', 'S1429+1202', 'S0900+2234', 'S1226+2152')
 # sorted by new ages, 9 dec 2016
+
+# Picking out the higher SNR subset from those w S99 fits
+too_noisy_for_photospheric = ('S0957+0509','Horseshoe', 'S2111-0114')
+gallist_justhighSNR = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U', 'S0900+2234','S1226+2152','S1429+1202', 'S1527+0652', 'Cosmic~Eye','Stack-A', 'chuck')
+
+sortedbyage_justhighSNR = ( 'rcs0327-E', 'Cosmic~Eye',  'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'chuck', 'S0033+0242', 'Stack-A', 'S1429+1202','S0900+2234','S1226+2152')
 
 print "STATUS:  Loading all the spectra (and their S99 fits) into big honking dataframes."
 (df, resoln, dresoln, big_LL, big_zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont')  # open honking
@@ -41,6 +47,8 @@ gallist_to_process = [val for val in specs['short_label']]
 gallist_to_process.append("chuck")
 gallist_to_process.append("Stack-A")
 print "DEBUGGING", gallist_to_process
+
+
  
 def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol=1, vel_plot=False, mage_mode="reduction", size=(8,8)) :
     ''' Plot one transition for many MagE galaxies on a page, one page per transition.  Compare spectra and S99 fit'''
@@ -87,27 +95,13 @@ def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol
 zz = 0.0  # stacked spectrum is already in rest frame wavelength
 xwin = 12. # +- velocity window (km/s) to consider a line
 Ncol = 4
-        
-def line_per_page():
-    print "STATUS:  Plotting the photospheric lines, one page per transition."
-    the_pdf = "S99-photospheric-bylines.pdf"
+
+
+def line_per_page(whichgals, the_pdf):
     pp = PdfPages(the_pdf)  # output
-#    for ii in range(0, 2) :  # for debugging
     for ii in range(0, len(line_center_p)) :
         print "\n", line_label_p[ii], line_center_p[ii], "***",
-        local_s99_compare_manyspectra(gallist_to_process, line_center_p[ii], line_label_p[ii], xwin, line_label_p[ii], Ncol, size=(16,8))
-        pp.savefig()
-    pp.close()
-    plt.clf()
-    return(0)
-
-def line_per_page_sortbyage() :
-    print "STATUS:  Plotting the photospheric lines, one page per transition, now sorting by light-weighted age."
-    the_pdf = "S99-photospheric-bylines-sortbyage.pdf"
-    pp = PdfPages(the_pdf)  # output
-    for ii in range(0, len(line_center_p)) :
-        print "\n", line_label_p[ii], line_center_p[ii],"***",
-        local_s99_compare_manyspectra(sorted_by_age, line_center_p[ii], line_label_p[ii], xwin, line_label_p[ii], Ncol, size=(16,8))
+        local_s99_compare_manyspectra(whichgals, line_center_p[ii], line_label_p[ii], xwin, line_label_p[ii], Ncol, size=(16,8))
         pp.savefig()
     pp.close()
     plt.clf()
@@ -134,8 +128,14 @@ def plot_all_CIV() :
     
 ###############################
 # Actually run things
-#line_per_page()
-#line_per_page_sortbyage()
+print "STATUS:  Plotting the photospheric lines, one page per transition."
+line_per_page(gallist_to_process,  "S99-photospheric-bylines.pdf")
+line_per_page(gallist_justhighSNR, "S99-photospheric-bylines_highSNR.pdf")
+
+print "STATUS:  Plotting the photospheric lines, one page per transition, now sorting by light-weighted age."
+line_per_page(sortedbyage, "S99-photospheric-bylines-sortbyage.pdf")
+line_per_page(sortedbyage_justhighSNR, "S99-photospheric-bylines-sortbyage_highSNR.pdf")
+
 
 # Make 1 page of CIV plots, with S99:
 plot_all_CIV()

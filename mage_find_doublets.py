@@ -99,15 +99,17 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                     counter += 1
     return(df)
 
+# Actually run things
 (MgII, CIV, SiIV) = get_doublet_waves()
 siglim=5
 ylims = (-2,2)
-the_pdf = "found_doublets_SNR" + str(siglim) + ".pdf"
-outfile = "found_doublets_SNR" + str(siglim) + ".txt"
+the_pdf = "found_doublets_SNR" + str(siglim) + "cleanup.pdf"
+outfile = "found_doublets_SNR" + str(siglim) + "cleanup.txt"
 pp = PdfPages(the_pdf)
 plt.clf()
 df = make_empty_doublet_dataframe()
-speclist = jrr.mage.wrap_getlist(mage_mode, which_list="wcont")
+#speclist = jrr.mage.wrap_getlist(mage_mode, which_list="wcont")
+speclist = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=("Cosmic~Eye",))
 for thisgal in speclist.short_label :
     (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(thisgal, mage_mode, addS99=True)  # load spectrum
     find_lines_Schneider(sp, resoln, siglim=siglim, abs=True)  #identify all the >N sigma peaks in spectrum

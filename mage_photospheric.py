@@ -118,7 +118,7 @@ def plot_all_CIV() :
     pp.close()
 
     pp = PdfPages("windlines_all_onepage.pdf")
-    for ii in len(cen_c) :
+    for ii, thisone in enumerate(cen_c) :
         local_s99_compare_manyspectra(S99fits[0:14], cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,12))
         pp.savefig()
     pp.close() 

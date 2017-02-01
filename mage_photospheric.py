@@ -85,7 +85,6 @@ def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol
         plt.ylim(0.0, 1.5)  # May need to change these limits
         jrr.mage.plot_linelist(big_LL[label], big_zz_sys[label], True, False)  # plot the line IDs
         if ii == len(labels)-1 or ii == len(labels)-2 :
-            print "AHA, ii was", ii
             if vel_plot :  plt.xlabel("rest-frame velocity (km/s)")  
             else :         plt.xlabel(r'rest-frame wavelength ($\rm \AA$)')                                
     fig.subplots_adjust(hspace=0)

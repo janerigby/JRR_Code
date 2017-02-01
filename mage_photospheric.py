@@ -136,7 +136,6 @@ print "STATUS:  Plotting the photospheric lines, one page per transition, now so
 line_per_page(sortedbyage, "S99-photospheric-bylines-sortbyage.pdf")
 line_per_page(sortedbyage_justhighSNR, "S99-photospheric-bylines-sortbyage_highSNR.pdf")
 
-
 # Make 1 page of CIV plots, with S99:
 plot_all_CIV()
 ###############################

@@ -110,7 +110,7 @@ def plot_all_CIV() :
     lab_c     = ("Al III 1854", "Si IV 1393", "C IV 1548", "N V 1238")
     cen_c = np.array((1854.72, 1393.76, 1548.19,  1238.82))
     pp = PdfPages("windlines_all_wSteidelStack.pdf")
-    for ii in len(cen_c) :
+    for ii, thisone in enumerate(cen_c) :
         local_s99_compare_manyspectra(S99fits[0:8],  cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
         pp.savefig()
         local_s99_compare_manyspectra(S99fits[8:16], cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))

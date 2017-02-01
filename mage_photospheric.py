@@ -54,7 +54,7 @@ def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol
     ''' Plot one transition for many MagE galaxies on a page, one page per transition.  Compare spectra and S99 fit'''
     Nrow = int(np.ceil( (len(labels)*1.0) / Ncol))  # Calculate how many rows to generate
     fig = plt.figure(figsize=size)
-    plt.suptitle(label, fontsize=18)
+    mageplt.suptitle(label, fontsize=18)
     for ii, label in enumerate(labels) :
         print "DEBUG", label, ii
         sp = df[label]
@@ -108,20 +108,21 @@ def line_per_page(whichgals, the_pdf):
     return(0)
 
 def plot_all_CIV() :
-    pp = PdfPages("CIV_all_wSteidelStack.pdf")
-    local_s99_compare_manyspectra(S99fits[0:8], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
-    pp.savefig()
-    local_s99_compare_manyspectra(S99fits[8:16], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
+    lab_c     = ("Al III 1854", "Si IV 1393", "C IV 1548", "N V 1238")
+    cen_c = array((1854.72, 1393.76, 1548.19,  1238.82))
+    pp = PdfPages("windlines_all_wSteidelStack.pdf")
+    for ii in len(cen_c) :
+        local_s99_compare_manyspectra(S99fits[0:8],  cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
+        pp.savefig()
+        local_s99_compare_manyspectra(S99fits[8:16], cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
+        pp.savefig()
+    pp.close()
+
     pp.savefig()
     pp.close()
-    pp = PdfPages("CIV_all.pdf")
-    local_s99_compare_manyspectra(S99fits[0:7], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
-    pp.savefig()
-    local_s99_compare_manyspectra(S99fits[7:14], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(12,12))
-    pp.savefig()
-    pp.close()
-    pp = PdfPages("CIV_all_onepage.pdf")
-    local_s99_compare_manyspectra(S99fits[0:14], 1548.195, "C IV", 20, "", Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,12))
+    pp = PdfPages("windlines_all_onepage.pdf")
+    for ii in len(cen_c) :
+        local_s99_compare_manyspectra(S99fits[0:14], cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,12))
     pp.savefig()
     pp.close() 
     plt.clf()

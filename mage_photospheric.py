@@ -54,7 +54,7 @@ def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol
     ''' Plot one transition for many MagE galaxies on a page, one page per transition.  Compare spectra and S99 fit'''
     Nrow = int(np.ceil( (len(labels)*1.0) / Ncol))  # Calculate how many rows to generate
     fig = plt.figure(figsize=size)
-    mageplt.suptitle(label, fontsize=18)
+    plt.suptitle(label, fontsize=18)
     for ii, label in enumerate(labels) :
         print "DEBUG", label, ii
         sp = df[label]

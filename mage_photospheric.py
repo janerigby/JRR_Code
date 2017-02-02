@@ -107,8 +107,8 @@ def line_per_page(whichgals, the_pdf):
     return(0)
 
 def plot_all_CIV() :
-    lab_c     = ("Al III 1854", "Si IV 1393", "C IV 1548", "N V 1238")
-    cen_c = np.array((1854.72, 1393.76, 1548.19,  1238.82))
+    lab_c     =    ('Al II 1670', 'C II 1334', 'Al III 1854', 'Si IV 1393', 'C IV 1548', 'N V 1238')
+    cen_c = np.array(( 1670.7874,   1334.5323,   1854.72,      1393.76,      1548.19,    1238.82))            
     pp = PdfPages("windlines_all_wSteidelStack.pdf")
     for ii, thisone in enumerate(cen_c) :
         local_s99_compare_manyspectra(S99fits[0:16],  cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,13))

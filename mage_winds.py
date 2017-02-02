@@ -41,7 +41,7 @@ def plot_photospheric_lines(prefix, thewaves, thefnus, thedfnus, thezs, label=""
     
 # Define the lines to plot
 line_label_a         = ('Lya', 'O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
-line_center_a = array((1215.6701, 1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))
+line_center_a = array((1215.6701, 1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))      
 line_label_b  =  ('MgII2796', 'FeII2344', 'FeII2383')
 line_center_b = array((2796.352,  2344.214,  2382.765))
 line_label_c     = ("Al III 1854", "Si IV 1393", "C IV 1548", "N V 1238")

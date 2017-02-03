@@ -30,6 +30,8 @@ S99fits = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', '
 sortedbyage = ('S2111-0114', 'rcs0327-E' , 'S1458-0023', 'Cosmic~Eye', 'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0957+0509', 'chuck', 'S0033+0242', 'Stack-A', 'S1429+1202', 'S0900+2234', 'S1226+2152')
 # sorted by new ages, 9 dec 2016
 
+S99_sortbyage = ( 'S2111-0114', 'rcs0327-E', 'Cosmic~Eye',  'Horseshoe', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103','S0957+0509', 'chuck', 'S0033+0242', 'S0108+0624', 'Stack-A', 'S1429+1202', 'S0900+2234', 'S1226+2152')
+    
 # Picking out the higher SNR subset from those w S99 fits
 too_noisy_for_photospheric = ('S0957+0509','Horseshoe', 'S2111-0114')
 gallist_justhighSNR = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U', 'S0900+2234','S1226+2152','S1429+1202', 'S1527+0652', 'Cosmic~Eye','Stack-A', 'chuck')
@@ -106,20 +108,14 @@ def line_per_page(whichgals, the_pdf):
     plt.clf()
     return(0)
 
-def plot_all_CIV() :
+def plot_all_winds(whichgals, the_pdf, size) :
     lab_c     =    ('Al II 1670', 'C II 1334', 'Al III 1854', 'Si IV 1393', 'C IV 1548', 'N V 1238')
     cen_c = np.array(( 1670.7874,   1334.5323,   1854.72,      1393.76,      1548.19,    1238.82))            
-    pp = PdfPages("windlines_all_wSteidelStack.pdf")
+    pp = PdfPages(the_pdf)
     for ii, thisone in enumerate(cen_c) :
-        local_s99_compare_manyspectra(S99fits[0:16],  cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,13))
+        local_s99_compare_manyspectra(whichgals,  cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,13))
         pp.savefig()
     pp.close()
-
-    pp = PdfPages("windlines_all_onepage.pdf")
-    for ii, thisone in enumerate(cen_c) :
-        local_s99_compare_manyspectra(S99fits[0:14], cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,12))
-        pp.savefig()
-    pp.close() 
     plt.clf()
     
 ###############################
@@ -133,5 +129,8 @@ line_per_page(sortedbyage, "S99-photospheric-bylines-sortbyage.pdf")
 line_per_page(sortedbyage_justhighSNR, "S99-photospheric-bylines-sortbyage_highSNR.pdf")
 
 # Make 1 page of CIV plots, with S99:
-plot_all_CIV()
+plot_all_winds(S99fits[0:16], 'windlines_all_wSteidelStack.pdf', size=(10,13))
+plot_all_winds(S99fits[0:14], 'windlines_all.pdf', size=(10,12))
+plot_all_winds(S99_sortbyage[0:16], 'windlines_sortbyage_wSteidelStack.pdf', size=(10,13))
+
 ###############################

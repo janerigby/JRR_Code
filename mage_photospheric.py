@@ -25,16 +25,19 @@ line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24, 
                   1620.40,     1662.32,   1717.90,      1930.39,               1953.33, 2297.58))
 
 S99fits = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U',
-'S0900+2234','S0957+0509', 'Horseshoe', 'S1226+2152','S1429+1202', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye','Stack-A', 'chuck')
+'S0900+2234','S0957+0509', 'Horseshoe', 'S1226+2152','S1429+1202', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye', 'chuck', 'Stack-A')
 
-sortedbyage = ('S2111-0114', 'rcs0327-E' , 'S1458-0023', 'Cosmic~Eye', 'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0957+0509', 'chuck', 'S0033+0242', 'Stack-A', 'S1429+1202', 'S0900+2234', 'S1226+2152')
+# I think 0108 is showing up in the wrong order.  debug after lunch...
+sortedbyage = ('S2111-0114', 'rcs0327-E' , 'S1458-0023', 'Cosmic~Eye', 'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0957+0509', 'S0033+0242', 'S1429+1202', 'S0900+2234', 'S1226+2152', 'chuck', 'Stack-A' )
 # sorted by new ages, 9 dec 2016
 
+S99_sortbyage = ( 'S2111-0114', 'rcs0327-E', 'Cosmic~Eye',  'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103','S0957+0509', 'S0033+0242', 'S1429+1202', 'S0900+2234', 'S1226+2152', 'chuck', 'Stack-A')
+    
 # Picking out the higher SNR subset from those w S99 fits
 too_noisy_for_photospheric = ('S0957+0509','Horseshoe', 'S2111-0114')
-gallist_justhighSNR = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U', 'S0900+2234','S1226+2152','S1429+1202', 'S1527+0652', 'Cosmic~Eye','Stack-A', 'chuck')
+gallist_justhighSNR = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U', 'S0900+2234','S1226+2152','S1429+1202', 'S1527+0652', 'Cosmic~Eye', 'chuck', 'Stack-A')
 
-sortedbyage_justhighSNR = ( 'rcs0327-E', 'Cosmic~Eye',  'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'chuck', 'S0033+0242', 'Stack-A', 'S1429+1202','S0900+2234','S1226+2152')
+sortedbyage_justhighSNR = ( 'rcs0327-E', 'Cosmic~Eye',  'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0033+0242', 'S1429+1202','S0900+2234','S1226+2152', 'chuck',  'Stack-A')
 
 print "STATUS:  Loading all the spectra (and their S99 fits) into big honking dataframes."
 (df, resoln, dresoln, big_LL, big_zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont')  # open honking
@@ -50,11 +53,11 @@ print "DEBUGGING", gallist_to_process
 
 
  
-def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol=1, vel_plot=False, mage_mode="reduction", size=(8,8)) :
+def local_s99_compare_manyspectra(labels, line_cen, line_label, win, toplabel, Ncol=1, vel_plot=False, mage_mode="reduction", size=(8,8), print_label=False) :
     ''' Plot one transition for many MagE galaxies on a page, one page per transition.  Compare spectra and S99 fit'''
     Nrow = int(np.ceil( (len(labels)*1.0) / Ncol))  # Calculate how many rows to generate
     fig = plt.figure(figsize=size)
-    plt.suptitle(label, fontsize=18)
+    if print_label:  plt.suptitle(toplabel, fontsize=18)
     for ii, label in enumerate(labels) :
         print "DEBUG", label, ii
         sp = df[label]
@@ -87,39 +90,34 @@ def local_s99_compare_manyspectra(labels, line_cen, line_label, win, label, Ncol
         if ii == len(labels)-1 or ii == len(labels)-2 :
             if vel_plot :  plt.xlabel("rest-frame velocity (km/s)")  
             else :         plt.xlabel(r'rest-frame wavelength ($\rm \AA$)')                                
+            #plt.annotate(toplabel, (0.52, 0.1), xycoords="axes fraction", fontsize=18)
     fig.subplots_adjust(hspace=0)
     return(0)
             
 # housekeeping
 zz = 0.0  # stacked spectrum is already in rest frame wavelength
 xwin = 12. # +- velocity window (km/s) to consider a line
-Ncol = 4
+Ncol = 2
 
 
 def line_per_page(whichgals, the_pdf):
     pp = PdfPages(the_pdf)  # output
     for ii in range(0, len(line_center_p)) :
         print "\n", line_label_p[ii], line_center_p[ii], "***",
-        local_s99_compare_manyspectra(whichgals, line_center_p[ii], line_label_p[ii], xwin, line_label_p[ii], Ncol, size=(16,8))
+        local_s99_compare_manyspectra(whichgals, line_center_p[ii], line_label_p[ii], xwin, line_label_p[ii], Ncol, size=(10,12), print_label=True)
         pp.savefig()
     pp.close()
     plt.clf()
     return(0)
 
-def plot_all_CIV() :   # These were orignally wind lines, but now also ISM lines that Rongmon wants to see.
+def plot_all_winds(whichgals, the_pdf, size) :    # These were orignally wind lines, but now also ISM lines that Rongmon wants to see.
     lab_c     =    ('Al II 1670', 'C II 1334', 'Al III 1854', 'Si IV 1393', 'C IV 1548', 'N V 1238')
     cen_c = np.array(( 1670.7874,   1334.5323,   1854.72,      1393.76,      1548.19,    1238.82))            
-    pp = PdfPages("windlines_all_wSteidelStack.pdf")
+    pp = PdfPages(the_pdf)
     for ii, thisone in enumerate(cen_c) :
-        local_s99_compare_manyspectra(S99fits[0:16],  cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,13))
+        local_s99_compare_manyspectra(whichgals,  cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,13), print_label=True)
         pp.savefig()
     pp.close()
-
-    pp = PdfPages("windlines_all_onepage.pdf")
-    for ii, thisone in enumerate(cen_c) :
-        local_s99_compare_manyspectra(S99fits[0:14], cen_c[ii], lab_c[ii], 20, lab_c[ii], Ncol=2, vel_plot=False, mage_mode="reduction", size=(10,12))
-        pp.savefig()
-    pp.close() 
     plt.clf()
     
 ###############################
@@ -133,5 +131,8 @@ line_per_page(sortedbyage, "S99-photospheric-bylines-sortbyage.pdf")
 line_per_page(sortedbyage_justhighSNR, "S99-photospheric-bylines-sortbyage_highSNR.pdf")
 
 # Make 1 page of CIV plots, with S99:
-plot_all_CIV()
+plot_all_winds(S99fits[0:16], 'windlines_all_wSteidelStack.pdf', size=(10,13))
+plot_all_winds(S99fits[0:14], 'windlines_all.pdf', size=(10,12))
+plot_all_winds(S99_sortbyage[0:16], 'windlines_sortbyage_wSteidelStack.pdf', size=(10,13))
+
 ###############################

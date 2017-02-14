@@ -106,7 +106,7 @@ def line_per_page(whichgals, the_pdf):
     plt.clf()
     return(0)
 
-def plot_all_CIV() :
+def plot_all_CIV() :   # These were orignally wind lines, but now also ISM lines that Rongmon wants to see.
     lab_c     =    ('Al II 1670', 'C II 1334', 'Al III 1854', 'Si IV 1393', 'C IV 1548', 'N V 1238')
     cen_c = np.array(( 1670.7874,   1334.5323,   1854.72,      1393.76,      1548.19,    1238.82))            
     pp = PdfPages("windlines_all_wSteidelStack.pdf")

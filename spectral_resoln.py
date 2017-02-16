@@ -72,15 +72,6 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
     maxtab, mintab = jrr.peakdet.peakdet(sp.fnu_sky,delta)  # Find peaks.  
     peak_ind =  [np.int(p[0]) for p in maxtab]
     ym1      =  [p[1] for p in maxtab]
-    
-#    # Deprecated methods I tried before settling on above method
-#    peak_ind = signal.find_peaks_cwt(sp.fnu_sky, np.arange(1,30), min_snr=20)  #wavelet is in pixels.  #method 2
-#    # wavelet range:  disp is constant 0.2A.  1000<R<4000, 4000<lambda<8000, so wavelets from 5 to 40
-#
-#    max, min = peakdetect.peakdetect(avgsky, wave_sky, 30, 0)  # method 3
-#    xm = [p[0] for p in max]
-#    ym = [p[1] for p in max]
-    
     plt.clf()
     #plt.ylim(0,5E-15)
     plt.xlim(5000,8500)

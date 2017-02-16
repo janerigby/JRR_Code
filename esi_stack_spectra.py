@@ -7,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.stats import sigma_clip, sigma_clipped_stats
 from astropy import constants, units
-A_c = constants.c.to('km/s').value
 
 # Needed for barycentric correction
 from astropy.time import Time
@@ -34,8 +33,7 @@ def get_the_spectra(filenames, colwav='obswave') :
         mytime = Time('2017-02-25T08:00:00.00000', format='isot', scale='utc')
         #barycor_vel = jrr.barycen.velcorr(mytime, my_target, location=keck)
         barycor_vel = 0. #km/s.  TESTING TESTING TESTING
-        df[thisfile]['newwave'] = df[thisfile][colwav] * (1.0 + (barycor_vel / A_c)) #testing, barycor-corrected wavlength
-        
+        jrr.barycen.apply_velcorr(df[thisfile], barycor_vel, colwav=colwav, colwavnew='newwave') # testing        
         df[thisfile]['Nfiles'] = 1 # N of exposures that went into this spectrum
     return(df)  # return a dictionary of dataframes of spectra
 

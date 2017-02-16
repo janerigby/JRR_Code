@@ -5,6 +5,9 @@ import numpy as np
 import pandas
 import matplotlib.pyplot as plt
 from astropy.io import fits
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, EarthLocation
+
 import pyds9
 
 ''' Steph LaMassa reduced and extracted the GNIRS spectra, using the IRAF pipeline.
@@ -17,7 +20,9 @@ It then saves the residual-sky-subtracted spectra to a big new dataframe newdf,
 does some simple bad-pixel rejection, and writes the mean, median, and error
 in the mean to a file.   jrigby, oct 2016'''
 
-s1723_dir = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/SDSSJ1723+3411/Gemini_GNIRS_highres/"
+# s1723_dir = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/SDSSJ1723+3411/Gemini_GNIRS_highres/" # satchmo
+s1723_dir = '/Users/jrrigby1/SCIENCE/Gemini_GNIRS_highres'  #milk
+
 # PART 1:  These are the 1D spectra I will actually use.
 in_dir    = s1723_dir + "Small_ap/"
 resid_dir = s1723_dir + "sky_residuals/"
@@ -27,7 +32,7 @@ Bs = ["310m309_B_small_ap.txt", "311m312_B_small_ap.txt", "314m313_B_small_ap.tx
 As = ["312m311_A_small_ap.txt", "313m314_A_small_ap.txt", "316m315_A_small_ap.txt", "317m318_A_small_ap.txt", "320m319_A_small_ap.txt"]
 
 extracted_spectra_files  = Bs + As
-names = ('wave', 'cts')
+names = ('oldwave', 'cts')
 
 # Open the first spectrum, and set up a dataframe to put successive spectra
 newdf =  pandas.read_table(in_dir + extracted_spectra_files[0], delim_whitespace=True, comment="#", skiprows=71, names=names)
@@ -36,13 +41,13 @@ for extract_file in extracted_spectra_files :
     df1 = pandas.read_table(in_dir + extract_file, delim_whitespace=True, comment="#", skiprows=71, names=names)
     skyresid_file = re.sub("small_ap.txt", "mid.txt", extract_file)
     df2 = pandas.read_table(resid_dir + skyresid_file, delim_whitespace=True, comment="#", skiprows=71, names=names)
-    newdf[extract_file] = jrr.spec.rebin_spec_new(df1['wave'], df1.cts - df2.cts, newdf['wave'], fill=np.nan)
+    newdf[extract_file] = jrr.spec.rebin_spec_new(df1['oldwave'], df1.cts - df2.cts, newdf['oldwave'], fill=np.nan)
     
-    sum_wave = (df1.wave - df2.wave).sum()  # this should be zero, if wavelength arrays are identical
+    sum_wave = (df1.oldwave - df2.oldwave).sum()  # this should be zero, if wavelength arrays are identical
     if sum_wave > 0 : print "WARNING, nonzero sum_wave", sum_wave
 #    plt.step(df1.wave, df1.cts, color="blue")
 #    plt.step(df2.wave, df2.cts, color="red")
-    plt.step(df1.wave, df1.cts - df2.cts, linewidth=0.3)
+    plt.step(df1.oldwave, df1.cts - df2.cts, linewidth=0.3)
     plt.ylim(-100,200)
     plt.xlim(1.5E4,1.6E4)
     # For B nods, subtraction of the two dataframes looks right.
@@ -51,6 +56,16 @@ for extract_file in extracted_spectra_files :
 
 Nspectra = len(extracted_spectra_files)*1.0
 newdf.drop('cts', axis=1, inplace=True)  # remove cts, it's stale
+
+# Need to do barycentric correction to velocities, here.  ******
+thistime =  Time('2016-09-07T06:09:00', format='isot', scale='utc')
+thisradec = SkyCoord("17:23:37.23", "+34:11:59.07", unit=(units.hourangle, units.deg), frame='icrs')
+keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck
+barycor_vel = jrr.barycen.velcorr(thistime, thisradec, location=keck)
+jrr.barycen.apply_velcorr(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
+# Need to check whether this worked.
+
+
 newdf.set_index('wave', inplace=True)  # set wavelength as the axis
 badval_hi = 150.
 badval_lo = -30.
@@ -123,8 +138,9 @@ fits.writeto(s1723_dir + 'ugly_all_sum_JRR.fits', output_sum, header=header_in, 
 
 # Part 3:  Read in the individual extractions for S2340, to get average and error in mean
 # (Steph already calculated average, but from A and B, so no useful uncertainty.
-# Doing it this way, I an uncertainty falls out.
-s2340_dir = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/S2340/Gemini_GNIRS_highres/"
+# Doing it this way, uncertainty falls out.
+s2340_dir = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/S2340/Gemini_GNIRS_highres/"  # satchmo
+
 in_dir = s2340_dir + "2340+2947_indiv_spec/"
 # no resid_dir, no need to remove residual skylines
 indy_files = glob.glob(in_dir + "*_small_ap.txt")
@@ -133,8 +149,17 @@ newdf =  pandas.read_table(indy_files[0], delim_whitespace=True, comment="#", sk
 plt.clf()
 for infile in indy_files :
     df1 =  pandas.read_table(infile, delim_whitespace=True, comment="#", skiprows=71, names=names)
-    newdf[infile] = jrr.spec.rebin_spec_new(df1['wave'], df1.cts, newdf['wave'], fill=np.nan)
-    plt.step(df1['wave'], df1['cts'], linewidth=0.3)
+    newdf[infile] = jrr.spec.rebin_spec_new(df1['oldwave'], df1.cts, newdf['oldwave'], fill=np.nan)
+    plt.step(df1['oldwave'], df1['cts'], linewidth=0.3)
+
+# Need to do barycentric correction to velocities, here.  ******
+thistime =  Time('2016-09-07T07:45:00', format='isot', scale='utc')
+thisradec = SkyCoord("23:40:29.27", "+29:48:01.16", unit=(units.hourangle, units.deg), frame='icrs')
+keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck
+barycor_vel = jrr.barycen.velcorr(thistime, thisradec, location=keck)
+jrr.barycen.apply_velcorr(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
+# Need to check whether this worked.
+
 newdf.drop('cts', axis=1, inplace=True)  # remove cts, it's stale
 newdf.set_index('wave', inplace=True)  # set wavelength as the axis
 

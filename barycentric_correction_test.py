@@ -1,6 +1,8 @@
 # from https://gist.github.com/StuartLittlefair/5aaf476c5d7b52d20aa9544cfaa936a1
-# This uses an experimental correction that is not yet implemented in Astropy.
-# Need to check against jskycalc.
+# Barycentric corrections should be implemented in Astropy, but aren't in there yet.
+# THis is a bit of a stopgap solution, probably not accurate at <m/s level but good
+# enough for correcting galaxy spectroscopy.  Have verified against 
+# jskycalc for LCO and Keck, for few coordinates and times, to precision of 0.01 km/s.
 
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, solar_system, EarthLocation, ICRS
@@ -17,5 +19,3 @@ mytime = Time('2017-02-25T08:00:00.00000', format='isot', scale='utc')
 mytime = Time('2017-07-25T01:00:00.00000', format='isot', scale='utc')
 result = barycen.velcorr(mytime, my_target, location=lco)
 print result
-
-# Conclusion:  This works great.  Verified for LCO, Keck, for a few coordinates and times.

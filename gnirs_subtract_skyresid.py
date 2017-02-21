@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
-
+from astropy import units
 import pyds9
 
 ''' Steph LaMassa reduced and extracted the GNIRS spectra, using the IRAF pipeline.
@@ -21,7 +21,7 @@ does some simple bad-pixel rejection, and writes the mean, median, and error
 in the mean to a file.   jrigby, oct 2016'''
 
 # s1723_dir = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/SDSSJ1723+3411/Gemini_GNIRS_highres/" # satchmo
-s1723_dir = '/Users/jrrigby1/SCIENCE/Gemini_GNIRS_highres'  #milk
+s1723_dir = '/Users/jrrigby1/SCIENCE/Gemini_GNIRS_highres/'  #milk
 
 # PART 1:  These are the 1D spectra I will actually use.
 in_dir    = s1723_dir + "Small_ap/"
@@ -60,9 +60,10 @@ newdf.drop('cts', axis=1, inplace=True)  # remove cts, it's stale
 # Need to do barycentric correction to velocities, here.  ******
 thistime =  Time('2016-09-07T06:09:00', format='isot', scale='utc')
 thisradec = SkyCoord("17:23:37.23", "+34:11:59.07", unit=(units.hourangle, units.deg), frame='icrs')
+# EarthLocation needs an internet connection to populate 'keck'.  Run this later
 keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck
-barycor_vel = jrr.barycen.velcorr(thistime, thisradec, location=keck)
-jrr.barycen.apply_velcorr(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
+barycor_vel = jrr.barycen.compute_barycentric_correction(thistime, thisradec, location=keck)
+jrr.barycen.apply_barycentric_correction(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
 # Need to check whether this worked.
 
 

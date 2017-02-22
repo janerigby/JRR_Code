@@ -6,6 +6,7 @@ import pandas
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.time import Time
+import datetime
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy import units
 import pyds9
@@ -20,8 +21,8 @@ It then saves the residual-sky-subtracted spectra to a big new dataframe newdf,
 does some simple bad-pixel rejection, and writes the mean, median, and error
 in the mean to a file.   jrigby, oct 2016'''
 
-# s1723_dir = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/SDSSJ1723+3411/Gemini_GNIRS_highres/" # satchmo
-s1723_dir = '/Users/jrrigby1/SCIENCE/Gemini_GNIRS_highres/'  #milk
+s1723_dir = "/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/SDSSJ1723+3411/Gemini_GNIRS_highres/" # satchmo
+#s1723_dir = '/Users/jrrigby1/SCIENCE/Gemini_GNIRS_highres/'  #milk
 
 # PART 1:  These are the 1D spectra I will actually use.
 in_dir    = s1723_dir + "Small_ap/"
@@ -52,20 +53,16 @@ for extract_file in extracted_spectra_files :
     plt.xlim(1.5E4,1.6E4)
     # For B nods, subtraction of the two dataframes looks right.
 #    plt.show()
-
-
 Nspectra = len(extracted_spectra_files)*1.0
 newdf.drop('cts', axis=1, inplace=True)  # remove cts, it's stale
 
-# Need to do barycentric correction to velocities, here.  ******
+# Applying barycentric correction to wavelengths.  All observations at about the same time.
 thistime =  Time('2016-09-07T06:09:00', format='isot', scale='utc')
 thisradec = SkyCoord("17:23:37.23", "+34:11:59.07", unit=(units.hourangle, units.deg), frame='icrs')
-# EarthLocation needs an internet connection to populate 'keck'.  Run this later
-keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck
+keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck.  Needs internet connection 
 barycor_vel = jrr.barycen.compute_barycentric_correction(thistime, thisradec, location=keck)
-jrr.barycen.apply_barycentric_correction(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
-# Need to check whether this worked.
-
+print "FYI, the barycentric correction factor for s1723 was", barycor_vel
+jrr.barycen.apply_barycentric_correction(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') 
 
 newdf.set_index('wave', inplace=True)  # set wavelength as the axis
 badval_hi = 150.
@@ -80,9 +77,10 @@ plt.step(newdf.index, newdf['mean'], color='black', lw=2)
 plt.step(newdf.index, newdf['errinmean'], color='red', lw=1)
 plt.step(newdf.index, newdf['median'], color='green', lw=2)
 plt.show()
+myheader = "# Combined high-resolution GNIRS spectra for S1723.  Reduced by S. LaMassa.\n# Cleaned up and combined by jrigby on " + str(datetime.datetime.today()) + "\n# Wave is vacuum barycentric-corrected wavelength in Angstroms.\n# Other columns are counts (given as median and mean, with error in the mean.)  Spectra have NOT been fluxed.\n"
 newdf.to_pickle(s1723_dir + "s1723_gnirs_residual_subtracted_spectrum_JRR.p")
-newdf.to_csv(s1723_dir + "s1723_gnirs_residual_subtracted_spectrum_JRR.csv", columns=('mean', 'median', 'errinmean'))
-
+newdf.to_csv("/tmp/tmpspec", columns=('mean', 'median', 'errinmean'))
+jrr.util.put_header_on_file("/tmp/tmpspec", myheader,  s1723_dir + "s1723_gnirs_residual_subtracted_spectrum_JRR.csv")
 
 # Part 2: I have promised myself I won't publish 1D spectra without publishing the
 # corresponding 2D spectra as well.  Will have to hand-do this, and it's for display
@@ -140,7 +138,7 @@ fits.writeto(s1723_dir + 'ugly_all_sum_JRR.fits', output_sum, header=header_in, 
 # Part 3:  Read in the individual extractions for S2340, to get average and error in mean
 # (Steph already calculated average, but from A and B, so no useful uncertainty.
 # Doing it this way, uncertainty falls out.
-s2340_dir = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/S2340/Gemini_GNIRS_highres/"  # satchmo
+s2340_dir = "/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/S2340/Gemini_GNIRS_highres/"  # satchmo
 
 in_dir = s2340_dir + "2340+2947_indiv_spec/"
 # no resid_dir, no need to remove residual skylines
@@ -153,17 +151,16 @@ for infile in indy_files :
     newdf[infile] = jrr.spec.rebin_spec_new(df1['oldwave'], df1.cts, newdf['oldwave'], fill=np.nan)
     plt.step(df1['oldwave'], df1['cts'], linewidth=0.3)
 
-# Need to do barycentric correction to velocities, here.  ******
+# Apply barycentric correction to wavelengths
 thistime =  Time('2016-09-07T07:45:00', format='isot', scale='utc')
 thisradec = SkyCoord("23:40:29.27", "+29:48:01.16", unit=(units.hourangle, units.deg), frame='icrs')
 keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck
-barycor_vel = jrr.barycen.velcorr(thistime, thisradec, location=keck)
-jrr.barycen.apply_velcorr(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
-# Need to check whether this worked.
+barycor_vel = jrr.barycen.compute_barycentric_correction(thistime, thisradec, location=keck)
+print "FYI, the barycentric correction factor for s2340 was", barycor_vel
+jrr.barycen.apply_barycentric_correction(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
 
 newdf.drop('cts', axis=1, inplace=True)  # remove cts, it's stale
 newdf.set_index('wave', inplace=True)  # set wavelength as the axis
-
 newdf['mean'] = newdf.mean(axis=1)
 newdf['errinmean']  = newdf.std(axis=1) / np.sqrt(len(indy_files))
 newdf['median']  = newdf.median(axis=1)
@@ -171,5 +168,7 @@ plt.step(newdf.index, newdf['mean'], color='black', lw=2)
 plt.ylim(-50,100)
 plt.xlim(1.52E4,1.65E4)
 plt.show()
+myheader = "# Combined high-resolution GNIRS spectra for S2340.  Reduced by S. LaMassa.\n# Cleaned up and combined by jrigby on " + str(datetime.datetime.today()) + "\n# Wave is vacuum barycentric-corrected wavelength in Angstroms.\n# Other columns are counts (given as median and mean, with error in the mean.)  Spectra have NOT been fluxed.\n"
 newdf.to_pickle(s2340_dir + "s2340_gnirs_spectrum_JRR.p")
-newdf.to_csv(s2340_dir + "s2340_gnirs_spectrum_JRR.csv", columns=('mean', 'median', 'errinmean'))
+newdf.to_csv("/tmp/tmpspec2", columns=('mean', 'median', 'errinmean'))
+jrr.util.put_header_on_file("/tmp/tmpspec2", myheader,  s2340_dir + "s2340_gnirs_spectrum_JRR.csv")

@@ -31,7 +31,7 @@ def get_the_spectra(filenames, obslog, colwav='obswave') :
         barycor_vel = jrr.barycen.compute_barycentric_correction(my_time, my_target, location=keck)
         #print "DEBUGGING", my_target, thisobs, my_target, my_start_time
         print "FYI, the barycentric correction factor for", thisfile,  "was", barycor_vel
-        jrr.barycen.apply_barycentric_correction(df[thisfile], barycor_vel, colwav='obswave', colwavnew='wave') # testing   
+        jrr.barycen.apply_barycentric_correction(df[thisfile], barycor_vel, colwav='obswave', colwavnew='wave') #   
         df[thisfile]['Nfiles'] = 1 # N of exposures that went into this spectrum
     return(df)  # return a dictionary of dataframes of spectra
 

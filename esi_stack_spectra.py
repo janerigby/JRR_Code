@@ -95,7 +95,7 @@ def write_spectrum_to_file(out2, outfile, prefix, filenames, header, thresh) :
     cols = ['wave', 'flam_sum_jrr', 'flam_u', 'flam_median_xN', 'Nfiles', 'replaced']
     simple_df = out2[cols] 
     shutil.copy(header, outfile)
-    with open(outfile, 'a') as f:  simple_df.to_csv(f, sep='\t')
+    with open(outfile, 'a') as f:  simple_df.to_csv(f, sep='\t', index=False)
     jrr.util.replace_text_in_file("OBJECTNAME", prefix, outfile)
     jrr.util.replace_text_in_file("THRESHTHRESH", str(thresh), outfile)
     jrr.util.replace_text_in_file("INDYSPECTRANAMES", ''.join(filenames), outfile)

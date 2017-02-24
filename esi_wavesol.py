@@ -3,6 +3,7 @@
    Run on command line as:  >./esi_wavesol.py  order Yval [redshift]
    for example, ./esi_wavesol.py 7 2010.2 [3.14]
    Returns approx observed wavelength, and if redshift entered, approx rest wavelength
+   Allowable orders are 6--15.
    Written by Jane Rigby, Aug 2016.  '''
 import numpy as np
 import sys
@@ -10,6 +11,9 @@ import sys
 #print "DEBUG, arguments received were: ", sys.argv, len(sys.argv)
 if(len(sys.argv) == 3 or len(sys.argv) == 4):
     order =  str(sys.argv[1])  # input the ESI spectral order
+    if order > 15 or order <6 : 
+        print "ERROR!  Order must be between 6 and 15."
+        sys.exit(1)
     pixel = np.float64(sys.argv[2])   # input the Y value of a pixel in that order
     if len(sys.argv)== 4 :
         zz = np.float64(sys.argv[3])  # Optional, redshift

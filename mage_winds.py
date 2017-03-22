@@ -1,3 +1,7 @@
+''' Make a bunch of plots to show winds in MagE spectra.
+run in /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Wind_plots
+jrigby, 2016'''
+
 from numpy import array, concatenate
 import jrr
 import sys
@@ -209,7 +213,7 @@ def plot_OVI_forJC() :
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
 plot_wind_stack()     # outdir = ("StdStack", "StackA")
-plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
+#plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/
 #plot_some_CIV()     # .
 #plot_OVI_forJC()     # .

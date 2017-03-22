@@ -1,12 +1,12 @@
 ''' Same as multipanel-spectrum-ids.py, but plot multiple spectra.  Using for sub-stacks (highZ, loZ),
 young, middle-aged, old.
-jrigby, Sept 2016. '''
+jrigby, Sept 2016.
+Run from /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Plot-all'''
 
 import jrr
 import matplotlib.pyplot as plt
 import numpy as np
 mage_mode = "reduction"  
-#mage_mode = "released"
 methods = ('bystars', 'byneb')  # method of determining systemic redshift
 
 # For sanity checking, make plots of the weighted avg(std), but also the median and sqrt(jackknife variance)

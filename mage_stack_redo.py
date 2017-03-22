@@ -1,5 +1,6 @@
 ''' Stack the MagE spectra together.
     jrigby, oct 2015.  Revised 3/2016, 7/2016, 8/2016, 9/2016
+    Run this from /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Stacked_spectra
 '''
 import jrr
 from   astropy.stats import sigma_clip

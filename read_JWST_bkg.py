@@ -15,40 +15,48 @@ This is the right schema.
 #  double stray_light_bg[SL_NWAVE]
 '''
 
+import glob
+from os.path import basename
 import struct
 import numpy as np
+import pandas
+from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
 
-myfiles = ('sl_pix_000593.bin','sl_pix_041303.bin','sl_pix_099422.bin','sl_pix_157139.bin','sl_pix_196512.bin')
-myfile =  myfiles[0]
+def rebin_spec_new(wave, specin, new_wave, fill=np.nan):
+    f = interp1d(wave, specin, bounds_error=False, fill_value=fill)  # With these settings, writes NaN to extrapolated regions
+    new_spec = f(new_wave)
+    return(new_spec)
 
-def read_JWST_precompiled_bkg(infile, showplots=False) :
-    thedir = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Zody_bathtubs/bg_samples_for_jane/"  # Satchmo
-    thedir = "/Users/jrrigby1/MISSIONS/JWST/Zody_bathtubs/bg_samples_for_jane/" # Milk
-    wave_file = "updated_std_spectrum_wavelengths.txt"  # Standard wavelength array.  Should be SL_NWave=108 long
-    wave_array = np.loadtxt(thedir + wave_file)    
+def read_JWST_precompiled_bkg(infile, base_dir, bkg_dir, showplot=False, verbose=False) :
+    wave_file = base_dir + "updated_std_spectrum_wavelengths.txt"  # Standard wavelength array.  Should be SL_NWave=108 long
+    wave_array = np.loadtxt(wave_file)    
     SL_NWAVE = len(wave_array)  # should be 108.  Size of wavelength array
-    sbet_file = open(thedir + myfile)
-    sbet_data = sbet_file.read()
 
+    thermal_file = "thermal_curve_jwst_jrigby_1.1.csv"  # The constant (not time variable) thermal self-emission curve
+    temp_thermal = np.genfromtxt(base_dir + thermal_file, delimiter=',')
+    thermal = rebin_spec_new(temp_thermal[:, 0], temp_thermal[:,1],  wave_array, fill=0.0)  # rebin to same wavelength_array as others.
+    
+    sbet_file = open(bkg_dir + myfile)
+    sbet_data = sbet_file.read()
     # Unpack the constant first part
-    print "File has", len(sbet_data), "bytes, which is", len(sbet_data)/8., "doubles"
+    if verbose: print "File has", len(sbet_data), "bytes, which is", len(sbet_data)/8., "doubles"
     size_calendar = struct.calcsize("366i") # bytes, not doubles
     partA = struct.unpack(str(5 + SL_NWAVE)+'d', sbet_data[0: (5 + SL_NWAVE)*8])
     RA = partA[0]
     DEC = partA[1]
     pos = partA[2:5]
-    nonzodi_bg = partA[5:5+SL_NWAVE]
+    nonzodi_bg = np.array(partA[5:5+SL_NWAVE])
 
     # Unpack the calendar dates      # code goes from 0 to 365 days.
     date_map = np.array(struct.unpack('366i', sbet_data[(5 + SL_NWAVE)*8  : (5 + SL_NWAVE)*8 + size_calendar]))
-    print "Out of", len(date_map), "days, these many are legal:", np.sum(date_map >=0)
+    if verbose: print "Out of", len(date_map), "days, these many are legal:", np.sum(date_map >=0)
     #print "indices of days:", date_map[date_map>=0]
     calendar = np.where(date_map >=0)[0]
     #print "calendar date:", calendar
     # So, the index dd in zodi_bg[dd, : ]  corresponds to the calendar day lookup[dd]
     Ndays = len(calendar) 
-    print len(date_map), Ndays
+    if verbose: print len(date_map), Ndays
 
     # Unpack part B, the time-variable part
     zodi_bg        = np.zeros((Ndays,SL_NWAVE))
@@ -56,7 +64,6 @@ def read_JWST_precompiled_bkg(infile, showplots=False) :
     perday = SL_NWAVE*2
     partB= struct.unpack(str((len(calendar))*SL_NWAVE*2)+'d', sbet_data[perday*Ndays*-8 : ])
 
-    print "Ndays:", Ndays
     for dd in range(0, int(Ndays)):
         br1 = dd*perday
         br2 = br1 + SL_NWAVE
@@ -64,37 +71,83 @@ def read_JWST_precompiled_bkg(infile, showplots=False) :
         #print "Breaking at:", br1, br2, br3
         zodi_bg[dd, ]        = partB[br1 : br2]
         stray_light_bg[dd, ] = partB[br2 : br3]
-    #print br3, "was last double" 
-    #print "DEBUGGING", zodi_bg
-    #print "DEBUGGING", stray_light_bg
+    expand = np.ones((Ndays,SL_NWAVE))  # same shape as zodi_bg
+    total = nonzodi_bg * expand + thermal * expand + stray_light_bg + zodi_bg
 
-    if showplots :
+    if showplot :
         plt.clf()
         thisday = 100
         plt.plot(wave_array, nonzodi_bg, label="ISM")
         plt.plot(wave_array, zodi_bg[thisday, :], label="Zodi")
         plt.plot(wave_array, stray_light_bg[thisday, :], label="Stray light")
+        plt.plot(wave_array, thermal, label = "Thermal")
+        plt.plot(wave_array, total[thisday, :], label = "Total")
         plt.xlim(0.6,31)
         plt.legend()
         plt.show()
-        
-    twomicron = 16 # 2.0 micron is index 16 in wave_array
-    total_2mic = nonzodi_bg[twomicron]*np.ones(Ndays) + stray_light_bg[ : , twomicron] + zodi_bg[ : , twomicron]
-    themin = np.min(total_2mic)
-    print "Fraction of FOR  <110% of min bkg", np.sum(total_2mic < themin*1.1)*1.0/ Ndays  # What fraction of days is below 10% threshold
-    if showplots:
-        plt.clf()      # Plot bathtub curve for 2um
-        plt.scatter(calendar, total_2mic)
-        percentiles = (themin, themin*1.1)
+    return((calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total))  #send it as a tuple
+
+def index_of_wavelength(wave_array, desired_wavelength) :  # look up index of wavelength array corresponding to desired wavelength
+    the_index = np.where(wave_array == desired_wavelength)
+    return(the_index[0][0])
+
+def make_bathtub(results, wavelength_desired=2.0, thresh=1.1, showplot=False) :
+    (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results # show how to break it up
+    the_index = index_of_wavelength(wave_array, wavelength_desired)
+    total_thiswave = total[ :, the_index]
+    themin = np.min(total_thiswave)
+    allgood =  np.sum(total_thiswave < themin * thresh)*1.0
+    if showplot: 
+        plt.scatter(calendar, total_thiswave)
+        percentiles = (themin, themin*thresh)
         plt.hlines(percentiles, 0, 365, color='green')
         plt.xlabel("Day of the year")
-        plt.ylabel("bkg at " + str(wave_array[twomicron]) + " um (MJy/SR)")
+        plt.xlim(0,366)
+        plt.ylabel("bkg at " + str(wave_array[the_index]) + " um (MJy/SR)")
         plt.show()
-    
-    return(calendar, RA, DEC, pos, nonzodi_bg, zodi_bg, stray_light_bg)
-    
+    return(allgood)  # Returns the number of days in the FOR with a background below 
 
-# actually run and test this.
-for myfile in myfiles :
-    print myfile
-    (calendar, RA, DEC, pos, nonzodi_bg, zodi_bg, stray_light_bg) = read_JWST_precompiled_bkg(("bg_samples_for_jane/" + myfile),  showplots=False)
+    
+###################################################
+# Setup
+thresh = 1.1  # 10 percent  # Threshhold above minimum background, to calculate Ndays
+wavelength_desired = 2.0
+base_dir  = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Zody_bathtubs/"  # Satchmo
+bkg_dir   = base_dir + "sl_cache.v1.0/"
+
+
+# Tutorial, make one example bathtub 
+myfile = "1464/sl_pix_146447.bin"
+results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
+(calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
+allgood = make_bathtub(results, wavelength_desired, thresh, showplot=False)
+print "Ran", myfile, wavelength_desired, "micron", thresh, "threshold"
+print allgood, "good days out of", len(calendar)
+
+
+# Loop through all the directories
+healpix_dirs = glob.glob(bkg_dir + "*/")
+allNday   =  []
+allGood   = []
+whichfile  = []
+
+for thisdir in healpix_dirs[0:3] : 
+    myfiles = [ basename(x) for x in glob.glob(thisdir + "*.bin") ]
+    print len(myfiles)
+    for ii, myfile in enumerate(myfiles) :
+        results = read_JWST_precompiled_bkg(thisdir + myfile, base_dir, thisdir, showplot=False)
+        (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results  # break up results tuple
+        allNday.append(len(calendar))
+        allGood.append(make_bathtub(results, wavelength_desired, thresh, showplot=False))
+        whichfile.append(myfile)
+allNday   = np.array(allNday)
+allGood   = np.array(allGood)
+whichfile = np.array(whichfile, dtype='str')
+plt.scatter(allNday, allGood)
+plt.show()
+
+df = pandas.DataFrame(
+
+header = "Number of Days in FOR, and number of days with good background, for thresh" + str(thresh) + "at wavelength" + str(wavelength_desired)
+temp =  np.transpose([whichfile, allNday, allGood], dtype=(np.int, np.int, np.str))
+np.savetxt("gooddays.txt", np.transpose([whichfile, allNday, allGood]), "%25s  %d  %d", header=header, comments="")

@@ -15,13 +15,19 @@ This is the right schema.
 #  double stray_light_bg[SL_NWAVE]
 '''
 
+import jrr
 import glob
+import re
 from os.path import basename
 import struct
 import numpy as np
 import pandas
 from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
+import seaborn as sns
+from matplotlib.backends.backend_pdf import PdfPages
+sns.set(font_scale=2)
+sns.set_style("white")
 
 def rebin_spec_new(wave, specin, new_wave, fill=np.nan):
     f = interp1d(wave, specin, bounds_error=False, fill_value=fill)  # With these settings, writes NaN to extrapolated regions
@@ -81,9 +87,10 @@ def read_JWST_precompiled_bkg(infile, base_dir, bkg_dir, showplot=False, verbose
         plt.plot(wave_array, zodi_bg[thisday, :], label="Zodi")
         plt.plot(wave_array, stray_light_bg[thisday, :], label="Stray light")
         plt.plot(wave_array, thermal, label = "Thermal")
-        plt.plot(wave_array, total[thisday, :], label = "Total")
+        plt.plot(wave_array, total[thisday, :], label = "Total", color='black', lw=3)
         plt.xlim(0.6,31)
         plt.legend()
+        plt.yscale('log')
         plt.show()
     return((calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total))  #send it as a tuple
 
@@ -91,7 +98,8 @@ def index_of_wavelength(wave_array, desired_wavelength) :  # look up index of wa
     the_index = np.where(wave_array == desired_wavelength)
     return(the_index[0][0])
 
-def make_bathtub(results, wavelength_desired=2.0, thresh=1.1, showplot=False) :
+def make_bathtub(results, wavelength_desired, thresh, showplot=False) :
+    # thresh is threshold above minimum background, to calculate number of good days
     (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results # show how to break it up
     the_index = index_of_wavelength(wave_array, wavelength_desired)
     total_thiswave = total[ :, the_index]
@@ -110,47 +118,93 @@ def make_bathtub(results, wavelength_desired=2.0, thresh=1.1, showplot=False) :
     
 ###################################################
 # Setup
-thresh = 1.1  # 10 percent  # Threshhold above minimum background, to calculate Ndays
-wavelength_desired = 2.0
+
 base_dir  = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Zody_bathtubs/"  # Satchmo
 bkg_dir   = base_dir + "sl_cache.v1.0/"
+whichwaves = [1.0, 2.0, 5.0, 10.1, 15.1, 20.5]
+whichthresh = [1.05, 1.1, 1.3, 1.5, 2.0]
 
+Bathtub_tutorial = False    # Tutorial, make one example bathtub
+if Bathtub_tutorial :
+    myfile = "1464/sl_pix_146447.bin"
+    thresh=1.1;  wavelength_desired = whichwaves[-1]
+    results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=True)
+    (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
+    allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True)
+    print "Ran", myfile, wavelength_desired, "micron", thresh, "threshold"
+    #print allgood, "good days out of", len(calendar)
 
-# Tutorial, make one example bathtub 
-myfile = "1464/sl_pix_146447.bin"
-results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
-(calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
-allgood = make_bathtub(results, wavelength_desired, thresh, showplot=False)
-print "Ran", myfile, wavelength_desired, "micron", thresh, "threshold"
-print allgood, "good days out of", len(calendar)
+Calc_Gooddays = False   # Loop through every position on the sky, and calculate how many days in the FOR
+if Calc_Gooddays :     # have a background below a threshold, for several thresholds, at several wavelengths 
+    healpix_dirs = glob.glob(bkg_dir + "*/")
+    dirs_to_run = healpix_dirs   
+    len(glob.glob(bkg_dir + "*/*bin"))
+    allGood   = np.zeros(shape=(len(whichwaves), len(whichthresh), 100*len(dirs_to_run)))  # Big array
+    allNday   =  []
+    whichfile  = []
+    allRA = []
+    allDEC = []
+    ii = 0  # file_index
+    for thisdir in dirs_to_run :
+        myfiles = [ basename(x) for x in glob.glob(thisdir + "*.bin") ]
+        print len(myfiles), thisdir
+        for myfile in myfiles:
+            results = read_JWST_precompiled_bkg(thisdir + myfile, base_dir, thisdir, showplot=False)
+            (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
+            allNday.append(len(calendar))
+            for jj, wavelength_desired in enumerate(whichwaves) :
+                for kk, thresh in enumerate(whichthresh):
+                    this_allgood = (make_bathtub(results, wavelength_desired, thresh, showplot=False))
+                    allGood[jj,kk,ii] = this_allgood
+            whichfile.append(myfile)
+            allRA.append(RA)
+            allDEC.append(DEC)
+            ii += 1  # increment monotonic file counter
+    # Done running everything.  Now, make pretty df and output
+    df = pandas.DataFrame( { 'file':whichfile, 'RA':allRA, 'DEC':allDEC, 'Nday':allNday})
+    df = df[['file', 'RA', 'DEC', 'Nday']]  # reorder
+    
+    for jj, wavelength_desired in enumerate(whichwaves) :
+        for kk, thresh in enumerate(whichthresh):
+            goodcol = "Good"+str(wavelength_desired)+ "_" + str(thresh)
+            df[goodcol] = allGood[jj,kk, :ii]   # does this fix the problem?
+    df.to_csv('tmp')
+    header = "#Number of Days in FOR, and number of days with good background, for waves" + str(whichwaves) + " micron, and thresholds" + str(whichthresh) + "\n"
+    jrr.util.put_header_on_file('tmp', header, "gooddays.txt") 
 
+    
+Analyze_Bathtubs = True   # Once rereun finished, remove whichwaves and whichtresh below, and plot for all
+if Analyze_Bathtubs :
+    infile = "gooddays_worked_31mar2017.txt"
+    pp = PdfPages(re.sub(".txt",  ".pdf", infile))  # the outfile
+    df2 = pandas.read_csv(base_dir + infile, comment="#")
+    x1 = 90; x2=366; y1=0; y2=1.05
 
-# Loop through all the directories
-healpix_dirs = glob.glob(bkg_dir + "*/")
-allNday   =  []
-allGood   = []
-whichfile  = []
-
-for thisdir in healpix_dirs[0:3] : 
-    myfiles = [ basename(x) for x in glob.glob(thisdir + "*.bin") ]
-    print len(myfiles)
-    for ii, myfile in enumerate(myfiles) :
-        results = read_JWST_precompiled_bkg(thisdir + myfile, base_dir, thisdir, showplot=False)
-        (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results  # break up results tuple
-        allNday.append(len(calendar))
-        allGood.append(make_bathtub(results, wavelength_desired, thresh, showplot=False))
-        whichfile.append(myfile)
-
-packaged = [allNday, allGood, whichfile]
-        
-allNday   = np.array(allNday)
-allGood   = np.array(allGood)
-whichfile = np.array(whichfile, dtype='str')
-plt.scatter(allNday, allGood)
-plt.show()
-
-df = pandas.DataFrame(
-
-header = "Number of Days in FOR, and number of days with good background, for thresh" + str(thresh) + "at wavelength" + str(wavelength_desired)
-temp =  np.transpose([whichfile, allNday, allGood], dtype=(np.int, np.int, np.str))
-np.savetxt("gooddays.txt", np.transpose([whichfile, allNday, allGood]), "%25s  %d  %d", header=header, comments="")
+    whichwaves = [1.0, 2.0, 10.1]  
+    whichthresh = [1.1, 1.3]
+    for wavelength_desired in whichwaves :
+        for thresh in whichthresh :
+            lab1 = "Ndays in FOR"
+            lab2 = "fraction of days w " + str(wavelength_desired) + " um bkg <" + str(thresh) + " of minimum"
+            goodcol =  "Good"+str(wavelength_desired)+ "_" + str(thresh)
+            print wavelength_desired, thresh, goodcol
+            df2['good_frac'] = df2[goodcol] / df2['Nday']
+            if False :
+                plt.scatter(df2['Nday'], df2['good_frac'], s=1)
+                plt.xlabel(lab1)
+                plt.ylabel(lab2)
+                plt.xlim(x1,x2)
+                plt.ylim(y1,y2)
+                pp.savefig()
+            # Density plot, with histograms on margins.  From NB example,
+            cmap = sns.cubehelix_palette(n_colors=10,  start=0, rot=0.0, gamma=2.0, hue=1, light=1, dark=0.4, reverse=False, as_cmap=True)
+            g = sns.JointGrid(df2['Nday'], df2['good_frac'], size=8)
+            g.set_axis_labels(lab1, lab2)
+            g.ax_marg_x.hist(df2['Nday'], bins=np.arange(x1, x2, 8))
+            g.ax_marg_y.hist(df2['good_frac'], bins=np.arange(y1,y2,0.03), orientation="horizontal")
+            g.plot_joint(plt.hexbin, gridsize=100, extent=[x1, x2, y1, y2], cmap=cmap, mincnt=1, bins='log')
+            pp.savefig()
+    pp.close()
+    
+# Since the index of the df is the healpix value, should *should* be easy to read in w healpy,
+# and then plot good_frac in healpy as a projection.  Bet I'll rediscover the galaxy, the Ecliptic

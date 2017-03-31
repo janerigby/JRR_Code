@@ -140,6 +140,9 @@ for thisdir in healpix_dirs[0:3] :
         allNday.append(len(calendar))
         allGood.append(make_bathtub(results, wavelength_desired, thresh, showplot=False))
         whichfile.append(myfile)
+
+packaged = [allNday, allGood, whichfile]
+        
 allNday   = np.array(allNday)
 allGood   = np.array(allGood)
 whichfile = np.array(whichfile, dtype='str')

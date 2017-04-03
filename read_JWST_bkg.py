@@ -1,9 +1,11 @@
-''' Writing a function to read STScIs precompiled backgrounds.
-Working prototype in  precompiled_JWST_bkgs2.py Now, rewriting as a function.
-Goal is to make bathtub curves of zody vs time.
-To read binary files, following tutorial at http://vislab-ccom.unh.edu/~schwehr/rt/python-binary-files.html
+''' These functions and scripts read the JWST backgrounds that have been 
+precompiled by STScI.  From prototype in precompiled_JWST_bkgs2.py.
+Goals are to make bathtub curves of background versus visibility window,
+and then analyze how much different thresholds on background level affect
+target visibility.
 
-This is the right schema.
+This is the right schema of the precompiled backgrounds. They are binary files, 
+read  following tutorial at http://vislab-ccom.unh.edu/~schwehr/rt/python-binary-files.html
   Verified against source code generate_stray_light_with_threads.c
 #double RA
 #double DEC
@@ -17,17 +19,27 @@ This is the right schema.
 
 import jrr
 import glob
+import struct
 import re
 from os.path import basename
-import struct
+import healpy
 import numpy as np
 import pandas
 from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
+
+#### Setup #############################################
 sns.set(font_scale=2)
 sns.set_style("white")
+nside = 128 # from generate_backgroundmodel_cache.c .  
+base_dir  = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Zody_bathtubs/"  # Satchmo
+bkg_dir   = base_dir + "sl_cache.v1.0/"
+whichwaves = [1.0, 2.0, 5.0, 10.1, 15.1, 20.5]  # wavelengths (micron) to calc bkg
+whichthresh = [1.05, 1.1, 1.3, 1.5, 2.0]        # thresholds over minimum to consider a good background
+########################################################
+
 
 def rebin_spec_new(wave, specin, new_wave, fill=np.nan):
     f = interp1d(wave, specin, bounds_error=False, fill_value=fill)  # With these settings, writes NaN to extrapolated regions
@@ -98,7 +110,10 @@ def index_of_wavelength(wave_array, desired_wavelength) :  # look up index of wa
     the_index = np.where(wave_array == desired_wavelength)
     return(the_index[0][0])
 
-def make_bathtub(results, wavelength_desired, thresh, showplot=False) :
+def myfile_from_healpix(healpix) :
+    return ( str(healpix)[0:4] + "/sl_pix_" + str(healpix) + ".bin")
+
+def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=False, title=False, label=False) :
     # thresh is threshold above minimum background, to calculate number of good days
     (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results # show how to break it up
     the_index = index_of_wavelength(wave_array, wavelength_desired)
@@ -106,36 +121,22 @@ def make_bathtub(results, wavelength_desired, thresh, showplot=False) :
     themin = np.min(total_thiswave)
     allgood =  np.sum(total_thiswave < themin * thresh)*1.0
     if showplot: 
-        plt.scatter(calendar, total_thiswave)
+        plt.scatter(calendar, total_thiswave, s=20, label=label)
         percentiles = (themin, themin*thresh)
-        plt.hlines(percentiles, 0, 365, color='green')
+        if showthresh : plt.hlines(percentiles, 0, 365, color='green')
         plt.xlabel("Day of the year")
         plt.xlim(0,366)
         plt.ylabel("bkg at " + str(wave_array[the_index]) + " um (MJy/SR)")
-        plt.show()
+        if title : plt.title(title)
+        #plt.show()
     return(allgood)  # Returns the number of days in the FOR with a background below 
 
     
 ###################################################
-# Setup
 
-base_dir  = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Zody_bathtubs/"  # Satchmo
-bkg_dir   = base_dir + "sl_cache.v1.0/"
-whichwaves = [1.0, 2.0, 5.0, 10.1, 15.1, 20.5]
-whichthresh = [1.05, 1.1, 1.3, 1.5, 2.0]
-
-Bathtub_tutorial = False    # Tutorial, make one example bathtub
-if Bathtub_tutorial :
-    myfile = "1464/sl_pix_146447.bin"
-    thresh=1.1;  wavelength_desired = whichwaves[-1]
-    results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=True)
-    (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
-    allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True)
-    print "Ran", myfile, wavelength_desired, "micron", thresh, "threshold"
-    #print allgood, "good days out of", len(calendar)
-
-Calc_Gooddays = False   # Loop through every position on the sky, and calculate how many days in the FOR
-if Calc_Gooddays :     # have a background below a threshold, for several thresholds, at several wavelengths 
+##########  This is the heart.  This reads the precompiled backgrounds, and calculates N good days.  Hrs to run.
+Calc_Gooddays = False   # Loop through *every* position on the sky, and calculate how many days in the FOR
+if Calc_Gooddays :      # have a background below a threshold, for several thresholds, at several wavelengths. 
     healpix_dirs = glob.glob(bkg_dir + "*/")
     dirs_to_run = healpix_dirs   
     len(glob.glob(bkg_dir + "*/*bin"))
@@ -172,16 +173,17 @@ if Calc_Gooddays :     # have a background below a threshold, for several thresh
     header = "#Number of Days in FOR, and number of days with good background, for waves" + str(whichwaves) + " micron, and thresholds" + str(whichthresh) + "\n"
     jrr.util.put_header_on_file('tmp', header, "gooddays.txt") 
 
-    
-Analyze_Bathtubs = True   # Once rereun finished, remove whichwaves and whichtresh below, and plot for all
+
+##############################################################################
+# Below assumes that Calc_Gooddays above has already been run, that it wrote
+# a "gooddays.txt" or similar output file, which we are now analyzing.
+                
+Analyze_Bathtubs = False   # Once rereun finished, remove whichwaves and whichtresh below, and plot for all
 if Analyze_Bathtubs :
-    infile = "gooddays_worked_31mar2017.txt"
+    infile = "gooddays.txt"    # "gooddays_worked_31mar2017.txt"
     pp = PdfPages(re.sub(".txt",  ".pdf", infile))  # the outfile
     df2 = pandas.read_csv(base_dir + infile, comment="#")
     x1 = 90; x2=366; y1=0; y2=1.05
-
-    whichwaves = [1.0, 2.0, 10.1]  
-    whichthresh = [1.1, 1.3]
     for wavelength_desired in whichwaves :
         for thresh in whichthresh :
             lab1 = "Ndays in FOR"
@@ -204,7 +206,68 @@ if Analyze_Bathtubs :
             g.ax_marg_y.hist(df2['good_frac'], bins=np.arange(y1,y2,0.03), orientation="horizontal")
             g.plot_joint(plt.hexbin, gridsize=100, extent=[x1, x2, y1, y2], cmap=cmap, mincnt=1, bins='log')
             pp.savefig()
+            plt.clf()
     pp.close()
     
 # Since the index of the df is the healpix value, should *should* be easy to read in w healpy,
 # and then plot good_frac in healpy as a projection.  Bet I'll rediscover the galaxy, the Ecliptic
+# import healpy
+#m = np.arange(healpy.nside2npix(nside))
+
+healpix = 195257
+Healpy_tutorial = False
+if Healpy_tutorial :
+    print "Convert from healpix number to RA, DEC:"
+    print healpy.pixelfunc.pix2ang(nside, healpix, nest=False, lonlat=True)
+    benchmark = (261.68333333, -73.33222222) # RA, DEC in decimal degrees of 1.2 min zody 
+    print "Convert from RA, DEC of 1.2 min zody to healpix numbers:"
+    healpix = healpy.pixelfunc.ang2pix(nside, benchmark[0], benchmark[1], nest=False, lonlat=True)
+    print "Healpix for", benchmark, "was", healpix
+
+Bathtub_tutorial = False
+if Bathtub_tutorial :
+    # got healpix from Healpy tutorial above. Should be 1.2 min zody benchmark
+    myfile = myfile_from_healpix(healpix)
+    thresh=1.1;  wavelength_desired = whichwaves[1]
+    results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=True)
+    (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
+    allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True)
+    print "Ran", myfile, wavelength_desired, "micron", thresh, "threshold"
+    #print allgood, "good days out of", len(calendar)
+    
+# Now, calculate bathtubs for commissioning stray light positions
+Bathtubs_deepfields = True
+if Bathtubs_deepfields :
+    pp = PdfPages("deepfields_bathtubs.pdf")
+    coords = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Stray_light_commissioning/coordinates.txt"
+    deep_fields = pandas.read_table(coords, delim_whitespace=True, comment="#")
+    jrr.util.convert_RADEC_segi_decimal_df(deep_fields) # Convert RADEC to format healpy can read
+    deep_fields['healpix']  = deep_fields.apply(lambda row : format(healpy.pixelfunc.ang2pix(nside, row.RA_deg, row.DEC_deg, nest=False, lonlat=True), '06d'), axis=1)  # figure out healpix number for each pixel
+    for row in deep_fields.itertuples() :
+        print "Running for", row.FIELDS, row.RA_deg, row.DEC_deg, row.healpix
+        myfile = myfile_from_healpix(row.healpix)
+        results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
+        (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results
+        for wavelength_desired in whichwaves :
+            plt.clf()
+            title = re.sub("_", " ", row.FIELDS) + " at " + str(wavelength_desired) + " micron"
+            allgood = make_bathtub(results, wavelength_desired, 1.1, showplot=True, title=title)
+            pp.savefig()
+    pp.close()
+    plt.close("all")
+
+# Repeat, but all fields on one plot, for each wavelength
+    palette = sns.color_palette(n_colors=10, as_cmap=True)
+    pp = PdfPages("deepfields_bathtubs_2.pdf")
+    for wavelength_desired in whichwaves :
+        title = "All fields at " + str(wavelength_desired) + " micron"
+        plt.clf()
+        for row in deep_fields.itertuples() :
+            print "Running for", row.FIELDS, row.RA_deg, row.DEC_deg, row.healpix
+            myfile = myfile_from_healpix(row.healpix)
+            results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
+            (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results
+            allgood = make_bathtub(results, wavelength_desired, 1.1, showthresh=False, showplot=True, title=title, color=next(paelette), label=re.sub("_", " ", row.FIELDS))
+        plt.legend(fontsize=10, frameon=False, labelspacing=0)
+        pp.savefig()
+    pp.close()

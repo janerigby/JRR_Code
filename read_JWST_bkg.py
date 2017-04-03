@@ -27,6 +27,7 @@ import numpy as np
 import pandas
 from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
+from cycler import cycler
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -113,15 +114,23 @@ def index_of_wavelength(wave_array, desired_wavelength) :  # look up index of wa
 def myfile_from_healpix(healpix) :
     return ( str(healpix)[0:4] + "/sl_pix_" + str(healpix) + ".bin")
 
-def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=False, title=False, label=False) :
+def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=False, showall=False, title=False, label=False) :
     # thresh is threshold above minimum background, to calculate number of good days
     (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results # show how to break it up
     the_index = index_of_wavelength(wave_array, wavelength_desired)
     total_thiswave = total[ :, the_index]
+    stray_thiswave = stray_light_bg[ :, the_index]
+    zodi_thiswave =  zodi_bg[ :, the_index]
+    
     themin = np.min(total_thiswave)
     allgood =  np.sum(total_thiswave < themin * thresh)*1.0
-    if showplot: 
+    if showplot:
+        annotation = str(allgood) + " good days out of " + str(len(calendar)) + " days observable, for thresh " + str(thresh)
+        plt.annotate(annotation, (0.05,0.05), xycoords="axes fraction", fontsize=12)
         plt.scatter(calendar, total_thiswave, s=20, label=label)
+        if showall :
+            plt.scatter(calendar, stray_thiswave, s=20, label=label)
+            plt.scatter(calendar, zodi_thiswave, s=20, label=label)
         percentiles = (themin, themin*thresh)
         if showthresh : plt.hlines(percentiles, 0, 365, color='green')
         plt.xlabel("Day of the year")
@@ -206,16 +215,14 @@ if Analyze_Bathtubs :
             g.ax_marg_y.hist(df2['good_frac'], bins=np.arange(y1,y2,0.03), orientation="horizontal")
             g.plot_joint(plt.hexbin, gridsize=100, extent=[x1, x2, y1, y2], cmap=cmap, mincnt=1, bins='log')
             pp.savefig()
+            healpy.mollview(df2['good_frac'], min=0, max=1, cmap=cmap, flip='astro', title=lab2, coord='CE')
+            pp.savefig()
             plt.clf()
     pp.close()
     
-# Since the index of the df is the healpix value, should *should* be easy to read in w healpy,
-# and then plot good_frac in healpy as a projection.  Bet I'll rediscover the galaxy, the Ecliptic
-# import healpy
-#m = np.arange(healpy.nside2npix(nside))
 
 healpix = 195257
-Healpy_tutorial = False
+Healpy_tutorial = True
 if Healpy_tutorial :
     print "Convert from healpix number to RA, DEC:"
     print healpy.pixelfunc.pix2ang(nside, healpix, nest=False, lonlat=True)
@@ -224,7 +231,7 @@ if Healpy_tutorial :
     healpix = healpy.pixelfunc.ang2pix(nside, benchmark[0], benchmark[1], nest=False, lonlat=True)
     print "Healpix for", benchmark, "was", healpix
 
-Bathtub_tutorial = False
+Bathtub_tutorial = True
 if Bathtub_tutorial :
     # got healpix from Healpy tutorial above. Should be 1.2 min zody benchmark
     myfile = myfile_from_healpix(healpix)
@@ -236,7 +243,7 @@ if Bathtub_tutorial :
     #print allgood, "good days out of", len(calendar)
     
 # Now, calculate bathtubs for commissioning stray light positions
-Bathtubs_deepfields = True
+Bathtubs_deepfields = False
 if Bathtubs_deepfields :
     pp = PdfPages("deepfields_bathtubs.pdf")
     coords = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Stray_light_commissioning/coordinates.txt"
@@ -244,30 +251,41 @@ if Bathtubs_deepfields :
     jrr.util.convert_RADEC_segi_decimal_df(deep_fields) # Convert RADEC to format healpy can read
     deep_fields['healpix']  = deep_fields.apply(lambda row : format(healpy.pixelfunc.ang2pix(nside, row.RA_deg, row.DEC_deg, nest=False, lonlat=True), '06d'), axis=1)  # figure out healpix number for each pixel
     for row in deep_fields.itertuples() :
-        print "Running for", row.FIELDS, row.RA_deg, row.DEC_deg, row.healpix
         myfile = myfile_from_healpix(row.healpix)
         results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
         (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results
-        for wavelength_desired in whichwaves :
+        print "Running for", row.FIELDS, row.RA_deg, row.DEC_deg, row.healpix, len(calendar)
+        for wavelength_desired in whichwaves[0:3] :
             plt.clf()
             title = re.sub("_", " ", row.FIELDS) + " at " + str(wavelength_desired) + " micron"
             allgood = make_bathtub(results, wavelength_desired, 1.1, showplot=True, title=title)
             pp.savefig()
     pp.close()
     plt.close("all")
-
 # Repeat, but all fields on one plot, for each wavelength
-    palette = sns.color_palette(n_colors=10, as_cmap=True)
+    sns.set_palette("hls", 10)
     pp = PdfPages("deepfields_bathtubs_2.pdf")
     for wavelength_desired in whichwaves :
-        title = "All fields at " + str(wavelength_desired) + " micron"
+        title = "Stray light calib fields at " + str(wavelength_desired) + " micron"
         plt.clf()
         for row in deep_fields.itertuples() :
             print "Running for", row.FIELDS, row.RA_deg, row.DEC_deg, row.healpix
             myfile = myfile_from_healpix(row.healpix)
             results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
             (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results
-            allgood = make_bathtub(results, wavelength_desired, 1.1, showthresh=False, showplot=True, title=title, color=next(paelette), label=re.sub("_", " ", row.FIELDS))
+            allgood = make_bathtub(results, wavelength_desired, 1.1, showthresh=False, showplot=True, title=title, label=re.sub("_", " ", row.FIELDS))
         plt.legend(fontsize=10, frameon=False, labelspacing=0)
         pp.savefig()
     pp.close()
+
+
+# Now, make 2D maps on the sky
+Plot_on_sky = True
+if Plot_on_sky :
+    plt.clf()
+    infile = "gooddays.txt"    # "gooddays_worked_31mar2017.txt"
+    df2 = pandas.read_csv(base_dir + infile, comment="#")
+    cmap = sns.cubehelix_palette(n_colors=10,  start=0, rot=0.0, gamma=2.0, hue=1, light=1, dark=0.4, reverse=False, as_cmap=True)
+    healpy.mollview(df2['Good2.0_1.1'], cmap=cmap, flip='astro', title="Ndays observable", coord='CE')
+    plt.show()
+    

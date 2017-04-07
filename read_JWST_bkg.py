@@ -109,10 +109,14 @@ def read_JWST_precompiled_bkg(infile, base_dir, bkg_dir, showplot=False, verbose
 
 def index_of_wavelength(wave_array, desired_wavelength) :  # look up index of wavelength array corresponding to desired wavelength
     the_index = np.where(wave_array == desired_wavelength)
-    return(the_index[0][0])
+    return(the_idex[0][0])
 
 def myfile_from_healpix(healpix) :
     return ( str(healpix)[0:4] + "/sl_pix_" + str(healpix) + ".bin")
+
+def calc_the_healpix(df):  # For each row of a dtaframe, take RA, DEC in degrees and calculate the healpix number
+    df['healpix'] = df.apply(lambda row : format(healpy.pixelfunc.ang2pix(nside, row.RA_deg, row.DEC_deg, nest=False, lonlat=True), '06d'), axis=1)
+    return(0)
 
 def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=False, showall=False, title=False, label=False) :
     # thresh is threshold above minimum background, to calculate number of good days
@@ -182,21 +186,38 @@ if Calc_Gooddays :      # have a background below a threshold, for several thres
     header = "#Number of Days in FOR, and number of days with good background, for waves" + str(whichwaves) + " micron, and thresholds" + str(whichthresh) + "\n"
     jrr.util.put_header_on_file('tmp', header, "gooddays.txt") 
 
+def read_gooddays(base_dir=base_dir, infile="gooddays.txt", addGalEcl=False) :
+    #infile = "gooddays.txt"    # "gooddays_worked_31mar2017.txt"
+    df2 = pandas.read_csv(base_dir + infile, comment="#")
+    df2.rename(columns={"file":"healfile", "RA":"RA_deg", "DEC":"DEC_deg"}, inplace=True)
+    if addGalEcl :
+        print "Converting from Equatorial Coords to Galactic and Ecliptic.  Takes a minute"
+        jrr.util.convert_RADEC_GalEclip_df(df2, colra='RA_deg', coldec='DEC_deg')    # Compute Galactic, Eclptic coords
+    return(df2)
 
+def read_deepfields(addGalEcl=False) :
+    #coords = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Stray_light_commissioning/coordinates.txt" #satch
+    coords = "coordinates.txt" # Milk
+    deep_fields = pandas.read_table(coords, delim_whitespace=True, comment="#")
+    jrr.util.convert_RADEC_segidecimal_df(deep_fields) # Convert RADEC to format healpy can read
+    calc_the_healpix(deep_fields)
+    if addGalEcl : jrr.util.convert_RADEC_GalEclip_df(deep_fields, colra='RA_deg', coldec='DEC_deg')
+    return(deep_fields)
+
+    
 ##############################################################################
 # Below assumes that Calc_Gooddays above has already been run, that it wrote
 # a "gooddays.txt" or similar output file, which we are now analyzing.
-                
-Analyze_Bathtubs = False   # Once rereun finished, remove whichwaves and whichtresh below, and plot for all
+Analyze_Bathtubs = True 
 if Analyze_Bathtubs :
-    infile = "gooddays.txt"    # "gooddays_worked_31mar2017.txt"
-    pp = PdfPages(re.sub(".txt",  ".pdf", infile))  # the outfile
-    df2 = pandas.read_csv(base_dir + infile, comment="#")
+    df2= read_gooddays(base_dir="", addGalEcl=False)
+    pp = PdfPages("gooddays_new.pdf")
     x1 = 90; x2=366; y1=0; y2=1.05
     for wavelength_desired in whichwaves :
         for thresh in whichthresh :
             lab1 = "Ndays in FOR"
             lab2 = "fraction of days w " + str(wavelength_desired) + " um bkg <" + str(thresh) + " of minimum"
+            lab3 = "Ndays w " + str(wavelength_desired) + " um bkg <" + str(thresh) + " of minimum"
             goodcol =  "Good"+str(wavelength_desired)+ "_" + str(thresh)
             print wavelength_desired, thresh, goodcol
             df2['good_frac'] = df2[goodcol] / df2['Nday']
@@ -217,12 +238,15 @@ if Analyze_Bathtubs :
             pp.savefig()
             healpy.mollview(df2['good_frac'], min=0, max=1, cmap=cmap, flip='astro', title=lab2, coord='CE')
             pp.savefig()
+            healpy.mollview(df2[goodcol], min=0, max=365, cmap=cmap, flip='astro', title=lab3, coord='CE')
+            pp.savefig()
+            
             plt.clf()
     pp.close()
     
 
 healpix = 195257
-Healpy_tutorial = True
+Healpy_tutorial = False
 if Healpy_tutorial :
     print "Convert from healpix number to RA, DEC:"
     print healpy.pixelfunc.pix2ang(nside, healpix, nest=False, lonlat=True)
@@ -231,7 +255,7 @@ if Healpy_tutorial :
     healpix = healpy.pixelfunc.ang2pix(nside, benchmark[0], benchmark[1], nest=False, lonlat=True)
     print "Healpix for", benchmark, "was", healpix
 
-Bathtub_tutorial = True
+Bathtub_tutorial = False
 if Bathtub_tutorial :
     # got healpix from Healpy tutorial above. Should be 1.2 min zody benchmark
     myfile = myfile_from_healpix(healpix)
@@ -245,11 +269,8 @@ if Bathtub_tutorial :
 # Now, calculate bathtubs for commissioning stray light positions
 Bathtubs_deepfields = False
 if Bathtubs_deepfields :
+    deep_fields = read_deepfields()
     pp = PdfPages("deepfields_bathtubs.pdf")
-    coords = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Stray_light_commissioning/coordinates.txt"
-    deep_fields = pandas.read_table(coords, delim_whitespace=True, comment="#")
-    jrr.util.convert_RADEC_segi_decimal_df(deep_fields) # Convert RADEC to format healpy can read
-    deep_fields['healpix']  = deep_fields.apply(lambda row : format(healpy.pixelfunc.ang2pix(nside, row.RA_deg, row.DEC_deg, nest=False, lonlat=True), '06d'), axis=1)  # figure out healpix number for each pixel
     for row in deep_fields.itertuples() :
         myfile = myfile_from_healpix(row.healpix)
         results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
@@ -279,13 +300,29 @@ if Bathtubs_deepfields :
     pp.close()
 
 
-# Now, make 2D maps on the sky
-Plot_on_sky = True
+# Now, make 2D maps on the sky, and do math by Ecliptic latitude
+Plot_on_sky = False
 if Plot_on_sky :
     plt.clf()
-    infile = "gooddays.txt"    # "gooddays_worked_31mar2017.txt"
-    df2 = pandas.read_csv(base_dir + infile, comment="#")
+    df2= read_gooddays(base_dir="", addGalEcl=False)
     cmap = sns.cubehelix_palette(n_colors=10,  start=0, rot=0.0, gamma=2.0, hue=1, light=1, dark=0.4, reverse=False, as_cmap=True)
-    healpy.mollview(df2['Good2.0_1.1'], cmap=cmap, flip='astro', title="Ndays observable", coord='CE')
+    healpy.mollview(df2['Nday'], cmap=cmap, flip='astro', title="Ndays observable", coord='CE')
+    plt.show()   
+    df2= read_gooddays(base_dir="", addGalEcl=True)
+    binlatby = 1
+    latbins = np.arange(-90,90,binlatby)
+    groups = df2.groupby(pandas.cut(df2['Ecl_lat'], latbins))
+    plt.plot(latbins[:-1], groups['Good1.0_1.1'].median().values, label="1 micron", color='red')
+    plt.plot(latbins[:-1], groups['Good2.0_1.1'].median().values, label="2 micron", color='orange')
+    plt.plot(latbins[:-1], groups['Good5.0_1.1'].median().values, label="5 micron", color='green')
+    plt.plot(latbins[:-1], groups['Good10.1_1.1'].median().values, label="10 micron", color='blue')
+    plt.plot(latbins[:-1], groups['Nday'].median().values, label="Nday", color='black')
+    plt.xlabel("Ecliptic Latitude (deg)")
+    plt.ylabel("N days with background <1.1 of min")
+    plt.xlim(-90,90)
+    plt.locator_params(axis='x', nbins=6)
+    plt.ylim(0,365)
+    plt.legend(labelspacing=0.3)
+    plt.grid()
     plt.show()
-    
+    # pseudo code:  groupby Ecliptic Latitude, and compute statistics

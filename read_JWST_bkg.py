@@ -37,10 +37,17 @@ sns.set_style("white")
 nside = 128 # from generate_backgroundmodel_cache.c .  
 base_dir  = "/Volumes/Apps_and_Docs/MISSIONS/JWST/Zody_bathtubs/"  # Satchmo
 bkg_dir   = base_dir + "sl_cache.v1.0/"
-whichwaves = [1.0, 2.0, 5.0, 10.1, 15.1, 20.5]  # wavelengths (micron) to calc bkg
-whichthresh = [1.05, 1.1, 1.3, 1.5, 2.0]        # thresholds over minimum to consider a good background
+
+trywaves  =  [1.0, 2.0, 5.0, 10.1, 15.1, 20.5]  # wavelengths (micron) to calc bkg
+trythresh = [1.05, 1.1, 1.3, 1.5, 2.0]        # thresholds over minimum to consider a good background
 ########################################################
 
+# These are the closest wavelengths in the ETC array to broad-band pivot waves.
+nircam_broad = [0.7, 0.9, 1.1, 1.5, 2.0, 2.8, 3.5, 4.5]
+miri_broad   = [5.5, 7.7, 10.1, 12.7, 15.1, 17.5, 21.5, 25.5]
+
+whichwaves = nircam_broad + miri_broad
+whichthresh = [1.1]
 
 def rebin_spec_new(wave, specin, new_wave, fill=np.nan):
     f = interp1d(wave, specin, bounds_error=False, fill_value=fill)  # With these settings, writes NaN to extrapolated regions
@@ -109,7 +116,7 @@ def read_JWST_precompiled_bkg(infile, base_dir, bkg_dir, showplot=False, verbose
 
 def index_of_wavelength(wave_array, desired_wavelength) :  # look up index of wavelength array corresponding to desired wavelength
     the_index = np.where(wave_array == desired_wavelength)
-    return(the_idex[0][0])
+    return(the_index[0][0])
 
 def myfile_from_healpix(healpix) :
     return ( str(healpix)[0:4] + "/sl_pix_" + str(healpix) + ".bin")
@@ -148,8 +155,9 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
 ###################################################
 
 ##########  This is the heart.  This reads the precompiled backgrounds, and calculates N good days.  Hrs to run.
-Calc_Gooddays = False   # Loop through *every* position on the sky, and calculate how many days in the FOR
+Calc_Gooddays = True   # Loop through *every* position on the sky, and calculate how many days in the FOR
 if Calc_Gooddays :      # have a background below a threshold, for several thresholds, at several wavelengths. 
+    outfile = "gooddays_nircam_miri.txt"
     healpix_dirs = glob.glob(bkg_dir + "*/")
     dirs_to_run = healpix_dirs   
     len(glob.glob(bkg_dir + "*/*bin"))
@@ -184,7 +192,7 @@ if Calc_Gooddays :      # have a background below a threshold, for several thres
             df[goodcol] = allGood[jj,kk, :ii]   # does this fix the problem?
     df.to_csv('tmp')
     header = "#Number of Days in FOR, and number of days with good background, for waves" + str(whichwaves) + " micron, and thresholds" + str(whichthresh) + "\n"
-    jrr.util.put_header_on_file('tmp', header, "gooddays.txt") 
+    jrr.util.put_header_on_file('tmp', header, outfile) 
 
 def read_gooddays(base_dir=base_dir, infile="gooddays.txt", addGalEcl=False) :
     #infile = "gooddays.txt"    # "gooddays_worked_31mar2017.txt"
@@ -208,7 +216,7 @@ def read_deepfields(addGalEcl=False) :
 ##############################################################################
 # Below assumes that Calc_Gooddays above has already been run, that it wrote
 # a "gooddays.txt" or similar output file, which we are now analyzing.
-Analyze_Bathtubs = True 
+Analyze_Bathtubs = False 
 if Analyze_Bathtubs :
     df2= read_gooddays(base_dir="", addGalEcl=False)
     pp = PdfPages("gooddays_new.pdf")

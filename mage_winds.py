@@ -20,12 +20,15 @@ def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, label
     vwin = 4000. # +- velocity window (km/s) to consider a line
     Ncol = 1
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
+    plt.show() # TEMP
     plt.savefig(prefix + "a.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_b, line_center_b, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
+    plt.show() # TEMP
     plt.savefig(prefix + "b.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_c, line_center_c, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
+    plt.show() # TEMP
     plt.savefig(prefix + "c.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     plt.close("all")
@@ -212,7 +215,7 @@ def plot_OVI_forJC() :
     
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
-plot_wind_stack()     # outdir = ("StdStack", "StackA")
+#plot_wind_stack()     # outdir = ("StdStack", "StackA")
 #plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/
 #plot_some_CIV()     # .

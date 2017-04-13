@@ -1,5 +1,4 @@
-''' Same as multipanel-spectrum-ids.py, but plot multiple spectra.  Using for sub-stacks (highZ, loZ),
-young, middle-aged, old.
+''' Same as multipanel-spectrum-ids.py, but plot multiple spectra.
 jrigby, Sept 2016.
 Run from /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Plot-all'''
 
@@ -28,7 +27,9 @@ for ii in range(0, len(colfnu)):
         (spec_path, line_path) = jrr.mage.getpath(mage_mode)
         (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
         jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='rest_fnu_autocont', title="Standard stack"+method, waverange=(1000,3000), colortab=colortab)
-    plt.clf()
+        plt.clf()
+
+plt.close("all")
 
 # Plot the standard stacks
 for ii in range(0, len(colfnu)):
@@ -45,4 +46,23 @@ for ii in range(0, len(colfnu)):
         # figure out new outfile for this, so it doesn't overwrite
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_standard_nolabels.pdf'
         jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, waverange=(1000,3000), annotate=())
+        plt.clf()
+plt.close("all")
+
+
+# Repeat for StackA
+for ii in range(0, len(colfnu)):
+    for method in methods:
+        stacks = ['magestack_'+method+'_ChisholmstackA_spectrum.txt']
+        sp1, dummyLL = jrr.mage.open_stacked_spectrum(mage_mode, alt_infile=stacks[0], colfnu=colfnu[ii], colfnuu=colfnuu[ii])
+        the_dfs = [sp1]
+        the_zzs = [0.0]  # Stacked spectra are already in rest frame.
+        the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_stackA.pdf'
+        (spec_path, line_path) = jrr.mage.getpath(mage_mode)
+        (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Stack A"+method, waverange=(1000,3000))
+        the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_stackA_nolabels.pdf'
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, waverange=(1000,3000), annotate=())
+        plt.clf()
     plt.clf()
+plt.close("all")

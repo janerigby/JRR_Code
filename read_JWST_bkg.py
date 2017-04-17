@@ -51,12 +51,13 @@ trythresh = [1.05, 1.1, 1.3, 1.5, 2.0]        # thresholds over minimum to consi
 nircam_broad = [0.7, 0.9, 1.1, 1.5, 2.0, 2.8, 3.5, 4.5]
 miri_broad   = [5.5, 7.7, 10.1, 12.7, 15.1, 17.5, 21.5, 25.5]
 good_nircammiri = "gooddays_nircam_miri.txt"
-
+good_nircammiri_highthresh = "gooddays_nircam_miri_highthresh.txt"
 
 ########################################################
 
 whichwaves = nircam_broad + miri_broad
-whichthresh = [1.1]
+#whichthresh = [1.1]            # THE SOC requirement
+whichthresh = [1.1, 1.2,  1.3, 1.5]  # Experimenting with higher thresholds
 
 def rebin_spec_new(wave, specin, new_wave, fill=np.nan):
     f = interp1d(wave, specin, bounds_error=False, fill_value=fill)  # With these settings, writes NaN to extrapolated regions
@@ -150,6 +151,7 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
     themin = np.min(total_thiswave)
     allgood =  np.sum(total_thiswave < themin * thresh)*1.0
     if showplot:
+        sns.set_palette("hls", 5)
         if showannotate:
             annotation = str(allgood) + " good days out of " + str(len(calendar)) + " days observable, for thresh " + str(thresh)
             print str(wavelength_desired) + " " + annotation
@@ -159,9 +161,14 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
         if showsubbkgs :
             plt.scatter(calendar, zodi_thiswave, s=20, label="Zodiacal")
             plt.scatter(calendar, stray_thiswave, s=20, label="Stray light")
-            plt.legend()
-        percentiles = (themin, themin*thresh)
-        if showthresh : plt.hlines(percentiles, 0, 365, color='green')
+            plt.scatter(calendar, nonzodi_bg[the_index]*np.ones_like(zodi_thiswave), s=20, label="ISM+CIB")
+            plt.scatter(calendar, thermal[the_index]*np.ones_like(zodi_thiswave), s=20, label="Thermal")
+            plt.legend(fontsize=10, frameon=False, labelspacing=0)
+            plt.grid()
+            plt.locator_params(axis='x', nbins=10)
+            plt.locator_params(axis='y', nbins=10)
+            percentiles = (themin, themin*thresh)
+        if showthresh : plt.hlines(percentiles, 0, 365, color='black')
         plt.xlabel("Day of the year")
         plt.xlim(0,366)
         plt.ylabel("bkg at " + str(wave_array[the_index]) + " um (MJy/SR)")
@@ -191,9 +198,10 @@ def read_deepfields(filename, addGalEcl=False) :
 # point on the sky, and calculates the number of low-background ("good") days as a function
 # of wavelength and threshhold.  Takes a few hours to run b/c of input/output of 2E5 files.
 # Write output to file named gooddays_XX.txt, to be analyzed by other parts below.
-Calc_Gooddays = False  
+Calc_Gooddays = False
 if Calc_Gooddays :     
-    outfile =  good_nircammiri
+#    outfile =  good_nircammiri
+    outfile = good_nircammiri_highthresh
     healpix_dirs = glob.glob(bkg_dir + "*/")
     dirs_to_run = healpix_dirs   
     len(glob.glob(bkg_dir + "*/*bin"))
@@ -271,7 +279,7 @@ if Analyze_Bathtubs :
     
 
 healpix = 195257
-Healpy_tutorial = True
+Healpy_tutorial = False
 if Healpy_tutorial :
     print "Convert from healpix number to RA, DEC:"
     print healpy.pixelfunc.pix2ang(nside, healpix, nest=False, lonlat=True)
@@ -280,7 +288,7 @@ if Healpy_tutorial :
     healpix = healpy.pixelfunc.ang2pix(nside, benchmark[0], benchmark[1], nest=False, lonlat=True)
     print "Healpix for", benchmark, "was", healpix
 
-Bathtub_tutorial = True
+Bathtub_tutorial = False
 if Bathtub_tutorial :
     # got healpix from Healpy tutorial above. Should be 1.2 min zody benchmark
     myfile = myfile_from_healpix(healpix)
@@ -307,7 +315,7 @@ if Bathtubs_deepfields :
             for wavelength_desired in whichwaves :
                 plt.clf()
                 title = re.sub("_", " ", row.FIELD) + " at " + str(wavelength_desired) + " micron"
-                allgood = make_bathtub(results, wavelength_desired, 1.1, showplot=True, showannotate=True, title=title)
+                allgood = make_bathtub(results, wavelength_desired, 1.1, showplot=True, showannotate=True, title=title,  showsubbkgs=True)
                 plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
                 pp.savefig()
         pp.close()
@@ -348,40 +356,37 @@ if Gooddays_deepfields :
         subset2.transpose().to_csv(re.sub(".txt", '_gooddays.csv', infile))  # dump to csv
         subset2.drop('Ecl_lon', axis=1, inplace=True)
         print subset2.transpose().to_clipboard()  # write to clipboard, so I can copy to the memo
+        raw_input("TEMPORARY, press any key to continue")
 
 # Now, make 2D maps on the sky, and bin by Ecliptic latitude
-Plot_on_sky = False
+Plot_on_sky = True
 if Plot_on_sky :
-    plt.clf()
-    df2= read_gooddays(infile=good_nircammiri, base_dir="", addGalEcl=False)
+    thewaves = [21.5, 17.5, 15.1, 12.7, 10.1, 5.5, 4.5, 2.0, 1.1, 0.7]
+    df2= read_gooddays(infile=good_nircammiri_highthresh, base_dir="", addGalEcl=False)
     cmap = sns.cubehelix_palette(n_colors=10,  start=0, rot=0.0, gamma=2.0, hue=1, light=1, dark=0.4, reverse=False, as_cmap=True)
     healpy.mollview(df2['Nday'], cmap=cmap, flip='astro', title="Ndays observable", coord='CE')
     plt.show()   
-    df2= read_gooddays(infile=good_nircammiri, base_dir="", addGalEcl=True)
+    df2= read_gooddays(infile=good_nircammiri_highthresh, base_dir="", addGalEcl=True)
     binlatby = 1
     latbins = np.arange(-90,90,binlatby)
     groups = df2.groupby(pandas.cut(df2['Ecl_lat'], latbins))
     groups.median().to_csv('gooddays_binned_by_ecliptic_latitude.csv')
     sns.set_palette("hls", 11)
-    plt.plot(latbins[:-1], groups['Good21.5_1.1'].median().values, label="21.5 micron")
-    plt.plot(latbins[:-1], groups['Good17.5_1.1'].median().values, label="17.5 micron")
-    plt.plot(latbins[:-1], groups['Good15.1_1.1'].median().values, label="15.1 micron")
-    plt.plot(latbins[:-1], groups['Good12.7_1.1'].median().values, label="12.7 micron")
-    plt.plot(latbins[:-1], groups['Good10.1_1.1'].median().values, label="10.1 micron")
-    plt.plot(latbins[:-1], groups['Good5.5_1.1'].median().values, label=" 5.1 micron") 
-    plt.plot(latbins[:-1], groups['Good4.5_1.1'].median().values, label="4.5 micron") 
-    plt.plot(latbins[:-1], groups['Good2.0_1.1'].median().values, label="2.0 micron") 
-    plt.plot(latbins[:-1], groups['Good1.1_1.1'].median().values, label="1.1 micron") 
-    plt.plot(latbins[:-1], groups['Good0.7_1.1'].median().values, label="0.7 micron")
-    plt.plot(latbins[:-1], groups['Nday'].median().values, label="Nday", color='black')
-    plt.xlabel("Ecliptic Latitude (deg)")
-    plt.ylabel("N days with background <1.1 of min")
-    plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
-    plt.xlim(-90,90)
-    plt.locator_params(axis='x', nbins=6)
-    plt.ylim(0,365)
-    plt.legend(labelspacing=0.2, fontsize=12)
-    plt.grid()
-    plt.savefig("gooddays_vs_eclipticlatitude.png")
-    plt.show()
-
+    for thresh in whichthresh :
+        plt.clf()
+        for thiswave in thewaves :
+            thiscol = 'Good' + str(thiswave) + "_" + str(thresh)
+            label = str(thiswave) + " micron"
+            plt.plot(latbins[:-1], groups[thiscol].median().values, label=label)
+        plt.plot(latbins[:-1], groups['Nday'].median().values, label="Nday", color='black')
+        plt.xlabel("Ecliptic Latitude (deg)")
+        plt.ylabel("N days with background <" + str(thresh) + " of min")
+        plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
+        plt.xlim(-90,90)
+        plt.locator_params(axis='x', nbins=6)
+        plt.ylim(0,365)
+        plt.legend(labelspacing=0.2, fontsize=12)
+        plt.grid()
+        plt.savefig("gooddays_vs_eclipticlatitude_thresh" + str(thresh) + ".png")
+        plt.show()
+    

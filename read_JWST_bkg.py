@@ -53,6 +53,7 @@ miri_broad   = [5.5, 7.7, 10.1, 12.7, 15.1, 17.5, 21.5, 25.5]
 good_nircammiri = "gooddays_nircam_miri.txt"
 good_nircammiri_highthresh = "gooddays_nircam_miri_highthresh.txt"
 
+
 ########################################################
 
 whichwaves = nircam_broad + miri_broad
@@ -151,12 +152,12 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
     themin = np.min(total_thiswave)
     allgood =  np.sum(total_thiswave < themin * thresh)*1.0
     if showplot:
-        sns.set_palette("hls", 5)
+        sns.set_palette("hls", 7)
         if showannotate:
             annotation = str(allgood) + " good days out of " + str(len(calendar)) + " days observable, for thresh " + str(thresh)
             print str(wavelength_desired) + " " + annotation
             plt.annotate(annotation, (0.05,0.05), xycoords="axes fraction", fontsize=12)
-        if not label : label="Total"
+        if not label : label="Total " + str(wavelength_desired) + " micron"
         plt.scatter(calendar, total_thiswave, s=20, label=label)
         if showsubbkgs :
             plt.scatter(calendar, zodi_thiswave, s=20, label="Zodiacal")
@@ -167,11 +168,12 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
             plt.grid()
             plt.locator_params(axis='x', nbins=10)
             plt.locator_params(axis='y', nbins=10)
-            percentiles = (themin, themin*thresh)
+        percentiles = (themin, themin*thresh)
         if showthresh : plt.hlines(percentiles, 0, 365, color='black')
         plt.xlabel("Day of the year")
         plt.xlim(0,366)
-        plt.ylabel("bkg at " + str(wave_array[the_index]) + " um (MJy/SR)")
+        if showannotate : plt.ylabel("bkg at " + str(wave_array[the_index]) + " um (MJy/SR)")
+        else : plt.ylabel("bkg (MJy/SR)")
         if title : plt.title(title)
         #plt.show()
     return(allgood)  # Returns the number of days in the FOR with a background below 
@@ -300,13 +302,15 @@ if Bathtub_tutorial :
     print allgood, "good days out of", len(calendar)
     
 # Now, make plots of bathtubs for famous deep fields, and fields used in commissioning stray light.
-Bathtubs_deepfields = False
+selected_waves = [10.1, 7.7, 4.5, 3.5, 2.0, 1.1]
+Bathtubs_deepfields = True
 if Bathtubs_deepfields :
     thefiles = (coords_dir + "deep_fields.txt", coords_dir + "commissioning_targets.txt")
     outpdf = ("deepfields_bathtubs.pdf", "commissioning_bathtubs.pdf")
     for ii, infile in enumerate(thefiles) :
         deep_fields = read_deepfields(infile)
-        pp = PdfPages(outpdf[ii])
+        pp = PdfPages(outpdf[ii])                             # Make lots of plots, one page for each wavelength and target
+        p3 = PdfPages(re.sub(".pdf", "_3.pdf", outpdf[ii]))   # One page per target, w several wavelengths
         for row in deep_fields.itertuples() :
             myfile = myfile_from_healpix(row.healpix)
             results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
@@ -315,12 +319,23 @@ if Bathtubs_deepfields :
             for wavelength_desired in whichwaves :
                 plt.clf()
                 title = re.sub("_", " ", row.FIELD) + " at " + str(wavelength_desired) + " micron"
-                allgood = make_bathtub(results, wavelength_desired, 1.1, showplot=True, showannotate=True, title=title,  showsubbkgs=True)
+                allgood = make_bathtub(results, wavelength_desired, 1.1, showplot=True, showannotate=True, title=title,  showsubbkgs=False)
                 plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
                 pp.savefig()
+            plt.clf()
+            for wavelength_desired in selected_waves :
+                allgood = make_bathtub(results, wavelength_desired, 1.1, showplot=True, showthresh=False, showannotate=False, title=title,  showsubbkgs=False)
+            plt.title(row.FIELD)
+            plt.legend(fontsize=10, frameon=False, labelspacing=0)
+            plt.yscale('log')
+            p3.savefig()
         pp.close()
+        p3.close()
         plt.close("all")
-        # Repeat, but all fields on one plot, for each wavelength
+    for ii, infile in enumerate(thefiles) :    
+        deep_fields = read_deepfields(infile)
+        
+        # Repeat, but all targets on one plot, for each wavelength
         sns.set_palette("hls", 12)
         pp = PdfPages(re.sub(".pdf", "_2.pdf", outpdf[ii]))
         for wavelength_desired in whichwaves :
@@ -336,6 +351,9 @@ if Bathtubs_deepfields :
             plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
             pp.savefig()
         pp.close()
+
+
+
 
 # Make a table of good days versus wavelength for the deep fields.
 Gooddays_deepfields = False
@@ -359,7 +377,7 @@ if Gooddays_deepfields :
         raw_input("TEMPORARY, press any key to continue")
 
 # Now, make 2D maps on the sky, and bin by Ecliptic latitude
-Plot_on_sky = True
+Plot_on_sky = False
 if Plot_on_sky :
     thewaves = [21.5, 17.5, 15.1, 12.7, 10.1, 5.5, 4.5, 2.0, 1.1, 0.7]
     df2= read_gooddays(infile=good_nircammiri_highthresh, base_dir="", addGalEcl=False)
@@ -389,4 +407,15 @@ if Plot_on_sky :
         plt.grid()
         plt.savefig("gooddays_vs_eclipticlatitude_thresh" + str(thresh) + ".png")
         plt.show()
-    
+    plt.clf()
+    plt.plot(latbins[:-1], groups['Nday'].median().values, label="Nday", color='black', linewidth=2)
+    plt.xlabel("Ecliptic Latitude (deg)")
+    plt.ylabel("Observable days per year")
+    plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.15)
+    plt.xlim(-90,90)
+    plt.locator_params(axis='x', nbins=10)
+    plt.locator_params(axis='y', nbins=8)
+    plt.ylim(0,365)
+    plt.grid()
+    plt.savefig("just_Nday_vs_ecliptlat.png")
+    plt.show()

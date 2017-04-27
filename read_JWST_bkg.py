@@ -124,7 +124,7 @@ def read_JWST_precompiled_bkg(infile, base_dir, bkg_dir, showplot=False, verbose
 
     if showplot :
         plt.clf()
-        thisday = 100
+        thisday = find_nearest(calendar, np.mean(calendar))  # plot the middle of the calendar
         plt.plot(wave_array, nonzodi_bg, label="ISM")
         plt.plot(wave_array, zodi_bg[thisday, :], label="Zodi")
         plt.plot(wave_array, stray_light_bg[thisday, :], label="Stray light")
@@ -161,7 +161,7 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
     zodi_thiswave =  zodi_bg[ :, the_index]
     
     themin = np.min(total_thiswave)
-    allgood =  np.sum(total_thiswave < themin * thresh)*1.0
+    allgood =  int(np.sum(total_thiswave < themin * thresh)*1.0)
     if showplot:
         sns.set_palette("hls", 7)
         if showannotate:
@@ -186,7 +186,6 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
         if showannotate : plt.ylabel("bkg at " + str(wave_array[the_index]) + " um (MJy/SR)")
         else : plt.ylabel("bkg (MJy/SR)")
         if title : plt.title(title)
-        #plt.show()
     return(allgood)  # Returns the number of days in the FOR with a background below 
 
 def read_gooddays(base_dir=base_dir, infile="gooddays.txt", addGalEcl=False) :
@@ -295,20 +294,22 @@ Example_for_STScI = True
 if Example_for_STScI :
     RA  = 261.68333333        # Here are the user inputs
     DEC = -73.33222222        # RA, DEC in decimal degrees of 1.2 min zody 
-    wavelength_input = 2.2    # Wavelength (in micron) 
+    wavelength_input = 2.15    # Wavelength (in micron) 
     thresh = 1.1              # The background threshol, relative to the minimum.  1.1 would be 10% above the min kg
-    print "Making example background plot for RA, DEC, wave, thresh of", RA, DEC, wavelength_desired, thresh
+    print "Making example background plot for RA, DEC, wave, thresh of:", RA, DEC, wavelength_input, thresh
     healpix = healpy.pixelfunc.ang2pix(nside, RA, DEC, nest=False, lonlat=True)  # old versions of healpy don't have lonlat
-    print "Healpix for", RA, DEC, "was", healpix
     myfile = myfile_from_healpix(healpix)   # Retrieve the name of the healpix file, including leading zero formatting
+    print "Plotting the background spectrum for an example day.  Turn this off w showplot=False" 
     results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=True)  # Retrieve the bkg file
     (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results  # parse results
-    wavelength_desired = find_nearest(wave_array, wavelength_desired)  # Nearest neighbor interpolation of wavelength
+    wavelength_desired = find_nearest(wave_array, wavelength_input)  # Nearest neighbor interpolation of wavelength
     if wavelength_desired != wavelength_input :
-        print "Using wave", wavelength_desired, ", micron, as the nearest neighbor to input", wavelength_input
+        print "Using wave", wavelength_desired, "as the nearest neighbor to input", wavelength_input, "micron"
     allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True, showsubbkgs=False)  # Compute bathtub, plot it.
-    print "RESULTS:  The coordinates", RA, DEC, "are observable by JWST" len(calendar), "days per year"
-    print "RESULTS: ", allgood, "of those days are observable with background <", threshold, "of the minimum, at wavelength", wavelength_desired, "micron"
+    print "Plotting background versus day fo the year"
+    plt.show()
+    print "RESULTS:  The coordinates", RA, DEC, "are observable by JWST", len(calendar), "days per year"
+    print "RESULTS:  For", allgood, "of those days, the background is <", thresh, "of the minimum, at wavelength", wavelength_desired, "micron"
 ### END EXAMPLE FOR STScI
     
     

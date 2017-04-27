@@ -1,24 +1,31 @@
-''' These functions and scripts read the JWST background cache that was 
-precompiled by STScI. Goals are to make bathtub curves of background versus 
-visibility window, and to analyze how much background thresholds affect 
-target visibility.   Jane.Rigby@nasa.gov, Apr 2017.
-#
-# Here is the schema for the precompiled background cache.  (I verified the schema
-# against the source code, generate_stray_light_with_threads.c)
-# The cache uses a Healpix RING tesselation, with NSIDE=128.  Every point on the sky 
-# (tesselated tile) corresponds to one binary file, whose name includes its healpix 
-# pixel number, in a directory corresponding to the first 4 digits of the healpix number.  
-# I used this tutorial to read the binary files: 
-#      http://vislab-ccom.unh.edu/~schwehr/rt/python-binary-files.html
-# Anyway, here's the schema of each binary file:
-#double RA
-#double DEC
-#double pos[3]
-#double nonzodi_bg[SL_NWAVE]
-#int[366] date_map  # This maps dates to indices.  **There are 366 days, not 365!**
-#for each day in FOR:
-#  double zodi_bg[SL_NWAVE]
-#  double stray_light_bg[SL_NWAVE]
+''' This script and its functions read the JWST background cache that was 
+precompiled by STScI, and does several things, including:
+- Makes bathtub curves of background versus calendar day
+- Computes the number of days per year that a target is observable at low background,
+  for a selectable threshold and wavelength
+- Computes the above quantity over the whole sky, and bins by Ecliptic latitude, 
+  because it depends on Ecliptic latitude.
+The big picture here is the window of low background is, for many wavelengths
+and ecliptic latitudes, much smaller than the window of JWST observability.
+See related memo on NGIN, JWST-RPT-034230
+    Jane.Rigby@nasa.gov, Apr 2017.
+
+ Here is the schema for the precompiled background cache.
+ (I verified the schema against the source code, generate_stray_light_with_threads.c)
+ The cache uses a Healpix RING tesselation, with NSIDE=128.  Every point on the sky 
+ (tesselated tile) corresponds to one binary file, whose name includes its healpix 
+ pixel number, in a directory corresponding to the first 4 digits of the healpix number.  
+ I used this tutorial to read the binary files: 
+      http://vislab-ccom.unh.edu/~schwehr/rt/python-binary-files.html
+Here's the schema of each binary file in the cache:
+double RA
+double DEC
+double pos[3]
+double nonzodi_bg[SL_NWAVE]
+int[366] date_map  # This maps dates to indices.  **There are 366 days, not 365!**
+for each day in FOR:
+  double zodi_bg[SL_NWAVE]
+  double stray_light_bg[SL_NWAVE]
 '''
 
 import jrr
@@ -59,6 +66,10 @@ good_nircammiri_highthresh = "gooddays_nircam_miri_highthresh.txt"
 whichwaves = nircam_broad + miri_broad
 #whichthresh = [1.1]            # THE SOC requirement
 whichthresh = [1.1, 1.2,  1.3, 1.5]  # Experimenting with higher thresholds
+
+def find_nearest(array,value):
+    idx = (np.abs(array-value)).argmin()
+    return array[idx]
 
 def rebin_spec_new(wave, specin, new_wave, fill=np.nan):
     f = interp1d(wave, specin, bounds_error=False, fill_value=fill)  # With these settings, writes NaN to extrapolated regions
@@ -280,30 +291,31 @@ if Analyze_Bathtubs :
     pp.close()
     
 
-healpix = 195257
-Healpy_tutorial = False
-if Healpy_tutorial :
-    print "Convert from healpix number to RA, DEC:"
-    print healpy.pixelfunc.pix2ang(nside, healpix, nest=False, lonlat=True)
-    benchmark = (261.68333333, -73.33222222) # RA, DEC in decimal degrees of 1.2 min zody 
-    print "Convert from RA, DEC of 1.2 min zody to healpix numbers:"
-    healpix = healpy.pixelfunc.ang2pix(nside, benchmark[0], benchmark[1], nest=False, lonlat=True)
-    print "Healpix for", benchmark, "was", healpix
+Example_for_STScI = True
+if Example_for_STScI :
+    RA  = 261.68333333        # Here are the user inputs
+    DEC = -73.33222222        # RA, DEC in decimal degrees of 1.2 min zody 
+    wavelength_input = 2.2    # Wavelength (in micron) 
+    thresh = 1.1              # The background threshol, relative to the minimum.  1.1 would be 10% above the min kg
+    print "Making example background plot for RA, DEC, wave, thresh of", RA, DEC, wavelength_desired, thresh
+    print "Convert from input RA, DEC to healpix number, to find the file in the bkg cache"
+    healpix = healpy.pixelfunc.ang2pix(nside, RA, DEC, nest=False, lonlat=True)  # old versions of healpy don't have lonlat
+    print "Healpix for", RA, DEC, "was", healpix
+    myfile = myfile_from_healpix(healpix)   # Retrieve the name of the healpix file, including leading zero formatting
+    results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=True)  # Retrieve the bkg file
+    (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results  # parse results
+    wavelength_desired = find_nearest(wave_array, wavelength_desired)  # Nearest neighbor interpolation of wavelength
+    if wavelength_desired != wavelength_input :
+        print "Using wave", wavelength_desired, ", micron, as the nearest neighbor to input", wavelength_input
 
-Bathtub_tutorial = False
-if Bathtub_tutorial :
-    # got healpix from Healpy tutorial above. Should be 1.2 min zody benchmark
-    myfile = myfile_from_healpix(healpix)
-    thresh=1.1;  wavelength_desired = whichwaves[4]
-    results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=True)
-    (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
-    allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True, showsubbkgs=True)
+
+    allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True, showsubbkgs=False)  # Compute bathtub, plot it.
     print "Ran", myfile, wavelength_desired, "micron", thresh, "threshold"
     print allgood, "good days out of", len(calendar)
     
 # Now, make plots of bathtubs for famous deep fields, and fields used in commissioning stray light.
 selected_waves = [10.1, 7.7, 4.5, 3.5, 2.0, 1.1]
-Bathtubs_deepfields = True
+Bathtubs_deepfields = False
 if Bathtubs_deepfields :
     thefiles = (coords_dir + "deep_fields.txt", coords_dir + "commissioning_targets.txt")
     outpdf = ("deepfields_bathtubs.pdf", "commissioning_bathtubs.pdf")

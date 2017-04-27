@@ -298,7 +298,6 @@ if Example_for_STScI :
     wavelength_input = 2.2    # Wavelength (in micron) 
     thresh = 1.1              # The background threshol, relative to the minimum.  1.1 would be 10% above the min kg
     print "Making example background plot for RA, DEC, wave, thresh of", RA, DEC, wavelength_desired, thresh
-    print "Convert from input RA, DEC to healpix number, to find the file in the bkg cache"
     healpix = healpy.pixelfunc.ang2pix(nside, RA, DEC, nest=False, lonlat=True)  # old versions of healpy don't have lonlat
     print "Healpix for", RA, DEC, "was", healpix
     myfile = myfile_from_healpix(healpix)   # Retrieve the name of the healpix file, including leading zero formatting
@@ -307,11 +306,11 @@ if Example_for_STScI :
     wavelength_desired = find_nearest(wave_array, wavelength_desired)  # Nearest neighbor interpolation of wavelength
     if wavelength_desired != wavelength_input :
         print "Using wave", wavelength_desired, ", micron, as the nearest neighbor to input", wavelength_input
-
-
     allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True, showsubbkgs=False)  # Compute bathtub, plot it.
-    print "Ran", myfile, wavelength_desired, "micron", thresh, "threshold"
-    print allgood, "good days out of", len(calendar)
+    print "RESULTS:  The coordinates", RA, DEC, "are observable by JWST" len(calendar), "days per year"
+    print "RESULTS: ", allgood, "of those days are observable with background <", threshold, "of the minimum, at wavelength", wavelength_desired, "micron"
+### END EXAMPLE FOR STScI
+    
     
 # Now, make plots of bathtubs for famous deep fields, and fields used in commissioning stray light.
 selected_waves = [10.1, 7.7, 4.5, 3.5, 2.0, 1.1]

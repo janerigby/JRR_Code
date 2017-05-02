@@ -5,6 +5,7 @@
 '''
 
 indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir.
+indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
 
 import jrr
 import glob
@@ -33,16 +34,19 @@ def get_the_spectra(filenames) :
         colnames = ('obswave', 'flam', 'flam_u')   # Units are 1E-14 erg/s/cm^2/A
         df[thisfile] = pandas.read_table(thisfile, delim_whitespace=True, comment="#", names=colnames)
         df[thisfile]['Nfiles'] = 1 # N of exposures that went into this spectrum
-        df[thisfile]['flam_u'][df[thisfile]['flam_u'].eq(0.000)] = 1E6
+        df[thisfile].loc[df[thisfile]['flam_u'] == 0.00, 'flam_u'] = 1E6
     return(df)  # return a dictionary of dataframes of spectra
 
 def flag_near_lines(df, geoMW_linelist) :
     vmask = 300.  # velocity to mask, +-, km/s   # checked that it masks geocoronal emission
-    Lyamask = 1000.
+    Lyamask = 2500.
+    geoMW_linelist['vmask'] = geoMW_linelist['unity'] * vmask
+    geoMW_linelist.loc[geoMW_linelist['linelabel'] == 'HI', 'vmask'] = Lyamask
     for thisfile in df.keys() :  # For each spectrum dataframe
         line_cen = np.array(geoMW_linelist.obswave)
-        line_lo   = line_cen * (1.0 - vmask/2.997E5)
-        line_hi   = line_cen * (1.0 + vmask/2.997E5)
+        vmask_ar = np.array(geoMW_linelist.vmask)
+        line_lo   = line_cen * (1.0 - vmask_ar/2.997E5)
+        line_hi   = line_cen * (1.0 + vmask_ar/2.997E5)
         temp_wave = np.array(df[thisfile]['obswave'])
         temp_mask = np.zeros_like(temp_wave).astype(np.bool)
         for ii in range(0, len(line_lo)) :    # doing this in observed wavelength
@@ -60,14 +64,22 @@ def from_galname_get_redshift(galname, zzlist) :
     redshift = zzlist[zzlist['galname'].eq(galname)]['zz']
     return(redshift.values[0])
 
+def deredshift_all_spectra(df, zzlist) :
+    for thisfile in df.keys() :  # This is breaking...***
+        (galname, grating) =  from_filename_get_galname_grating(thisfile)
+        redshift = from_galname_get_redshift(galname, zzlist)
+        jrr.spec.convert2restframe_df(df[thisfile], redshift, units='flam', colwave='obswave', colf='flam', colf_u='flam_u')
+    return()
+
+
 # NOW DO THINGS
 zzlist = get_the_redshifts()
 filenames =  [ basename(x) for x in glob.glob(indir + "*G130M") ]    # Find the files.   curerntly doing G130M only
 df = get_the_spectra(filenames)  # load spectra into dict of dataframes
 geoMW_linelist =  get_MW_geocoronal_linelist()  # Will need this to mask the geocoronal lines
 flag_near_lines(df, geoMW_linelist)  # Flag the geocoronal and MW emission.
-
-
+deredshift_all_spectra(df, zzlist)
+    
 first = df.keys()[0]
 #ax = df[first].plot(x='obswave', y='flam')
 figsize=(20,4)
@@ -90,10 +102,8 @@ for thisfile in df.keys() :
     ax1.set_xlim(x1,x2)
 #    ax2.set_xlim(x1/(1.+redshift), x2/(1.+redshift))
     plt.ylim(0,2)
-    plt.show()
+    #plt.show()
 
-# Notes to future Jane:  Here's what to do to finish this
-# Add extra masking to Lya, try +-1000 km/s to get rid of MW DLAs.
-# Check whether that removed the DLA signature.  If not, change mask window
+
 # If yes, move on, convert to rest frame, and stack the spectra.
 

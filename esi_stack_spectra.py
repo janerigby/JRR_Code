@@ -103,7 +103,7 @@ def write_spectrum_to_file(out2, outfile, prefix, filenames, header, thresh) :
 
 def make_a_stack(filenames, obslog, prefix, thresh, mintoreplace, low_wave_cutoff) :     # Put it all together
     df = get_the_spectra(filenames, obslog)
-    out = jrr.spec.stack_observed_spectra(df, do_sum=True, colwav='wave', colf='flam', colfu='flam_u')
+    out = jrr.spec.stack_spectra(df, straight_sum=True, colwav='wave', colf='flam', colfu='flam_u')
     out2 = jrr_filter(out, thresh, mintoreplace, low_wave_cutoff)    
     plot_the_results(filenames, df, out2, groupby=False)
     outfile = prefix + "_ESI_JRR_sum.txt"

@@ -150,7 +150,7 @@ stacked.to_csv(stacked_output, index=False)
 # This works!  Columns are a bit ugly, but it works
 
 # Now, read this in using the same software to plot the stacked mage spectrum...  Will need to change column names
-pandas.read_csv(stacked_output)
+
 
 
 # For debugging, plot a bunch of the spectra, to see if MW, Geocoronal features were masked out

@@ -4,8 +4,8 @@
     jane.rigby@nasa.gov, 4/2017
 '''
 
-indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir.
-#indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
+#indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir.
+indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
 
 import jrr
 import glob
@@ -137,11 +137,11 @@ for this in df.keys() :
 # Continuum-normalize before stacking
 
 output_wave_array = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 2E4, 2.2) # nyquist sampled at R=2E4
-stacked =  jrr.spec.stack_spectra(df, straight_sum=False, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=output_wave_array) 
+stacked =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=output_wave_array) 
 plt.close("all")
-ax = stacked.plot(x='rest_wave', y='rflam_norm', linewidth=0.5, color='k', drawstyle="steps-post")
-stacked.plot(x='rest_wave', y='rflamu_norm', linewidth=1, color='grey', ax=ax, drawstyle="steps-post")
-plt.plot(stacked.rest_wave, stacked.X_Ngal / stacked.X_Ngal.max(), color='green', linewidth=1)
+ax = stacked.plot(x='rest_wave', y='fweightavg', linewidth=0.5, color='k', drawstyle="steps-post")
+stacked.plot(x='rest_wave', y='fweightavg_u', linewidth=1, color='grey', ax=ax, drawstyle="steps-post")
+plt.plot(stacked.rest_wave, stacked.Ngal / stacked.Ngal.max(), color='green', linewidth=1)
 plt.plot((1000,2000), (1,1), color='grey', linewidth=1)
 plt.ylim(0,1.5)
 plt.show()
@@ -151,7 +151,6 @@ stacked.to_csv(stacked_output, index=False)
 
 # Now, read this in using the same software to plot the stacked mage spectrum...  Will need to change column names
 pandas.read_csv(stacked_output)
-
 
 
 # For debugging, plot a bunch of the spectra, to see if MW, Geocoronal features were masked out

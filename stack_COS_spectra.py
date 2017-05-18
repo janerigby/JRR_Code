@@ -4,8 +4,8 @@
     jane.rigby@nasa.gov, 4/2017
 '''
 
-#indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir.
-indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
+indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir.
+#indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
 
 import jrr
 import glob
@@ -15,6 +15,8 @@ import pandas
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.stats import sigma_clip, sigma_clipped_stats
+from astropy.stats import gaussian_fwhm_to_sigma
+import astropy.convolution
 
 def get_the_redshifts(filename='stack_samp.txt') :
     colnames = ('galname', 'zz', 'has_G130M', 'has_G160M')  #has=1 is True
@@ -52,6 +54,30 @@ def get_the_spectra(filenames) :
         jrr.spec.calc_dispersion(df[this], colwave='obswave', coldisp='obsdisp')
     return(df)  # return a dictionary of dataframes of spectra
 
+# STILL WORKING ON THIS...
+** THIS IS BROKEN <STOPPED HERE> FIX IT FROM HERE.*****
+def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convolve and rebin the COS spectra to simulate MagE data.
+    idf = {}  ; newdf = {}
+    for this in df.keys() : #for each spectrum dataframe
+        # I have high spectral resolution R1 & oversampled.
+        # This function rebins to critically sampled, then convolves w Gaussian, then rebins again to R=R2.
+        # Start by rebinning to an intermediate wavelength array. R=2E4 nyquist=2.2.
+        idf[this] = pandas.DataFrame(data=pandas.Series(intermed_wave), columns=('obswave',))
+        idf[this]['flam']   = jrr.spec.rebin_spec_new(df[this]['obswave'], df[this]['flam'],  intermed_wave)
+        idf[this]['flam_u'] = jrr.spec.rebin_spec_new(df[this]['obswave'], df[this]['flam_u'], intermed_wave)
+        # Intermediate wavelength array has pixels to keep R=constant. It is critically sampled.  Now, convolve w Gaussian,
+        # assuming destination is also a critically-sampled array
+        kern_fwhm = np.sqrt((R1/R2)**2 - 1.)
+        kern = astropy.convolution.Gaussian1DKernel(gaussian_fwhm_to_sigma * kern_fwhm)
+        idf[this]['smooth']   = astropy.convolution.convolve(newdf[this]['flam'].as_matrix(),   kern, boundary='fill', fill_value=np.nan)
+        idf[this]['smooth_u'] = astropy.convolution.convolve(newdf[this]['flam_u'].as_matrix(), kern, boundary='fill', fill_value=np.nan)
+        # Should we be doing soemthing smarter here with smooth_u?
+        ndf[this] = pandas.DataFrame(data=pandas.Series(new_wave), columns=('obswave',))
+        ndf[this]['flam']   = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth'],   new_wave)
+        ndf[this]['flam_u'] = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth_u'], new_wave)
+    return(idf, newdf)
+    
+ 
 def flag_geoMW_lines(df, geoMW_linelist, vmask, Lyamask) :
     geoMW_linelist['vmask'] = vmask
     geoMW_linelist.loc[geoMW_linelist['linelabel'] == 'HI', 'vmask'] = Lyamask
@@ -91,7 +117,7 @@ def deredshift_all_spectra(df, zzlist) :
 #                          Velocity to mask features for continuum fitting, and stacking, +-, in km/s
 geoMW_vmask      = 300.  # Mask Geocoronal and Milky Way emission for most lines.  Mask for continuum and stacking 
 Lya_geoMW_mask   = 3000. # Larger mask for Milky Way damped Lyman alpha.  Mask for continuum and stacking.
-starburst_vmask  = 500.  # mask lines when fitting continuum.  Leave in stack
+starburst_vmask  = 1000.  # mask lines when fitting continuum.  Leave in stack
 Lya_starburst    = 1000. # Mask Lya when fitting continuum.  Leave in stack.
 smooth_length = 20. # rest-frame Angstroms.  Smoothing length for continuum fitting.  
 
@@ -99,8 +125,8 @@ smooth_length = 20. # rest-frame Angstroms.  Smoothing length for continuum fitt
 zzlist = get_the_redshifts()
 filenames =  [ basename(x) for x in glob.glob(indir + "*G*M") ]    # Find the files. 
 print "Loading spectra"
-df = get_the_spectra(filenames)                 # load spectra into dict of dataframes
-#df = get_the_spectra(filenames[0:10])  # DEBUGGING, subset is faster *****
+#df = get_the_spectra(filenames)                 # load spectra into dict of dataframes
+df = get_the_spectra(filenames[0:10])  # DEBUGGING, subset is faster *****
 geoMW_linelist =  get_MW_geocoronal_linelist()  # Line list, prepartory to masking geocoronal & MW lines
 flag_geoMW_lines(df, geoMW_linelist, geoMW_vmask, Lya_geoMW_mask)  # Flag the geocoronal and MW emission.
 deredshift_all_spectra(df, zzlist)
@@ -131,13 +157,20 @@ for this in df.keys() :
         print "Plotting", this, galname, grating, redshift
         plt.show()
 
-# Now, to stack the spectra.  Still working on getting this to work.
-# Using an input mask.  Masking geocoronal lines, Milky Way lines, and bad pixels.
-# TO DO:
-# Continuum-normalize before stacking
+        
+# STACKING HAPPENS HERE
+R2E4_wavear  = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 2E4, 2.2)  # desired wavelength array for COS, nyquist sampled at R=2E4
+R3500_wavear = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 3500, 2.2) # appropriate output wavelength array for simulated-MagE stack
 
-output_wave_array = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 2E4, 2.2) # nyquist sampled at R=2E4
-stacked =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=output_wave_array) 
+stacked =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R2E4_wavear)
+stacked_output = "stacked_COS_spectrum_R2E4.csv"
+stacked.to_csv(stacked_output, index=False)
+
+# because we haven't also convolved input spectra to R=3500
+stacked2 =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R3500_wavear)
+stacked_output = "stacked_COS_spectrum_R3500.csv"
+stacked2.to_csv(stacked_output, index=False)
+
 plt.close("all")
 ax = stacked.plot(x='rest_wave', y='fweightavg', linewidth=0.5, color='k', drawstyle="steps-post")
 stacked.plot(x='rest_wave', y='fweightavg_u', linewidth=1, color='grey', ax=ax, drawstyle="steps-post")
@@ -145,9 +178,18 @@ plt.plot(stacked.rest_wave, stacked.Ngal / stacked.Ngal.max(), color='green', li
 plt.plot((1000,2000), (1,1), color='grey', linewidth=1)
 plt.ylim(0,1.5)
 plt.show()
-stacked_output = "stacked_COS_spectrum.csv"
-stacked.to_csv(stacked_output, index=False)
+
+plt.close("all")
+ax = stacked2.plot(x='rest_wave', y='fweightavg', linewidth=0.5, color='k', drawstyle="steps-post")
+stacked2.plot(x='rest_wave', y='fweightavg_u', linewidth=1, color='grey', ax=ax, drawstyle="steps-post")
+plt.plot(stacked2.rest_wave, stacked2.Ngal / stacked2.Ngal.max(), color='green', linewidth=1)
+plt.plot((1000,2000), (1,1), color='grey', linewidth=1)
+plt.ylim(0,1.5)
+plt.show()
+
 # This works!  Columns are a bit ugly, but it works
+
+
 
 # Now, read this in using the same software to plot the stacked mage spectrum...  Will need to change column names
 

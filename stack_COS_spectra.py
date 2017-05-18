@@ -55,10 +55,11 @@ def get_the_spectra(filenames) :
     return(df)  # return a dictionary of dataframes of spectra
 
 # STILL WORKING ON THIS...
-** THIS IS BROKEN <STOPPED HERE> FIX IT FROM HERE.*****
+#** THIS IS BROKEN <STOPPED HERE> FIX IT FROM HERE.*****
 def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convolve and rebin the COS spectra to simulate MagE data.
-    idf = {}  ; newdf = {}
+    idf = {}  ; ndf = {}  # intermediate and new data frames
     for this in df.keys() : #for each spectrum dataframe
+        print "DEBUGGING", this
         # I have high spectral resolution R1 & oversampled.
         # This function rebins to critically sampled, then convolves w Gaussian, then rebins again to R=R2.
         # Start by rebinning to an intermediate wavelength array. R=2E4 nyquist=2.2.
@@ -69,13 +70,13 @@ def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convo
         # assuming destination is also a critically-sampled array
         kern_fwhm = np.sqrt((R1/R2)**2 - 1.)
         kern = astropy.convolution.Gaussian1DKernel(gaussian_fwhm_to_sigma * kern_fwhm)
-        idf[this]['smooth']   = astropy.convolution.convolve(newdf[this]['flam'].as_matrix(),   kern, boundary='fill', fill_value=np.nan)
-        idf[this]['smooth_u'] = astropy.convolution.convolve(newdf[this]['flam_u'].as_matrix(), kern, boundary='fill', fill_value=np.nan)
+        idf[this]['smooth']   = astropy.convolution.convolve(idf[this]['flam'].as_matrix(),   kern, boundary='fill', fill_value=np.nan)
+        idf[this]['smooth_u'] = astropy.convolution.convolve(idf[this]['flam_u'].as_matrix(), kern, boundary='fill', fill_value=np.nan)
         # Should we be doing soemthing smarter here with smooth_u?
         ndf[this] = pandas.DataFrame(data=pandas.Series(new_wave), columns=('obswave',))
         ndf[this]['flam']   = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth'],   new_wave)
         ndf[this]['flam_u'] = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth_u'], new_wave)
-    return(idf, newdf)
+    return(idf, ndf)
     
  
 def flag_geoMW_lines(df, geoMW_linelist, vmask, Lyamask) :

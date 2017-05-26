@@ -8,7 +8,7 @@ precompiled by STScI, and does several things, including:
 The big picture here is the window of low background is, for many wavelengths
 and ecliptic latitudes, much smaller than the window of JWST observability.
 See related memo on NGIN, JWST-RPT-034230
-    Jane.Rigby@nasa.gov, Apr 2017.
+  Jane.Rigby@nasa.gov, Apr 2017.
 
  Here is the schema for the precompiled background cache.
  (I verified the schema against the source code, generate_stray_light_with_threads.c)
@@ -38,7 +38,6 @@ import numpy as np
 import pandas
 from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
-from cycler import cycler
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
 

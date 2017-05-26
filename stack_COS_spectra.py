@@ -18,7 +18,7 @@ from astropy.stats import sigma_clip, sigma_clipped_stats
 from astropy.stats import gaussian_fwhm_to_sigma
 import astropy.convolution
 
-def get_the_redshifts(filename='stack_samp.txt') :
+def get_redshifts(filename='stack_samp.txt') :
     colnames = ('galname', 'zz', 'has_G130M', 'has_G160M')  #has=1 is True
     zzlist = pandas.read_csv(filename, comment="#", names=colnames)
     return(zzlist)
@@ -37,14 +37,20 @@ def get_stacked_linelist(vmask=300., Lyamask=1000.) :  # need a linelist to flag
     (LL, foobar) = jrr.mage.get_linelist(line_path + "stacked.linelist")
     LL['vmask'] = vmask
     LL.loc[LL['lab1'] == 'H I', 'vmask'] = Lyamask
-    return(LL)
+    LL2 = LL.loc[LL['type'].ne("PHOTOSPHERE")]  # don't mask photospheric lines
+    return(LL2)
      
-def get_the_spectra(filenames) :
+def get_spectra(filenames) :
     df = {}
     for this in filenames :
         #print "loading file ", this
         colnames = ('obswave', 'flam', 'flam_u')   # Units are 1E-14 erg/s/cm^2/A
         df[this] = pandas.read_table(this, delim_whitespace=True, comment="#", names=colnames)
+        prepare_spectra(df)
+    return(df)  # return a dictionary of dataframes of spectra
+
+def prepare_spectra(df) :   # Process the spectra dataframes for use later
+    for this in df.keys() :
         df[this]['Nfiles'] = 1 # N of exposures that went into this spectrum
         df[this]['badmask']   = False
         df[this]['linemask']  = False
@@ -52,15 +58,12 @@ def get_the_spectra(filenames) :
         df[this]['stackmask'] = False
         df[this].loc[df[this]['flam_u'] == 0.00, 'badmask'] = True   # flag bad values
         jrr.spec.calc_dispersion(df[this], colwave='obswave', coldisp='obsdisp')
-    return(df)  # return a dictionary of dataframes of spectra
-
-# STILL WORKING ON THIS...
-#** THIS IS BROKEN <STOPPED HERE> FIX IT FROM HERE.*****
+    return(0)
+    
 def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convolve and rebin the COS spectra to simulate MagE data.
     idf = {}  ; ndf = {}  # intermediate and new data frames
     for this in df.keys() : #for each spectrum dataframe
-        print "DEBUGGING", this
-        # I have high spectral resolution R1 & oversampled.
+        # Input is oversampled spectrum with high spectral resolution R1.
         # This function rebins to critically sampled, then convolves w Gaussian, then rebins again to R=R2.
         # Start by rebinning to an intermediate wavelength array. R=2E4 nyquist=2.2.
         idf[this] = pandas.DataFrame(data=pandas.Series(intermed_wave), columns=('obswave',))
@@ -76,8 +79,9 @@ def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convo
         ndf[this] = pandas.DataFrame(data=pandas.Series(new_wave), columns=('obswave',))
         ndf[this]['flam']   = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth'],   new_wave)
         ndf[this]['flam_u'] = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth_u'], new_wave)
+    prepare_spectra(idf) ; prepare_spectra(ndf)
     return(idf, ndf)
-    
+
  
 def flag_geoMW_lines(df, geoMW_linelist, vmask, Lyamask) :
     geoMW_linelist['vmask'] = vmask
@@ -114,61 +118,74 @@ def deredshift_all_spectra(df, zzlist) :
         jrr.spec.calc_dispersion(df[this], colwave='rest_wave', coldisp='rest_disp')
     return()
 
+def wrapper_fit_continuua(df, smooth_length, debug=False) : 
+    print "Fitting Continuua (target  grating redshift)"
+    for this in df.keys() : 
+        (galname, grating, redshift) =  from_filename_get_props(this, zzlist)
+        print "      ", galname, grating, redshift
+        df[this].loc[df[this]['badmask'],        'contmask'] = True   # Prepare mask for continuum fitting
+        df[this].loc[df[this]['geoMWlinemask'],  'contmask'] = True
+        df[this].loc[df[this]['badmask'],        'stackmask'] = True  # Prepare mask for stacking
+        df[this].loc[df[this]['geoMWlinemask'],  'stackmask'] = True
+
+        boxcar = jrr.spec.get_boxcar4autocont(df[this], smooth_length)
+        jrr.spec.fit_autocont(df[this], LL, 0.0, colv2mask='vmask', boxcar=boxcar, flag_lines=True, colwave='rest_wave', colf='rest_flam', colmask='contmask', colcont='rest_flam_autocont')
+        df[this]['rflam_norm']  = df[this]['rest_flam']  / df[this]['rest_flam_autocont']    # Normalize by continuum here.
+        df[this]['rflamu_norm'] = df[this]['rest_flam_u']/ df[this]['rest_flam_autocont']
+        if debug : # Plot the continuum fits
+            fig = plt.figure(figsize=(20,4))
+            plt.clf()
+            plt.plot(df[this]['rest_wave'], df[this]['rest_flam'], color='black', linewidth=1)
+            used_for_cont = df[this].loc[df[this]['contmask'] == False]
+            plt.plot(used_for_cont['rest_wave'], used_for_cont['rest_flam'], color='grey', linewidth=1)
+            plt.ylim(0,3)
+            plt.plot(df[this]['rest_wave'], df[this]['rest_flam_autocont'], color='green', linewidth=1)
+            #plt.plot(df[this]['rest_wave'], df[this]['contmask'], color='red', linewidth=1)
+            plt.xlabel("rest wavelength")
+            print "Plotting", this, galname, grating, redshift
+            plt.show()
+    return(0)
+
+
 # Set parameters
 #                          Velocity to mask features for continuum fitting, and stacking, +-, in km/s
 geoMW_vmask      = 300.  # Mask Geocoronal and Milky Way emission for most lines.  Mask for continuum and stacking 
 Lya_geoMW_mask   = 3000. # Larger mask for Milky Way damped Lyman alpha.  Mask for continuum and stacking.
-starburst_vmask  = 1000.  # mask lines when fitting continuum.  Leave in stack
-Lya_starburst    = 1000. # Mask Lya when fitting continuum.  Leave in stack.
-smooth_length = 20. # rest-frame Angstroms.  Smoothing length for continuum fitting.  
+starburst_vmask  = 500.  # mask lines when fitting continuum.  Leave in stack
+Lya_starburst    = 2000. # Mask Lya when fitting continuum.  Leave in stack.
+smooth_length_origR = 20. # rest-frame Angstroms.  Smoothing length for continuum fitting.
+smooth_length_likeMage= 50.
+R2E4_wavear  = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 2E4, 2.2)  # desired wavelength array for COS, nyquist sampled at R=2E4
+R3500_wavear = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 3500, 2.2) # appropriate output wavelength array for simulated-MagE stack
 
 # NOW DO THINGS
-zzlist = get_the_redshifts()
+zzlist = get_redshifts()
 filenames =  [ basename(x) for x in glob.glob(indir + "*G*M") ]    # Find the files. 
 print "Loading spectra"
-#df = get_the_spectra(filenames)                 # load spectra into dict of dataframes
-df = get_the_spectra(filenames[0:10])  # DEBUGGING, subset is faster *****
+#df = get_spectra(filenames)                 # load spectra into dict of dataframes
+df = get_spectra(filenames[:20])  # DEBUGGING, subset is faster *****
 geoMW_linelist =  get_MW_geocoronal_linelist()  # Line list, prepartory to masking geocoronal & MW lines
 flag_geoMW_lines(df, geoMW_linelist, geoMW_vmask, Lya_geoMW_mask)  # Flag the geocoronal and MW emission.
 deredshift_all_spectra(df, zzlist)
 LL = get_stacked_linelist(starburst_vmask, Lya_starburst) 
+wrapper_fit_continuua(df, smooth_length_origR, debug=False)
 
-print "Fitting Continuua (target  grating redshift)"
-for this in df.keys() : 
-    (galname, grating, redshift) =  from_filename_get_props(this, zzlist)
-    print "      ", galname, grating, redshift
-    df[this].loc[df[this]['badmask'],        'contmask'] = True   # Prepare mask for continuum fitting
-    df[this].loc[df[this]['geoMWlinemask'],  'contmask'] = True
-    df[this].loc[df[this]['badmask'],        'stackmask'] = True  # Prepare mask for stacking
-    df[this].loc[df[this]['geoMWlinemask'],  'stackmask'] = True
-    
-    boxcar = jrr.spec.get_boxcar4autocont(df[this], smooth_length)
-    jrr.spec.fit_autocont(df[this], LL, 0.0, colv2mask='vmask', boxcar=boxcar, flag_lines=True, colwave='rest_wave', colf='rest_flam', colmask='contmask', colcont='rest_flam_autocont')
-    df[this]['rflam_norm']  = df[this]['rest_flam']  / df[this]['rest_flam_autocont']    # Normalize by continuum here.
-    df[this]['rflamu_norm'] = df[this]['rest_flam_u']/ df[this]['rest_flam_autocont']
-    if False : # Plot the continuum fits
-        fig = plt.figure(figsize=(20,4))
-        plt.clf()
-        plt.plot(df[this]['obswave'], df[this]['rest_flam'], color='black', linewidth=1)
-        used_for_cont = df[this].loc[df[this]['contmask'] == False]
-        plt.plot(used_for_cont['obswave'], used_for_cont['rest_flam'], color='grey', linewidth=1)
-        plt.ylim(0,3)
-        plt.plot(df[this]['obswave'], df[this]['rest_flam_autocont'], color='green', linewidth=1)
-        plt.xlabel("Observed wavelength")
-        print "Plotting", this, galname, grating, redshift
-        plt.show()
+# To make a stack w spectral resoln matched to MagE, repeat this for ndf
+(idf, ndf) = blur_the_spectra(df, R2E4_wavear, R3500_wavear, R1=2.0E4, R2=3500.)
+flag_geoMW_lines(ndf, geoMW_linelist, geoMW_vmask, Lya_geoMW_mask)  # Flag the geocoronal and MW emission.
+deredshift_all_spectra(ndf, zzlist)
+wrapper_fit_continuua(ndf, smooth_length_likeMage, debug=False)
 
-        
-# STACKING HAPPENS HERE
-R2E4_wavear  = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 2E4, 2.2)  # desired wavelength array for COS, nyquist sampled at R=2E4
-R3500_wavear = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 3500, 2.2) # appropriate output wavelength array for simulated-MagE stack
 
+# STACKING STARTS HERE
+
+# Make stack, with output array nyquist sampled for COS
 stacked =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R2E4_wavear)
 stacked_output = "stacked_COS_spectrum_R2E4.csv"
 stacked.to_csv(stacked_output, index=False)
 
-# because we haven't also convolved input spectra to R=3500
-stacked2 =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R3500_wavear)
+# Make stack, with spectral resolution matched to MagE
+stacked2 =  jrr.spec.stack_spectra(ndf, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R3500_wavear)
 stacked_output = "stacked_COS_spectrum_R3500.csv"
 stacked2.to_csv(stacked_output, index=False)
 
@@ -191,8 +208,6 @@ plt.show()
 # This works!  Columns are a bit ugly, but it works
 
 
-
-# Now, read this in using the same software to plot the stacked mage spectrum...  Will need to change column names
 
 
 

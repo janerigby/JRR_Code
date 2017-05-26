@@ -32,7 +32,7 @@ plt.close("all")
 
 # May 2017, compare our COS stack to the MagE stack.
 sp1, dummyLL   = jrr.mage.open_stacked_spectrum(mage_mode, colfnu=colfnu[0], colfnuu=colfnuu[0])
-cos  = jrr.mage.read_our_COS_stack(resoln="matched_mage")
+cos  = jrr.mage.read_our_COS_stack(resoln="matched_mage")\revisedApJ{
 the_dfs = [sp1, cos]
 the_zzs = [0.0, 0.0]
 colortab = ('black', 'blue')

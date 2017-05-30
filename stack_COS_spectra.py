@@ -57,6 +57,8 @@ def prepare_spectra(df) :   # Process the spectra dataframes for use later
         df[this]['contmask']  = False
         df[this]['stackmask'] = False
         df[this].loc[df[this]['flam_u'] == 0.00, 'badmask'] = True   # flag bad values
+        df[this].loc[df[this]['flam_u'] == 0.00, 'flam_u']  = 1E6   # flag bad values
+        df[this].loc[df[this]['flam_u'] == 0.00, 'flam']  = np.nan  # flag bad values
         jrr.spec.calc_dispersion(df[this], colwave='obswave', coldisp='obsdisp')
     return(0)
     
@@ -163,29 +165,30 @@ zzlist = get_redshifts()
 filenames =  [ basename(x) for x in glob.glob(indir + "*G*M") ]    # Find the files. 
 print "Loading spectra"
 #df = get_spectra(filenames)                 # load spectra into dict of dataframes
-df = get_spectra(filenames[:20])  # DEBUGGING, subset is faster *****
+df = get_spectra(filenames[0:20])  # DEBUGGING, subset is faster *****
 geoMW_linelist =  get_MW_geocoronal_linelist()  # Line list, prepartory to masking geocoronal & MW lines
 flag_geoMW_lines(df, geoMW_linelist, geoMW_vmask, Lya_geoMW_mask)  # Flag the geocoronal and MW emission.
 deredshift_all_spectra(df, zzlist)
 LL = get_stacked_linelist(starburst_vmask, Lya_starburst) 
 wrapper_fit_continuua(df, smooth_length_origR, debug=False)
 
-# To make a stack w spectral resoln matched to MagE, repeat this for ndf
-(idf, ndf) = blur_the_spectra(df, R2E4_wavear, R3500_wavear, R1=2.0E4, R2=3500.)
-flag_geoMW_lines(ndf, geoMW_linelist, geoMW_vmask, Lya_geoMW_mask)  # Flag the geocoronal and MW emission.
-deredshift_all_spectra(ndf, zzlist)
-wrapper_fit_continuua(ndf, smooth_length_likeMage, debug=False)
+# To make a stack w spectral resoln matched to MagE, repeat this for df2
+(idf, df2) = blur_the_spectra(df, R2E4_wavear, R3500_wavear, R1=2.0E4, R2=3500.)
+flag_geoMW_lines(df2, geoMW_linelist, geoMW_vmask, Lya_geoMW_mask)  # Flag the geocoronal and MW emission.
+deredshift_all_spectra(df2, zzlist)
+wrapper_fit_continuua(df2, smooth_length_likeMage, debug=False)
 
 
 # STACKING STARTS HERE
 
 # Make stack, with output array nyquist sampled for COS
-stacked =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R2E4_wavear)
+(stacked, nf, nf_u) =  jrr.spec.stack_spectra(df, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R2E4_wavear)
 stacked_output = "stacked_COS_spectrum_R2E4.csv"
 stacked.to_csv(stacked_output, index=False)
 
 # Make stack, with spectral resolution matched to MagE
-stacked2 =  jrr.spec.stack_spectra(ndf, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R3500_wavear)
+(stacked2, nf2, nf_u2) =  jrr.spec.stack_spectra(df2, colwave='rest_wave', colf='rflam_norm', colfu='rflamu_norm', colmask='stackmask', output_wave_array=R3500_wavear)
+
 stacked_output = "stacked_COS_spectrum_R3500.csv"
 stacked2.to_csv(stacked_output, index=False)
 
@@ -205,9 +208,17 @@ plt.plot((1000,2000), (1,1), color='grey', linewidth=1)
 plt.ylim(0,1.5)
 plt.show()
 
-# This works!  Columns are a bit ugly, but it works
 
-
+plt.close("all")
+ax = stacked.plot(x='rest_wave', y='fweightavg', linewidth=0.5, color='k', drawstyle="steps-post")
+stacked.plot(x='rest_wave', y='fweightavg_u', linewidth=1, color='grey', ax=ax, drawstyle="steps-post")
+plt.plot(stacked.rest_wave, stacked.Ngal / stacked.Ngal.max(), color='green', linewidth=1)
+stacked2.plot(x='rest_wave', y='fweightavg', linewidth=0.5, color='blue', drawstyle="steps-post", ax=ax)
+stacked2.plot(x='rest_wave', y='fweightavg_u', linewidth=1, color='lightgrey', ax=ax, drawstyle="steps-post")
+plt.plot(stacked2.rest_wave, stacked2.Ngal / stacked2.Ngal.max(), color='purple', linewidth=1)
+plt.plot((1000,2000), (1,1), color='grey', linewidth=1)
+plt.ylim(0,1.5)
+plt.show()
 
 
 

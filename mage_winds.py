@@ -127,6 +127,15 @@ def plot_wind_stack() :
             jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol)
             plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya_S99.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close("all")
+
+    cos_df = jrr.mage.read_our_COS_stack(resoln="full")
+    jrr.plot.velocity_overplot(cos_df.rest_wave, cos_df.fweightavg, line_label_Heck, line_center_Heck, 0.0, -1600, 500, (8,5), colortab=mycol)
+    plt.savefig("COS_R2E4_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
+    plt.clf()
+    cos_df2 = jrr.mage.read_our_COS_stack(resoln="matched_mage")
+    jrr.plot.velocity_overplot(cos_df2.rest_wave, cos_df2.fweightavg, line_label_Heck, line_center_Heck, 0.0, -1600, 500, (8,5), colortab=mycol)
+    plt.savefig("COS_R3500_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
+    plt.clf()
     return(0)
     
 # Conclusion:  it takes about 2500 km/s for the continuum to recover blueward of the SiIV,
@@ -215,7 +224,7 @@ def plot_OVI_forJC() :
     
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
-#plot_wind_stack()     # outdir = ("StdStack", "StackA")
+plot_wind_stack()     # outdir = ("StdStack", "StackA")
 #plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/
 #plot_some_CIV()     # .

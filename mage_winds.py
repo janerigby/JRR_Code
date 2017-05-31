@@ -78,11 +78,15 @@ def plot_wind_stack() :
     for ii, which_stack in enumerate(stack_choices) :
         print "STATUS:  Plotting wind lines for MagE stack ", outdir[ii]
         (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack=which_stack, addS99=True)
-        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,), (zz,), "wtdavg "+newlabel[ii], LL, zz, drawunity=unity[ii])       
-        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "median "+ newlabel[ii], LL, zz, drawunity=unity[ii])       
+        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,), (zz,), "wtdavg "+newlabel[ii], LL, zz, drawunity=unity[ii])
+        print "Got to here 1"
+        plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "median "+ newlabel[ii], LL, zz, drawunity=unity[ii])
+        print "Got to here 2"
         plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,),       (zz,), "", LL, zz)
         plot_photospheric_lines(pdir+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "", LL, zz)
+        print "Got to here 3"
         if which_stack == "Stack-A"  :  # S99 was fit to Stack-A, not to the standard stack
+            print "Got to here 4"
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgwS99-", (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "wtdavg "+newlabel[1], LL, zz)
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgdivbyS99-", (sp.wave,), (sp.X_avg/sp.fnu_s99model,), (sp.X_sigma/sp.fnu_s99model,), (zz,), "wtdavgdivbyS99 "+newlabel[1], LL, zz, drawunity=True)
             plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavgwS99-",          (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "", LL, zz)            
@@ -104,7 +108,7 @@ def plot_wind_stack() :
             sp['temp_fnu_u'] = sp['X_jack_std']
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_norm.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
-
+        print "got to here 5"
         mycol = ("goldenrod", "green", "red")
         mycol2 = ("goldenrod", "green", "purple", "red", "blue") 
         print "STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample"
@@ -127,7 +131,7 @@ def plot_wind_stack() :
             jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol)
             plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya_S99.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close("all")
-
+    print "got to here 5"
     cos_df = jrr.mage.read_our_COS_stack(resoln="full")
     jrr.plot.velocity_overplot(cos_df.rest_wave, cos_df.fweightavg, line_label_Heck, line_center_Heck, 0.0, -1600, 500, (8,5), colortab=mycol)
     plt.savefig("COS_R2E4_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)

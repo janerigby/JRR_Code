@@ -32,7 +32,7 @@ plt.close("all")
 
 # May 2017, compare our COS stack to the MagE stack.
 sp1, dummyLL   = jrr.mage.open_stacked_spectrum(mage_mode, colfnu=colfnu[0], colfnuu=colfnuu[0])
-cos  = jrr.mage.read_our_COS_stack(resoln="matched_mage")\revisedApJ{
+cos  = jrr.mage.read_our_COS_stack(resoln="matched_mage")
 the_dfs = [sp1, cos]
 the_zzs = [0.0, 0.0]
 colortab = ('black', 'blue')
@@ -43,7 +43,6 @@ the_dfs = [sp1, cos]
 the_zzs = [0.0, 0.0]
 colortab = ('black', 'blue')
 jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile="MagE_vs_COSR2E4.pdf", plot_cont=True, norm_by_cont=True, apply_bad=False, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='rest_fnu_autocont', title="MagE_vs_COS", waverange=(1000,3000), colortab=colortab)
-
 
 
 # Plot the standard stacks

@@ -20,15 +20,12 @@ def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, label
     vwin = 4000. # +- velocity window (km/s) to consider a line
     Ncol = 1
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_a, line_center_a, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
-    plt.show() # TEMP
     plt.savefig(prefix + "a.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_b, line_center_b, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
-    plt.show() # TEMP
     plt.savefig(prefix + "b.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     jrr.plot.boxplot_Nspectra(thewaves, thefnus, thedfnus, thezs, line_label_c, line_center_c, vwin, Ncol, LL, extra_label=label, colortab=colortab, ymax=ymax, verbose=False, drawunity=drawunity)
-    plt.show() # TEMP
     plt.savefig(prefix + "c.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
     plt.close("all")
@@ -78,6 +75,7 @@ def plot_wind_stack() :
     for ii, which_stack in enumerate(stack_choices) :
         print "STATUS:  Plotting wind lines for MagE stack ", outdir[ii]
         (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack=which_stack, addS99=True)
+        print "got to here 0"
         plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,), (zz,), "wtdavg "+newlabel[ii], LL, zz, drawunity=unity[ii])
         print "Got to here 1"
         plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "median "+ newlabel[ii], LL, zz, drawunity=unity[ii])

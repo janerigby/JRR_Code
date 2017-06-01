@@ -4,8 +4,8 @@
     jane.rigby@nasa.gov, 4/2017
 '''
 
-#indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir.
-indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
+indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir  Satchmo
+#indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
 
 import jrr
 import glob
@@ -165,7 +165,7 @@ zzlist = get_redshifts()
 filenames =  [ basename(x) for x in glob.glob(indir + "*G*M") ]    # Find the files. 
 print "Loading spectra"
 df = get_spectra(filenames)                 # load spectra into dict of dataframes
-#df = get_spectra(filenames[0:20])  # DEBUGGING, subset is faster *****
+#df = get_spectra(filenames[0:10])  # DEBUGGING, subset is faster *****
 geoMW_linelist =  get_MW_geocoronal_linelist()  # Line list, prepartory to masking geocoronal & MW lines
 flag_geoMW_lines(df, geoMW_linelist, geoMW_vmask, Lya_geoMW_mask)  # Flag the geocoronal and MW emission.
 deredshift_all_spectra(df, zzlist)

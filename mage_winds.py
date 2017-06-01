@@ -14,6 +14,39 @@ mage_mode = "reduction"
 #mage_mode = "released"
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 
+
+##########   SETUP
+# Define the lines to plot
+line_label_a         = ('Lya', 'O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
+line_center_a = array((1215.6701, 1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))      
+line_label_b  =  ('MgII2796', 'FeII2344', 'FeII2383')
+line_center_b = array((2796.352,  2344.214,  2382.765))
+line_label_c     = ("Al III 1854", "Si IV 1393", "C IV 1548", "N V 1238")
+line_center_c = array((1854.72, 1393.76, 1548.19,  1238.82))
+line_label_extra  = ("OVI 1031", "OVI 1037", "CIII] 1907", "C II] 2326", "OIII] 1660", "O II] 2470", "SiII] 2335", "HeII1640", "SiIII 1882", "SiIII 1892", "LyB", "SiIV1402", "Fe II 2600", "S II 1259")
+line_center_extra =array((1031.9261, 1037.6167, 1906.68, 2326.00, 1660.81, 2470.97, 2335.123, 1640.42,  1883.00, 1892.03, 1025.7223, 1402.770, 2600.1729, 1259.519))
+line_label_all  = line_label_a  + line_label_b  + line_label_c + line_label_extra
+line_center_all = concatenate((line_center_a, line_center_b, line_center_c, line_center_extra))
+
+# Photospheric features that John Chisholm and JR identified as strong in the stack.
+line_label_p  = ("CIII 1247", "C_III 1296", "CII 1323", "OIV 1343", "SiIII 1417", "SiII 1485", "SV 1501",
+                 "CIII 1620", "FeV 1662", "FeIV 1717", "FeIII 1930 complex", "FeIII 1956 complex", "CIII 2297")
+line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24,    1485.40,        1501.76,
+                  1620.40,     1662.32,   1717.90,      1930.39,               1953.33, 2297.58))
+
+line_label_Heck  = ('S II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  
+line_center_Heck = array((1260.4221, 1334.5323,   1206.500, 1393.76, 1084.5659))
+mycol = ("goldenrod", "green", "red")
+mycol2 = ("goldenrod", "green", "purple", "red", "blue") 
+
+line_label_Heck2  = ('Si II 1526', 'S II 1260', 'C II 1334', 'Si IV 1393')   #'Si III 1206'
+line_center_Heck2 = array((1526.7066, 1260.4221, 1334.5323,   1393.76))  # 1206.500,
+# Housekeeping
+zz = 0.0  # stacked spectrum is already in rest frame wavelength
+pdir = "Photospheric"
+
+
+
 def plot_winds_neutral_stellar(prefix, thewaves, thefnus, thedfnus, thezs, label="", LL=[], z_sys=0.0, colortab=False, drawunity=False) :
     ''' thewaves, thefnus, thedfnus, thezs are TUPLES of arrays of wavelength, fnu, sigma, and redshift.  If only plotting one, use thewaves=(wave_array,) '''
     ymax= [1.5]
@@ -43,27 +76,8 @@ def plot_photospheric_lines(prefix, thewaves, thefnus, thedfnus, thezs, label=""
     plt.close("all")
     return(0)
     
-# Define the lines to plot
-line_label_a         = ('Lya', 'O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
-line_center_a = array((1215.6701, 1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))      
-line_label_b  =  ('MgII2796', 'FeII2344', 'FeII2383')
-line_center_b = array((2796.352,  2344.214,  2382.765))
-line_label_c     = ("Al III 1854", "Si IV 1393", "C IV 1548", "N V 1238")
-line_center_c = array((1854.72, 1393.76, 1548.19,  1238.82))
-line_label_extra  = ("OVI 1031", "OVI 1037", "CIII] 1907", "C II] 2326", "OIII] 1660", "O II] 2470", "SiII] 2335", "HeII1640", "SiIII 1882", "SiIII 1892", "LyB", "SiIV1402", "Fe II 2600", "S II 1259")
-line_center_extra =array((1031.9261, 1037.6167, 1906.68, 2326.00, 1660.81, 2470.97, 2335.123, 1640.42,  1883.00, 1892.03, 1025.7223, 1402.770, 2600.1729, 1259.519))
-line_label_all  = line_label_a  + line_label_b  + line_label_c + line_label_extra
-line_center_all = concatenate((line_center_a, line_center_b, line_center_c, line_center_extra))
 
-# Photospheric features that John Chisholm and JR identified as strong in the stack.
-line_label_p  = ("CIII 1247", "C_III 1296", "CII 1323", "OIV 1343", "SiIII 1417", "SiII 1485", "SV 1501",
-                 "CIII 1620", "FeV 1662", "FeIV 1717", "FeIII 1930 complex", "FeIII 1956 complex", "CIII 2297")
-line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24,    1485.40,        1501.76,
-                  1620.40,     1662.32,   1717.90,      1930.39,               1953.33, 2297.58))
-    
-# housekeeping
-zz = 0.0  # stacked spectrum is already in rest frame wavelength
-pdir = "Photospheric"
+
 
 def plot_wind_stack() :
     stack_choices = ("standard", "Stack-A", "divbys99")
@@ -75,16 +89,11 @@ def plot_wind_stack() :
     for ii, which_stack in enumerate(stack_choices) :
         print "STATUS:  Plotting wind lines for MagE stack ", outdir[ii]
         (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack=which_stack, addS99=True)
-        print "got to here 0"
         plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,), (zz,), "wtdavg "+newlabel[ii], LL, zz, drawunity=unity[ii])
-        print "Got to here 1"
         plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "median "+ newlabel[ii], LL, zz, drawunity=unity[ii])
-        print "Got to here 2"
         plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.X_avg,), (sp.X_sigma,),       (zz,), "", LL, zz)
         plot_photospheric_lines(pdir+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.X_median,), (sp.X_jack_std,), (zz,), "", LL, zz)
-        print "Got to here 3"
         if which_stack == "Stack-A"  :  # S99 was fit to Stack-A, not to the standard stack
-            print "Got to here 4"
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgwS99-", (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "wtdavg "+newlabel[1], LL, zz)
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavgdivbyS99-", (sp.wave,), (sp.X_avg/sp.fnu_s99model,), (sp.X_sigma/sp.fnu_s99model,), (zz,), "wtdavgdivbyS99 "+newlabel[1], LL, zz, drawunity=True)
             plot_photospheric_lines(pdir+"/"+outdir[ii]+"-wtdavgwS99-",          (sp.wave,sp.wave), (sp.X_avg,    sp.fnu_s99model), (sp.X_sigma,    sp.wave*0), (zz,zz), "", LL, zz)            
@@ -106,12 +115,7 @@ def plot_wind_stack() :
             sp['temp_fnu_u'] = sp['X_jack_std']
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_norm.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
-        print "got to here 5"
-        mycol = ("goldenrod", "green", "red")
-        mycol2 = ("goldenrod", "green", "purple", "red", "blue") 
         print "STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample"
-        line_label_Heck  = ('S II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  
-        line_center_Heck = array((1260.4221, 1334.5323,   1206.500, 1393.76, 1084.5659))  
         jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol2)
         plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
         plt.clf()
@@ -129,16 +133,7 @@ def plot_wind_stack() :
             jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol)
             plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya_S99.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.close("all")
-    print "got to here 5"
-    cos_df = jrr.mage.read_our_COS_stack(resoln="full")
-    jrr.plot.velocity_overplot(cos_df.rest_wave, cos_df.fweightavg, line_label_Heck, line_center_Heck, 0.0, -1600, 500, (8,5), colortab=mycol)
-    plt.savefig("COS_R2E4_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
-    plt.clf()
-    cos_df2 = jrr.mage.read_our_COS_stack(resoln="matched_mage")
-    jrr.plot.velocity_overplot(cos_df2.rest_wave, cos_df2.fweightavg, line_label_Heck, line_center_Heck, 0.0, -1600, 500, (8,5), colortab=mycol)
-    plt.savefig("COS_R3500_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
-    plt.clf()
-    return(0)
+
     
 # Conclusion:  it takes about 2500 km/s for the continuum to recover blueward of the SiIV,
 # C IV, and Al III wind lines.  This must be related to the max or term velocity of the wind.
@@ -146,6 +141,23 @@ def plot_wind_stack() :
 # How quickly do the ISM lines recover?  (get from FeII 2600, MgII)
 # Can Separating ISM from wind kinematics.
 # And then go read stis papers; is the high-vel tail interesting?
+
+def plot_Heckman_like() :
+    (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
+    cos_df = jrr.mage.read_our_COS_stack(resoln="full")
+    jrr.plot.velocity_overplot(cos_df.rest_wave, cos_df.fweightavg, line_label_Heck2, line_center_Heck2, 0.0, -1600, 500, (8,5), colortab=mycol2)
+    plt.savefig("COS_R2E4_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
+    plt.clf()
+
+    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.fweightavg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2))
+    plt.savefig("COS_R2E4_likeHeckman2015_wtdavg.pdf", bbox_inches='tight', pad_inches=0.1)
+
+    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_median, cos_df.fmedian),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2))
+    plt.savefig("COS_R2E4_likeHeckman2015_median.pdf", bbox_inches='tight', pad_inches=0.1)
+
+    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.favg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2))
+    plt.savefig("COS_R2E4_likeHeckman2015_avg.pdf", bbox_inches='tight', pad_inches=0.1)
+    return(0)
 
 
 def plot_wind_indy() :
@@ -226,7 +238,8 @@ def plot_OVI_forJC() :
     
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
-plot_wind_stack()     # outdir = ("StdStack", "StackA")
+#plot_wind_stack()     # outdir = ("StdStack", "StackA")
+plot_Heckman_like()
 #plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/
 #plot_some_CIV()     # .

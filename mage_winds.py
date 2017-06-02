@@ -149,13 +149,13 @@ def plot_Heckman_like() :
     plt.savefig("COS_R2E4_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
     plt.clf()
 
-    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.fweightavg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2))
+    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.fweightavg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,1))
     plt.savefig("COS_R2E4_likeHeckman2015_wtdavg.pdf", bbox_inches='tight', pad_inches=0.1)
 
-    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_median, cos_df.fmedian),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2))
+    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_median, cos_df.fmedian),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,1))
     plt.savefig("COS_R2E4_likeHeckman2015_median.pdf", bbox_inches='tight', pad_inches=0.1)
 
-    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.favg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2))
+    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.favg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,1))
     plt.savefig("COS_R2E4_likeHeckman2015_avg.pdf", bbox_inches='tight', pad_inches=0.1)
     return(0)
 

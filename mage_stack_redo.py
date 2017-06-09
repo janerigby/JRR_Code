@@ -153,7 +153,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     np.savetxt(outfile, np.transpose([wave_stack, X_avg, X_clipavg, X_median, X_sigma, X_jack_std,  X_Ngal]), "%.3f  %.2E  %.2E  %.2E  %.2E %.2E  %d", header=head, comments="")
     maskout_head = "#This mask shows which galaxies were stacked at each wavelength. 0=gal used.  1=gal masked out.\n"
     outfile = long_rootname + "_maskused.txt"
-    jack_head = "wave   " + re.sub("\n", "", str(specs.short_label.values))
+    jack_head = "restwave   " + re.sub("\n", "", str(specs.short_label.values))
     jack_head = re.sub("'", "", jack_head)
     jack_head = re.sub("\[", "", jack_head)
     jack_head = re.sub("\]", "", jack_head)

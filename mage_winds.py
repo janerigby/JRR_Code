@@ -34,13 +34,13 @@ line_label_p  = ("CIII 1247", "C_III 1296", "CII 1323", "OIV 1343", "SiIII 1417"
 line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24,    1485.40,        1501.76,
                   1620.40,     1662.32,   1717.90,      1930.39,               1953.33, 2297.58))
 
-line_label_Heck  = ('S II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  
+line_label_Heck  = ('Si II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  
 line_center_Heck = array((1260.4221, 1334.5323,   1206.500, 1393.76, 1084.5659))
 mycol = ("goldenrod", "green", "red")
 mycol2 = ("goldenrod", "green", "purple", "red", "blue") 
 
-line_label_Heck2  = ('Si II 1526', 'S II 1260', 'C II 1334', 'Si IV 1393')   #'Si III 1206'
-line_center_Heck2 = array((1526.7066, 1260.4221, 1334.5323,   1393.76))  # 1206.500,
+line_label_Heck2  = ('Si II 1526', 'Si II 1260', 'C II 1334', 'Si IV 1393')  
+line_center_Heck2 = array((1526.7066, 1260.4221, 1334.5323,   1393.76))  
 # Housekeeping
 zz = 0.0  # stacked spectrum is already in rest frame wavelength
 pdir = "Photospheric"
@@ -76,8 +76,6 @@ def plot_photospheric_lines(prefix, thewaves, thefnus, thedfnus, thezs, label=""
     plt.close("all")
     return(0)
     
-
-
 
 def plot_wind_stack() :
     stack_choices = ("standard", "Stack-A", "divbys99")
@@ -124,7 +122,7 @@ def plot_wind_stack() :
             plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1_S99.pdf", bbox_inches='tight', pad_inches=0.1)
             plt.clf()
         print "STATUS: again, but removing the transitions blueward of Lya."
-        line_label_Heck  = ('S II 1260', 'C II 1334',  'Si IV 1393')  
+        line_label_Heck  = ('Si II 1260', 'C II 1334',  'Si IV 1393')  
         line_center_Heck = array((1260.4221, 1334.5323, 1393.76))  
         jrr.plot.velocity_overplot(sp.wave, sp.X_avg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol)
         plt.savefig(outdir[ii]+"/"+outdir[ii]+"-like-heckman2015fig1-onlytrans_redwardlya.pdf", bbox_inches='tight', pad_inches=0.1)
@@ -238,7 +236,7 @@ def plot_OVI_forJC() :
     
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
-#plot_wind_stack()     # outdir = ("StdStack", "StackA")
+plot_wind_stack()     # outdir = ("StdStack", "StackA")
 plot_Heckman_like()
 #plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/

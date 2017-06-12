@@ -4,8 +4,8 @@
     jane.rigby@nasa.gov, 4/2017
 '''
 
-indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir  Satchmo
-#indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
+#indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir  Satchmo
+indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
 
 import jrr
 import glob
@@ -52,10 +52,10 @@ def get_spectra(filenames) :
 def prepare_spectra(df) :   # Process the spectra dataframes for use later
     for this in df.keys() :
         df[this]['Nfiles'] = 1 # N of exposures that went into this spectrum
-        df[this]['badmask']   = False
-        df[this]['linemask']  = False
-        df[this]['contmask']  = False
-        df[this]['stackmask'] = False
+        if not 'badmask'   in df[this].columns :  df[this]['badmask']   = False
+        if not 'linemask'  in df[this].columns :  df[this]['linemask']  = False
+        if not 'contmask'  in df[this].columns :  df[this]['contmask']  = False
+        if not 'stackmask' in df[this].columns :  df[this]['stackmask'] = False
         df[this].loc[df[this]['flam_u'] == 0.00, 'badmask'] = True   # flag bad values
         df[this].loc[df[this]['flam_u'] == 0.00, 'flam_u']  = 1E6   # flag bad values
         df[this].loc[df[this]['flam_u'] == 0.00, 'flam']  = np.nan  # flag bad values
@@ -69,18 +69,21 @@ def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convo
         # This function rebins to critically sampled, then convolves w Gaussian, then rebins again to R=R2.
         # Start by rebinning to an intermediate wavelength array. R=2E4 nyquist=2.2.
         idf[this] = pandas.DataFrame(data=pandas.Series(intermed_wave), columns=('obswave',))
-        idf[this]['flam']   = jrr.spec.rebin_spec_new(df[this]['obswave'], df[this]['flam'],  intermed_wave)
-        idf[this]['flam_u'] = jrr.spec.rebin_spec_new(df[this]['obswave'], df[this]['flam_u'], intermed_wave)
+        idf[this]['flam']    = jrr.spec.rebin_spec_new(df[this]['obswave'], df[this]['flam'],  intermed_wave)
+        idf[this]['flam_u']  = jrr.spec.rebin_spec_new(df[this]['obswave'], df[this]['flam_u'], intermed_wave)
+        idf[this]['badmask'] = jrr.spec.rebin_spec_new(df[this]['obswave'], df[this]['badmask'], intermed_wave)
         # Intermediate wavelength array has pixels to keep R=constant. It is critically sampled.  Now, convolve w Gaussian,
         # assuming destination is also a critically-sampled array
         kern_fwhm = np.sqrt((R1/R2)**2 - 1.)
         kern = astropy.convolution.Gaussian1DKernel(gaussian_fwhm_to_sigma * kern_fwhm)
         idf[this]['smooth']   = astropy.convolution.convolve(idf[this]['flam'].as_matrix(),   kern, boundary='fill', fill_value=np.nan)
         idf[this]['smooth_u'] = astropy.convolution.convolve(idf[this]['flam_u'].as_matrix(), kern, boundary='fill', fill_value=np.nan)
-        # Should we be doing soemthing smarter here with smooth_u?
+        # Should we be doing something smarter here with smooth_u?
         ndf[this] = pandas.DataFrame(data=pandas.Series(new_wave), columns=('obswave',))
-        ndf[this]['flam']   = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth'],   new_wave)
-        ndf[this]['flam_u'] = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth_u'], new_wave)
+        ndf[this]['flam']    = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth'],   new_wave)
+        ndf[this]['flam_u']  = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['smooth_u'], new_wave)
+        ndf[this]['badmask'] = jrr.spec.rebin_spec_new(idf[this]['obswave'], idf[this]['badmask'], new_wave)
+        ndf[this]['badmask'] = ndf[this]['badmask'].astype(bool)  #nans will flag, as will partial values that were rebinned        
     prepare_spectra(idf) ; prepare_spectra(ndf)
     return(idf, ndf)
 
@@ -144,6 +147,7 @@ def wrapper_fit_continuua(df, smooth_length, debug=False) :
             plt.plot(df[this]['rest_wave'], df[this]['rest_flam_autocont'], color='green', linewidth=1)
             #plt.plot(df[this]['rest_wave'], df[this]['contmask'], color='red', linewidth=1)
             plt.xlabel("rest wavelength")
+            plt.xlim(1200,1400)
             print "Plotting", this, galname, grating, redshift
             plt.show()
     return(0)

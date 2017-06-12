@@ -11,10 +11,11 @@ import matplotlib
 
 # FRIDAY TOMORROW, PICK UP HERE WHEN FRESH. ***
 # Good, I am now getting the uncertainty in vmean, vmax by varying the continuum via scalecont.  Hokey but realistic.
-# Measure Si 1260 by hand, continuum is screwed up for both Mage, COS lowres.  
+# Measure Si 1260 by hand, continuum is screwed up for both Mage, COS lowres.
+# Wait, why is Si 1260 screwed up?  Appears to be a continuum fitting problem...
 # Use COS lowres rather than COS R2E4.  It has better noise properties, fairer comparison to MagE.  
 def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red, thecenters, thelabels, IParray, pdfout) :
-    scalecont = np.array((1.0, 1.01, 0.99, 1.02, 0.98))
+    scalecont = np.array((1.0, 1.05, 0.995, 1.01, 0.99, 1.02, 0.98))
     # Measure the velocities and put them in a dataframe
     v_df = pandas.DataFrame(data=np.array(thelabels), columns=('linelab',))
     v_df['linecen'] = thecenters

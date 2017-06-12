@@ -19,14 +19,14 @@ def avg_errorbar(f_this) :
     return( np.mean(np.abs(f_this)))
 
     
-def measure_Lyman_continuum(df, wavcol="rest_wave", fnucol="rest_fnu"):
+def measure_Lyman_continuum(df, colwave="rest_wave", fnucol="rest_fnu"):
     # Need to check whether the wavelength regimes are valid
-    if df[wavcol][0] > Lyc[0] :
+    if df[colwave][0] > Lyc[0] :
         #print "Warning: Lyman continuum not covered for this object"
         packitup = (-99, -99, -99, -99, -99, -99)
     else :
-        f_Lyc = jrr.util.bootstrap_val_confint( df[df[wavcol].between(*Lyc)][fnucol], np.mean) # Median flux in Ly cont
-        f_red = jrr.util.bootstrap_val_confint( df[df[wavcol].between(*red)][fnucol], np.mean)  # and at 1500A
+        f_Lyc = jrr.util.bootstrap_val_confint( df[df[colwave].between(*Lyc)][fnucol], np.mean) # Median flux in Ly cont
+        f_red = jrr.util.bootstrap_val_confint( df[df[colwave].between(*red)][fnucol], np.mean)  # and at 1500A
         # This should be median, not mean, but it is breaking.  Google when off a plane ******
         ratio = f_Lyc[0] / f_red[0]
         ratio_u =  jrr.util.sigma_adivb(f_Lyc[0], avg_errorbar(f_Lyc[1:3]), f_red[0], avg_errorbar(f_red[1:3]))
@@ -34,16 +34,16 @@ def measure_Lyman_continuum(df, wavcol="rest_wave", fnucol="rest_fnu"):
         packitup = (f_Lyc[0], f_Lyc[1], f_Lyc[2], f_red[0], f_red[1], f_red[2], ratio, ratio_u)
     return(packitup)
 
-def plot_the_measurement(df, result, label, zz=0, wavcol="rest_wave", fnucol="rest_fnu") :
+def plot_the_measurement(df, result, label, zz=0, colwave="rest_wave", fnucol="rest_fnu") :
     plt.clf()
     fig = plt.figure(figsize=(12,4))
     ax1 = fig.add_subplot(111)
     ax2 = ax1.twiny()
-    ax1.step(df[wavcol], df[fnucol], color='black', lw=0.5)
+    ax1.step(df[colwave], df[fnucol], color='black', lw=0.5)
     if zz >0 : # Show where extraction may be dodgy
         toobluewave = 3200.
         tooblue = df[df['wave'].lt(toobluewave)]
-        ax1.step(tooblue[wavcol], tooblue[fnucol], color='yellow', lw=0.5)
+        ax1.step(tooblue[colwave], tooblue[fnucol], color='yellow', lw=0.5)
     ax1.plot( Lyc, np.ones_like(Lyc)*result[0], color='blue', lw=2)
     ax1.plot( red, np.ones_like(red)*result[3], color='red',  lw=2)         
     ax1.errorbar( np.mean(Lyc), result[0], xerr=None, yerr=avg_errorbar(result[1:3]), lw=2, color='blue', capthick=2)

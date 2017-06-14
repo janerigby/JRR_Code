@@ -4,8 +4,8 @@
     jane.rigby@nasa.gov, 4/2017
 '''
 
-#indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir  Satchmo
-indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
+indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir  Satchmo
+#indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
 
 import jrr
 import glob
@@ -137,7 +137,7 @@ def wrapper_fit_continuua(df, smooth_length, debug=False) :
         jrr.spec.fit_autocont(df[this], LL, 0.0, colv2mask='vmask', boxcar=boxcar, flag_lines=True, colwave='rest_wave', colf='rest_flam', colmask='contmask', colcont='rest_flam_autocont')
         df[this]['rflam_norm']  = df[this]['rest_flam']  / df[this]['rest_flam_autocont']    # Normalize by continuum here.
         df[this]['rflamu_norm'] = df[this]['rest_flam_u']/ df[this]['rest_flam_autocont']
-        if debug : # Plot the continuum fits
+        if debug and jrr.spec.test_wave_in_spectrum(df[this], 1240., colwave='rest_wave') : # debugging continuum fits.
             fig = plt.figure(figsize=(20,4))
             plt.clf()
             plt.plot(df[this]['rest_wave'], df[this]['rest_flam'], color='black', linewidth=1)
@@ -147,7 +147,7 @@ def wrapper_fit_continuua(df, smooth_length, debug=False) :
             plt.plot(df[this]['rest_wave'], df[this]['rest_flam_autocont'], color='green', linewidth=1)
             #plt.plot(df[this]['rest_wave'], df[this]['contmask'], color='red', linewidth=1)
             plt.xlabel("rest wavelength")
-            plt.xlim(1200,1400)
+            plt.xlim(1200,1300)
             print "Plotting", this, galname, grating, redshift
             plt.show()
     return(0)
@@ -157,7 +157,7 @@ def wrapper_fit_continuua(df, smooth_length, debug=False) :
 #                          Velocity to mask features for continuum fitting, and stacking, +-, in km/s
 geoMW_vmask      = 300.  # Mask Geocoronal and Milky Way emission for most lines.  Mask for continuum and stacking 
 Lya_geoMW_mask   = 3000. # Larger mask for Milky Way damped Lyman alpha.  Mask for continuum and stacking.
-starburst_vmask  = 500.  # mask lines when fitting continuum.  Leave in stack
+starburst_vmask  = 300.  # mask lines when fitting continuum.  Leave in stack
 Lya_starburst    = 2000. # Mask Lya when fitting continuum.  Leave in stack.
 smooth_length_origR = 20. # rest-frame Angstroms.  Smoothing length for continuum fitting.
 smooth_length_likeMage= 50.

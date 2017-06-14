@@ -12,10 +12,11 @@ import matplotlib
 # FRIDAY TOMORROW, PICK UP HERE WHEN FRESH. ***
 # Good, I am now getting the uncertainty in vmean, vmax by varying the continuum via scalecont.  Hokey but realistic.
 # Measure Si 1260 by hand, continuum is screwed up for both Mage, COS lowres.
-# Wait, why is Si 1260 screwed up?  Appears to be a continuum fitting problem...
+# Wait, why is Si 1260 screwed up?  Appears to be a continuum fitting problem from NV 1240X
+# Messed with stack_COS_spectra.py, but can't get it to go away.  ** stoppedhere.
 # Use COS lowres rather than COS R2E4.  It has better noise properties, fairer comparison to MagE.  
 def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red, thecenters, thelabels, IParray, pdfout) :
-    scalecont = np.array((1.0, 1.05, 0.995, 1.01, 0.99, 1.02, 0.98))
+    scalecont = np.array((1.0, 0.98, 0.985, 0.99, 0.995, 1.01, 1.01, 1.015, 1.02)) 
     # Measure the velocities and put them in a dataframe
     v_df = pandas.DataFrame(data=np.array(thelabels), columns=('linelab',))
     v_df['linecen'] = thecenters
@@ -101,11 +102,9 @@ vmage_df = wrap_measure_vmaxvmean(sp, 'wave', 'X_avg', 'unity', Nover_blue, Nove
 
 # Manually enter lower limits for blends
 vmage_df.loc['O I 1302', 'vlowlim']   = -510.
-vmage_df.loc['O I 1302', 'comment']   =  "blend w photospheric abs"
-vmage_df.loc['Al II 1670', 'vlowlim'] = -760.
-vmage_df.loc['Al II 1670', 'comment'] = "blend with O III] emission"
+vmage_df.loc['O I 1302', 'comment']   =  "blend w photospheric abs."
 vmage_df.loc['Fe II 2383', 'vlowlim'] = -840.
-vmage_df.loc['Fe II 2383', 'comment'] = "blend with O III] emission"
+vmage_df.loc['Fe II 2383', 'comment'] = "blend with Fe II 2374 abs"
 vmage_df.loc['N V 1238', 'vlowlim']   = -10.
 vmage_df.loc['N V 1238', 'comment']   = "Not clearly detected"
 
@@ -142,22 +141,26 @@ vmage_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', c
 ax1.errorbar(vmage_notlim['IP'], vmage_notlim['vmean'], yerr=vmage_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
 plt.quiver(vmage_df['IP'], vmage_df['vlowlim'], np.zeros(shape=vmage_df.shape[0]), np.ones(shape=vmage_df.shape[0])*100, color='r')
 plt.xlabel("IP (eV)") ; plt.ylabel("v (km/s)")
-plt.xlim(10,70) ; plt.ylim(0,-2900)
+plt.xlim(10,70) ; plt.ylim(50,-2900)
 ax1.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
 plt.tight_layout()
 plt.savefig('mage_vmaxvmean_vsIP.pdf')
 
-vcos_notlim = vcos_df[vcos_df['vlowlim'].isnull()]
-ax2 = vcos_notlim.plot(x='IP', y='vmax', kind='scatter', label=r'COS $v_{max}$', color='red', s=s)
-ax2.errorbar(vcos_notlim['IP'], vcos_notlim['vmax'], yerr=vcos_notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
-vcos_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'COS $v_{mean}$', color='blue', s=s, ax=ax2)
-ax2.errorbar(vcos_notlim['IP'], vcos_notlim['vmean'], yerr=vcos_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
-plt.quiver(vcos_df['IP'], vcos_df['vlowlim'], np.zeros(shape=vcos_df.shape[0]), np.ones(shape=vcos_df.shape[0])*100, color='r')
-plt.xlim(10,70) ; plt.ylim(0,-2900)
-plt.xlabel("IP (eV)") ; plt.ylabel("v (km/s)")
-ax2.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
-plt.tight_layout()
-plt.savefig('cos_vmaxvmean_vsIP.pdf')
+
+indf = (vcos_df, vcos_df2)   # Make vs ionization potential plot for both version of COS stack
+outpdf = ('cos_R2E4_vmaxvmean_vsIP.pdf', 'cos_R3500_vmaxvmean_vsIP.pdf')
+for ii, thedf in enumerate(indf) :
+    notlim = thedf[thedf['vlowlim'].isnull()]
+    ax2 = notlim.plot(x='IP', y='vmax', kind='scatter', label=r'COS $v_{max}$', color='red', s=s)
+    ax2.errorbar(notlim['IP'], notlim['vmax'], yerr=notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
+    notlim.plot(x='IP', y='vmean', kind='scatter', label=r'COS $v_{mean}$', color='blue', s=s, ax=ax2)
+    ax2.errorbar(notlim['IP'], notlim['vmean'], yerr=notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
+    plt.quiver(thedf['IP'], thedf['vlowlim'], np.zeros(shape=thedf.shape[0]), np.ones(shape=thedf.shape[0])*100, color='r')
+    plt.xlim(10,70) ; plt.ylim(50,-2900)
+    plt.xlabel("IP (eV)") ; plt.ylabel("v (km/s)")
+    ax2.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
+    plt.tight_layout()
+    plt.savefig(outpdf[ii])
 
 
 

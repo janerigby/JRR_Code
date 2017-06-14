@@ -13,9 +13,11 @@ import numpy as np
 mage_mode = "reduction"
 #mage_mode = "released"
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
+import matplotlib
 
+matplotlib.rcParams.update({'font.size': 16})
 
-##########   SETUP
+ ##########   SETUP
 # Define the lines to plot
 line_label_a         = ('Lya', 'O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
 line_center_a = array((1215.6701, 1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))      
@@ -33,7 +35,6 @@ line_label_p  = ("CIII 1247", "C_III 1296", "CII 1323", "OIV 1343", "SiIII 1417"
                  "CIII 1620", "FeV 1662", "FeIV 1717", "FeIII 1930 complex", "FeIII 1956 complex", "CIII 2297")
 line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24,    1485.40,        1501.76,
                   1620.40,     1662.32,   1717.90,      1930.39,               1953.33, 2297.58))
-
 line_label_Heck  = ('Si II 1260', 'C II 1334', 'Si III 1206', 'Si IV 1393', 'N II 1084')  
 line_center_Heck = array((1260.4221, 1334.5323,   1206.500, 1393.76, 1084.5659))
 mycol = ("goldenrod", "green", "red")
@@ -141,20 +142,25 @@ def plot_wind_stack() :
 # And then go read stis papers; is the high-vel tail interesting?
 
 def plot_Heckman_like() :
-    (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
-    cos_df = jrr.mage.read_our_COS_stack(resoln="full")
-    jrr.plot.velocity_overplot(cos_df.rest_wave, cos_df.fweightavg, line_label_Heck2, line_center_Heck2, 0.0, -1600, 500, (8,5), colortab=mycol2)
-    plt.savefig("COS_R2E4_likeHeckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
-    plt.clf()
+    whichtype = ("full", "matched_mage")
+    coslabel  = ("R2E4", "R3500")
+    mycol = ('black', 'green')
+    vwin = (-3000, 1010)
+    for ii, thistype in enumerate(whichtype) :
+        (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
+        cos_df = jrr.mage.read_our_COS_stack(resoln=thistype)
+        jrr.plot.velocity_overplot(cos_df.rest_wave, cos_df.fweightavg, line_label_Heck2, line_center_Heck2, 0.0, -1600, 500, (8,5), colortab=mycol2)
+        plt.savefig("COS_likeHeckman2015fig1_"+coslabel[ii]+".pdf", bbox_inches='tight', pad_inches=0.1)
+        plt.clf()
 
-    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.fweightavg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,1))
-    plt.savefig("COS_R2E4_likeHeckman2015_wtdavg.pdf", bbox_inches='tight', pad_inches=0.1)
+        jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.fweightavg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=vwin, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,2), colortab=mycol)
+        plt.savefig("mage_COS_likeHeckman2015_wtdavg"+coslabel[ii]+".pdf", bbox_inches='tight', pad_inches=0.1)
 
-    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_median, cos_df.fmedian),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,1))
-    plt.savefig("COS_R2E4_likeHeckman2015_median.pdf", bbox_inches='tight', pad_inches=0.1)
+        jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_median, cos_df.fmedian),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=vwin, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,2), colortab=mycol)
+        plt.savefig("mage_COS_likeHeckman2015_median"+coslabel[ii]+".pdf", bbox_inches='tight', pad_inches=0.1)
 
-    jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.favg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=1600, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,1))
-    plt.savefig("COS_R2E4_likeHeckman2015_avg.pdf", bbox_inches='tight', pad_inches=0.1)
+        jrr.plot.boxplot_Nspectra( (sp.rest_wave, cos_df.rest_wave), (sp.X_avg, cos_df.favg),  (sp.X_jack_std, cos_df.fjack_std), (0., 0.), line_label_Heck2, line_center_Heck2, win=vwin, Ncol=1, vel_plot=True, drawunity=True, label_loc=(0.05,0.2), lw=(2,2), colortab=mycol)
+        plt.savefig("mage_COS_likeHeckman2015_avg"+coslabel[ii]+".pdf", bbox_inches='tight', pad_inches=0.1)
     return(0)
 
 
@@ -236,7 +242,7 @@ def plot_OVI_forJC() :
     
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
-plot_wind_stack()     # outdir = ("StdStack", "StackA")
+#plot_wind_stack()     # outdir = ("StdStack", "StackA")
 plot_Heckman_like()
 #plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/

@@ -51,9 +51,9 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         filename  = specs['filename'][ii]
 
         if(zchoice == "stars") :     # Update 8/2016, enabling either method to to set systemic redshift, selectable as zchoice
-            zz =  specs['z_syst'][ii] # New, using john chisholm's S99 fits to photospheric absorption lines where possible.
+            zz =  specs['z_syst'][ii] # using john chisholm's S99 fits to photospheric absorption lines where possible.
         elif(zchoice == "neb") :
-            zz =  specs['z_neb'][ii]  # Old, what I used prior to 21 july 2016.
+            zz =  specs['z_neb'][ii]  # what I used prior to 21 july 2016.
         else : raise ValueError('Error, I do not recognize input zchoice (choice to set systemic redshift) as stars or neb')
         # OLD (sp, resoln, dresoln)  = jrr.mage.open_spectrum(filename, zz, mage_mode)
         (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(label, mage_mode, addS99=True)

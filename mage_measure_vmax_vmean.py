@@ -63,9 +63,27 @@ def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red,
     v_df['comment'] = ""
     return(v_df)
 
+def plot_vs_IP(df, color1, color2, ax, fillstyle='full', s=60) :  # Plotting procedure gets run on several data frames, so make a function
+    df_notlim = df[df['vlowlim'].isnull()]
+    df_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', color=color1, s=s, ax=ax, fillstyle=fillstyle)
+    df_notlim.plot(x='IP', y='vmax',  kind='scatter', label=r'MagE $v_{max}$',  color=color2, s=s, ax=ax, fillstyle=fillstyle)
+    ax.errorbar(df_notlim['IP'], df_notlim['vmean'], yerr=df_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
+    ax.errorbar(df_notlim['IP'], df_notlim['vmax'],  yerr=df_notlim['vmax_std'],  ls='none', color='k', lw=1.5, label=None)
+    plt.quiver(df['IP'], df['vlowlim'], np.zeros(shape=df.shape[0]), np.ones(shape=df.shape[0])*100, color=color1)
+    return(0)
+
+def finish_IPplot(ax, pdfout) :
+    plt.xlabel("IP (eV)") ; plt.ylabel("v (km/s)")
+    plt.xlim(10,70) ; plt.ylim(50,-2900)
+    ax.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
+    plt.tight_layout()
+    plt.savefig(pdfout)
+    return(0)
+
+
+
 #############################################
 mage_mode = 'reduction'
-
 ##### Define a bunch of lines. Copied from mage_winds.py
 line_label_a         = ('O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
 line_center_a = np.array((1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))      
@@ -82,6 +100,7 @@ IP = np.array((13.62, 16.35, 16.35, 18.83, 24.38,15.035, 16.1878, 16.1878, 28.44
 (thelabels, thecenters) = (line_label_all, line_center_all)
 Nover_blue = 1 # Nth pixel over the continuum counts as the edge of the line for calculation of vmax, vmean
 Nover_red = 1
+plt.ioff()
 
 # UGH what follows below is ugly, lots of copy and paste rather than loops.  Sorry, future self.
 
@@ -92,12 +111,11 @@ Nover_red = 1
 #vcos_hiR_whtavg
 #vcos_loR_whtavg
 #vcos_hiR_median
-plt.ioff()
-# Read spectra
+
+print "COMPUTING vmax vmean for the MagE stacked spectrum"
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
 sp['unity' ] = 1.0  # continuum
-print "COMPUTING vmax vmean for the MagE stacked spectrum"
 print "#  (velocities are in systemic rest frame, in km/s)"
 #vmage_df is the shape-normalized MagE stack, weighted avg
 vmage_whtavg = wrap_measure_vmaxvmean(sp, 'wave', 'X_avg',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_whtavg.pdf')
@@ -107,11 +125,9 @@ vmage_whtavg.drop('linecen', axis=1).to_latex('mage_vmaxvmean_whtavg.tex')
 vmage_median.drop('linecen', axis=1).to_latex('mage_vmaxvmean_median.tex')
 plt.close("all")
 
-# Read spectra
+print "COMPUTING vmax vmean for the R=20000 COS stacked spectrum"
 cos_hiR = jrr.mage.read_our_COS_stack(resoln="full")
 cos_loR = jrr.mage.read_our_COS_stack(resoln="matched_mage")
-
-print "COMPUTING vmax vmean for the R=20000 COS stacked spectrum"
 vcos_hiR_whtavg = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R2E4_whtavg.pdf')
 vcos_hiR_median = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R2E4_median.pdf')
 cos_mark_blends(vcos_hiR_whtavg)  ;  cos_mark_blends(vcos_hiR_median)  # Manually enter lower limits for blends
@@ -127,49 +143,27 @@ vcos_loR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3500_whtavg.tex
 vcos_loR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3500_median.tex')
 plt.close("all")
 
-plt.ion()
-## Plot the results versus ionization potential
+
+#########   Make plots of vmean, vmax vs IP    ###########################
+
 matplotlib.rcParams.update({'font.size': 16})
-s=60
-vmage_whtavg_notlim = vmage_whtavg[vmage_whtavg['vlowlim'].isnull()]
-vmage_median_notlim = vmage_median[vmage_median['vlowlim'].isnull()]
-ax1 = vmage_whtavg_notlim.plot(x='IP', y='vmax', kind='scatter', label=r'MagE $v_{max}$', color='red', s=s)
-vmage_median_notlim.plot(x='IP', y='vmax', kind='scatter', label=r'MagE $v_{max}$', color='orange', s=s, ax=ax1)
-ax1.errorbar(vmage_whtavg_notlim['IP'], vmage_whtavg_notlim['vmax'], yerr=vmage_whtavg_notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
-ax1.errorbar(vmage_median_notlim['IP'], vmage_median_notlim['vmax'], yerr=vmage_median_notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
-vmage_whtavg_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', color='blue', s=s, ax=ax1)
-vmage_median_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', color='purple', s=s, ax=ax1)
-ax1.errorbar(vmage_whtavg_notlim['IP'], vmage_whtavg_notlim['vmean'], yerr=vmage_whtavg_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
-ax1.errorbar(vmage_median_notlim['IP'], vmage_median_notlim['vmean'], yerr=vmage_median_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
-plt.quiver(vmage_whtavg['IP'], vmage_whtavg['vlowlim'], np.zeros(shape=vmage_whtavg.shape[0]), np.ones(shape=vmage_whtavg.shape[0])*100, color='red')
-plt.quiver(vmage_median['IP'], vmage_median['vlowlim'], np.zeros(shape=vmage_median.shape[0]), np.ones(shape=vmage_median.shape[0])*100, color='orange')
-plt.xlabel("IP (eV)") ; plt.ylabel("v (km/s)")
-plt.xlim(10,70) ; plt.ylim(50,-2900)
-ax1.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
-plt.tight_layout()
-plt.savefig('mage_vmaxvmean_vsIP.pdf')
+plt.ion()   #  Plot velocities versus IP for the MagE stack
+ax1 = fig.add_subplot(111)
+plot_vs_IP(vmage_whtavg, 'red', 'blue', ax1)
+plot_vs_IP(vmage_median,  'orange', 'purple', ax1, fillstyle='top')
+finish_IPplot(ax1, 'mage_vmaxvmean_vsIP.pdf')
 
-# Swap colors, blue on top, red on bottom.
-#Plot as open red circles versus closed red circles, for whtdmean vs median..
+ax2 = fig.add_subplot(111)  # Plot velocities for the COS stack
+plot_vs_IP(vcos_hiR_whtavg, 'red', 'blue', ax2)
+plot_vs_IP(vcos_hiR_median, 'orange', 'purple', ax2, fillstyle='top')
+finish_IPplot(ax2, 'cos_R2E4_vmaxvmean_vsIP.pdf')
+
+ax3 = fig.add_subplot(111)  # Plot velocities for the COS stack
+plot_vs_IP(vcos_loR_whtavg, 'red', 'blue', ax3)
+plot_vs_IP(vcos_loR_median, 'orange', 'purple', ax3, fillstyle='top')
+finish_IPplot(ax3, 'cos_R3500_vmaxvmean_vsIP.pdf')
 
 
-indf = (vcos_hiR_whtavg, vcos_loR_whtavg, vcos_hiR_median, vcos_loR_median)   # Make vs ionization potential plot for both version of COS stack
-outpdf = ('cos_R2E4_vmaxvmean_whtavg_vsIP.pdf', 'cos_R3500_vmaxvmean_whtavg_vsIP.pdf', 'cos_R2E4_vmaxvmean_median_vsIP.pdf', 'cos_R3500_vmaxvmean_median_vsIP.pdf')
-for ii, thedf in enumerate(indf) :
-    notlim = thedf[thedf['vlowlim'].isnull()]
-    ax2 = notlim.plot(x='IP', y='vmax', kind='scatter', label=r'COS $v_{max}$', color='red', s=s)
-    ax2.errorbar(notlim['IP'], notlim['vmax'], yerr=notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
-    notlim.plot(x='IP', y='vmean', kind='scatter', label=r'COS $v_{mean}$', color='blue', s=s, ax=ax2)
-    ax2.errorbar(notlim['IP'], notlim['vmean'], yerr=notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
-    plt.quiver(thedf['IP'], thedf['vlowlim'], np.zeros(shape=thedf.shape[0]), np.ones(shape=thedf.shape[0])*100, color='r')
-    plt.xlim(10,70) ; plt.ylim(50,-2900)
-    plt.xlabel("IP (eV)") ; plt.ylabel("v (km/s)")
-    ax2.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
-    plt.tight_layout()
-    plt.savefig(outpdf[ii])
-
-# Need to combine above as for vmage, to fit on one plot
-    
 
 ################################################################
 ##### set up EXAMPLE data frame, w wavelength, flux, continuum.  Was useful for debugging

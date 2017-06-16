@@ -7,13 +7,26 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib
 
+# Originally I measured vmax manually in interactive plots, using hack_to_get_vmax.py.  It was clunky.
+# Now, actually measuring it the right way, using v_max and absorption-weighted mean velocity v_mean
+
 #pandas.set_option('display.float_format', lambda x: '%.1f' % x)  # suppress scientific notation in output
 
-# FRIDAY TOMORROW, PICK UP HERE WHEN FRESH. ***
+def mage_mark_blends(df) :  # Manually enter lower limits for blends
+    df.loc['O I 1302', 'vlowlim']   = -510.
+    df.loc['O I 1302', 'comment']   =  "blend w photospheric abs."
+    df.loc['Fe II 2383', 'vlowlim'] = -840.
+    df.loc['Fe II 2383', 'comment'] = "blend with Fe II 2374 abs"
+    df.loc['N V 1238', 'vlowlim']   = -10.
+    df.loc['N V 1238', 'comment']   = "Not clearly detected"
+    return(0)
+
+def cos_mark_blends(df) :
+    df.loc['O I 1302', 'vlowlim'] = -500.
+    df.loc['O I 1302', 'comment']  =  "blend w photospheric abs"
+    return(0)
+
 # Good, I am now getting the uncertainty in vmean, vmax by varying the continuum via scalecont.  Hokey but realistic.
-# Measure Si 1260 by hand, continuum is screwed up for both Mage, COS lowres.
-# Wait, why is Si 1260 screwed up?  Appears to be a continuum fitting problem from NV 1240X
-# Messed with stack_COS_spectra.py, but can't get it to go away.  ** stoppedhere.
 # Use COS lowres rather than COS R2E4.  It has better noise properties, fairer comparison to MagE.  
 def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red, thecenters, thelabels, IParray, pdfout) :
     scalecont = np.array((1.0, 0.98, 0.985, 0.99, 0.995, 1.01, 1.01, 1.015, 1.02)) 
@@ -50,25 +63,8 @@ def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red,
     v_df['comment'] = ""
     return(v_df)
 
-# This would be nice, butoptional.  Deprioritizing.
-def open_mage_jackknife() :
-    jackfile = "/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Stacked_spectra/magestack_byneb_standard_jackknife.txt"
-    sp =  pandas.read_table(jackfile, delim_whitespace=True, comment="#", header=0)
-    jrr.spec.calc_dispersion(sp, 'restwave', 'rest_disp')
-    sp['badmask'] = False
-    sp['linemask'] = False
-    boxcar = jrr.spec.get_boxcar4autocont(sp)
-    print "DEBUGGING, boxcar is ", boxcar
-    # ** NEED AN LL
-    jrr.spec.fit_autocont(sp, LL, zz=0.0, vmask=1000, boxcar=3001)
-    # Want to step through each jackknife spectrum, fit fautocont, then loop through vmax,vmean procedure, get mean, std
-    return(0)
-
+#############################################
 mage_mode = 'reduction'
-
-# Not to self.  Originally I measured vmax manually in interactive plots,
-# using hack_to_get_vmax.py.  It was clunky.
-# Now, actually measuring it the right way.
 
 ##### Define a bunch of lines. Copied from mage_winds.py
 line_label_a         = ('O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
@@ -82,73 +78,83 @@ line_center_all = np.concatenate((line_center_a, line_center_b, line_center_c))#
 # Add an array of ionization potentials, so I can plot velocities versus IP
 IP = np.array((13.62, 16.35, 16.35, 18.83, 24.38,15.035, 16.1878, 16.1878, 28.44765, 45.14181, 64.4939, 97.8902))
 ##############################
-
 # Pick which lines to measure
 (thelabels, thecenters) = (line_label_all, line_center_all)
+Nover_blue = 1 # Nth pixel over the continuum counts as the edge of the line for calculation of vmax, vmean
+Nover_red = 1
 
+# UGH what follows below is ugly, lots of copy and paste rather than loops.  Sorry, future self.
+
+#New names:
+#vmage_whtavg  # use the weighted avg stack of MagE
+#vmage_median  # Use the median stack of MagE
+#vcos_loR_whtavg
+#vcos_hiR_whtavg
+#vcos_loR_whtavg
+#vcos_hiR_median
+plt.ioff()
 # Read spectra
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
 sp['unity' ] = 1.0  # continuum
-cos_df = jrr.mage.read_our_COS_stack(resoln="full")
-cos_df2 = jrr.mage.read_our_COS_stack(resoln="matched_mage")
-
-plt.ioff()
 print "COMPUTING vmax vmean for the MagE stacked spectrum"
 print "#  (velocities are in systemic rest frame, in km/s)"
-Nover_blue = 1 # Nth pixel over the continuum counts as the edge of the line for calculation of vmax, vmean
-Nover_red = 1
-vmage_df = wrap_measure_vmaxvmean(sp, 'wave', 'X_avg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean.pdf')
-
-# Manually enter lower limits for blends
-vmage_df.loc['O I 1302', 'vlowlim']   = -510.
-vmage_df.loc['O I 1302', 'comment']   =  "blend w photospheric abs."
-vmage_df.loc['Fe II 2383', 'vlowlim'] = -840.
-vmage_df.loc['Fe II 2383', 'comment'] = "blend with Fe II 2374 abs"
-vmage_df.loc['N V 1238', 'vlowlim']   = -10.
-vmage_df.loc['N V 1238', 'comment']   = "Not clearly detected"
-
-print vmage_df.head(100)
-vmage_df.drop('linecen', axis=1).to_latex('mage_vmaxvmean.tex')               
+#vmage_df is the shape-normalized MagE stack, weighted avg
+vmage_whtavg = wrap_measure_vmaxvmean(sp, 'wave', 'X_avg',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_whtavg.pdf')
+vmage_median = wrap_measure_vmaxvmean(sp, 'wave', 'X_median', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_median.pdf')
+mage_mark_blends(vmage_whtavg)  ;   mage_mark_blends(vmage_median)   # manually enter lower limits for blends
+vmage_whtavg.drop('linecen', axis=1).to_latex('mage_vmaxvmean_whtavg.tex')
+vmage_median.drop('linecen', axis=1).to_latex('mage_vmaxvmean_median.tex')
 plt.close("all")
 
-print "COMPUTING vmax vmean for the COS stacked spectrum"
-vcos_df = wrap_measure_vmaxvmean(cos_df, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R2E4.pdf')
-# Manually enter lower limits for blends
-vcos_df.loc['O I 1302', 'vlowlim'] = -500.
-vcos_df.loc['O I 1302', 'comment']  =  "blend w photospheric abs"
-print vcos_df.head(100)
-vcos_df.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R2E4.tex')
+# Read spectra
+cos_hiR = jrr.mage.read_our_COS_stack(resoln="full")
+cos_loR = jrr.mage.read_our_COS_stack(resoln="matched_mage")
+
+print "COMPUTING vmax vmean for the R=20000 COS stacked spectrum"
+vcos_hiR_whtavg = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R2E4_whtavg.pdf')
+vcos_hiR_median = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R2E4_median.pdf')
+cos_mark_blends(vcos_hiR_whtavg)  ;  cos_mark_blends(vcos_hiR_median)  # Manually enter lower limits for blends
+vcos_hiR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R2E4_whtavg.tex')
+vcos_hiR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R2E4_median.tex')
 plt.close("all")
 
-print "COMPUTING vmax vmean for the COS stacked spectrum"
-vcos_df2 = wrap_measure_vmaxvmean(cos_df2, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3500.pdf')
-# Manually enter lower limits for blends
-vcos_df2.loc['O I 1302', 'vlowlim'] = -500.
-vcos_df2.loc['O I 1302', 'comment']  =  "blend w photospheric abs"
-print vcos_df2.head(100)
-vcos_df2.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3500.tex')
+print "COMPUTING vmax vmean for the R=3500 COS stacked spectrum"
+vcos_loR_whtavg = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3500_whtavg.pdf')
+vcos_loR_median = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3500_median.pdf')
+cos_mark_blends(vcos_loR_whtavg)  ;  cos_mark_blends(vcos_loR_median) # Manually enter lower limits for blends
+vcos_loR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3500_whtavg.tex')
+vcos_loR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3500_median.tex')
 plt.close("all")
 
 plt.ion()
 ## Plot the results versus ionization potential
 matplotlib.rcParams.update({'font.size': 16})
 s=60
-vmage_notlim = vmage_df[vmage_df['vlowlim'].isnull()]
-ax1 = vmage_notlim.plot(x='IP', y='vmax', kind='scatter', label=r'MagE $v_{max}$', color='red', s=s)
-ax1.errorbar(vmage_notlim['IP'], vmage_notlim['vmax'], yerr=vmage_notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
-vmage_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', color='blue', s=s, ax=ax1)
-ax1.errorbar(vmage_notlim['IP'], vmage_notlim['vmean'], yerr=vmage_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
-plt.quiver(vmage_df['IP'], vmage_df['vlowlim'], np.zeros(shape=vmage_df.shape[0]), np.ones(shape=vmage_df.shape[0])*100, color='r')
+vmage_whtavg_notlim = vmage_whtavg[vmage_whtavg['vlowlim'].isnull()]
+vmage_median_notlim = vmage_median[vmage_median['vlowlim'].isnull()]
+ax1 = vmage_whtavg_notlim.plot(x='IP', y='vmax', kind='scatter', label=r'MagE $v_{max}$', color='red', s=s)
+vmage_median_notlim.plot(x='IP', y='vmax', kind='scatter', label=r'MagE $v_{max}$', color='orange', s=s, ax=ax1)
+ax1.errorbar(vmage_whtavg_notlim['IP'], vmage_whtavg_notlim['vmax'], yerr=vmage_whtavg_notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
+ax1.errorbar(vmage_median_notlim['IP'], vmage_median_notlim['vmax'], yerr=vmage_median_notlim['vmax_std'], ls='none', color='k', lw=1.5, label=None)
+vmage_whtavg_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', color='blue', s=s, ax=ax1)
+vmage_median_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', color='purple', s=s, ax=ax1)
+ax1.errorbar(vmage_whtavg_notlim['IP'], vmage_whtavg_notlim['vmean'], yerr=vmage_whtavg_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
+ax1.errorbar(vmage_median_notlim['IP'], vmage_median_notlim['vmean'], yerr=vmage_median_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
+plt.quiver(vmage_whtavg['IP'], vmage_whtavg['vlowlim'], np.zeros(shape=vmage_whtavg.shape[0]), np.ones(shape=vmage_whtavg.shape[0])*100, color='red')
+plt.quiver(vmage_median['IP'], vmage_median['vlowlim'], np.zeros(shape=vmage_median.shape[0]), np.ones(shape=vmage_median.shape[0])*100, color='orange')
 plt.xlabel("IP (eV)") ; plt.ylabel("v (km/s)")
 plt.xlim(10,70) ; plt.ylim(50,-2900)
 ax1.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
 plt.tight_layout()
 plt.savefig('mage_vmaxvmean_vsIP.pdf')
 
+# Swap colors, blue on top, red on bottom.
+#Plot as open red circles versus closed red circles, for whtdmean vs median..
 
-indf = (vcos_df, vcos_df2)   # Make vs ionization potential plot for both version of COS stack
-outpdf = ('cos_R2E4_vmaxvmean_vsIP.pdf', 'cos_R3500_vmaxvmean_vsIP.pdf')
+
+indf = (vcos_hiR_whtavg, vcos_loR_whtavg, vcos_hiR_median, vcos_loR_median)   # Make vs ionization potential plot for both version of COS stack
+outpdf = ('cos_R2E4_vmaxvmean_whtavg_vsIP.pdf', 'cos_R3500_vmaxvmean_whtavg_vsIP.pdf', 'cos_R2E4_vmaxvmean_median_vsIP.pdf', 'cos_R3500_vmaxvmean_median_vsIP.pdf')
 for ii, thedf in enumerate(indf) :
     notlim = thedf[thedf['vlowlim'].isnull()]
     ax2 = notlim.plot(x='IP', y='vmax', kind='scatter', label=r'COS $v_{max}$', color='red', s=s)
@@ -162,8 +168,10 @@ for ii, thedf in enumerate(indf) :
     plt.tight_layout()
     plt.savefig(outpdf[ii])
 
+# Need to combine above as for vmage, to fit on one plot
+    
 
-
+################################################################
 ##### set up EXAMPLE data frame, w wavelength, flux, continuum.  Was useful for debugging
 if False :  
     colrwave = 'rest_wave' ; colf = 'f' ; colcont = 'cont'
@@ -173,7 +181,7 @@ if False :
     df[colcont] = 1.0  # the continuum
     df[colf] = jrr.spec.onegaus(df[colrwave], -0.7,  linecen, 4., 1.0) + jrr.spec.onegaus(df[colrwave], -0.3,  linecen - 15., 9., 0.0) + np.random.normal(0.0, 0.03, size=len(df[colrwave]))  # the flux
     # Measure vmean, vmax 
-    (vmean, vmax_blue, vmax_red) = jrr.spec.calc_vmean_vmax(df, colrwave, colf, colcont, Nover, linecen, isabs=True, plotit=True)
+    (vmean, vmax_blue, vmax_red) = jrr.spec.calc_vmean_vmax(df, colrwave, colf, colcont, Nover_blue, Nover_red, linecen, isabs=True, plotit=True)
     print "Vmean, vmax_blue, vmax_red:", vmean, vmax_blue, vmax_red
 
 

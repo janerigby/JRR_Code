@@ -63,10 +63,12 @@ def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red,
     v_df['comment'] = ""
     return(v_df)
 
-def plot_vs_IP(df, color1, color2, ax, fillstyle='full', s=60) :  # Plotting procedure gets run on several data frames, so make a function
+def plot_vs_IP(df, color1, color2, ax, marker='o', s=60, plotlegend=True) :  # Plotting procedure gets run on several data frames, so make a function
     df_notlim = df[df['vlowlim'].isnull()]
-    df_notlim.plot(x='IP', y='vmean', kind='scatter', label=r'MagE $v_{mean}$', color=color1, s=s, ax=ax, fillstyle=fillstyle)
-    df_notlim.plot(x='IP', y='vmax',  kind='scatter', label=r'MagE $v_{max}$',  color=color2, s=s, ax=ax, fillstyle=fillstyle)
+    if plotlegend: label=(r'MagE $v_{max}$', 'MagE $v_{mean}$')
+    else         : label=('_nolegend_',      '_nolegend_')
+    df_notlim.plot(x='IP', y='vmax',  kind='scatter', label=label[0], color=color2, s=s, ax=ax, marker=marker)
+    df_notlim.plot(x='IP', y='vmean', kind='scatter', label=label[1], color=color1, s=s, ax=ax, marker=marker)
     ax.errorbar(df_notlim['IP'], df_notlim['vmean'], yerr=df_notlim['vmean_std'], ls='none', color='k', lw=1.5, label=None)
     ax.errorbar(df_notlim['IP'], df_notlim['vmax'],  yerr=df_notlim['vmax_std'],  ls='none', color='k', lw=1.5, label=None)
     plt.quiver(df['IP'], df['vlowlim'], np.zeros(shape=df.shape[0]), np.ones(shape=df.shape[0])*100, color=color1)
@@ -148,19 +150,22 @@ plt.close("all")
 
 matplotlib.rcParams.update({'font.size': 16})
 plt.ion()   #  Plot velocities versus IP for the MagE stack
+fig = plt.figure()
 ax1 = fig.add_subplot(111)
-plot_vs_IP(vmage_whtavg, 'red', 'blue', ax1)
-plot_vs_IP(vmage_median,  'orange', 'purple', ax1, fillstyle='top')
+plot_vs_IP(vmage_whtavg, 'red', 'blue', ax1, marker='o')
+plot_vs_IP(vmage_median,  'red', 'blue', ax1, marker='s', plotlegend=False)
 finish_IPplot(ax1, 'mage_vmaxvmean_vsIP.pdf')
 
+plt.close("all")
 ax2 = fig.add_subplot(111)  # Plot velocities for the COS stack
-plot_vs_IP(vcos_hiR_whtavg, 'red', 'blue', ax2)
-plot_vs_IP(vcos_hiR_median, 'orange', 'purple', ax2, fillstyle='top')
+plot_vs_IP(vcos_hiR_whtavg, 'red', 'blue', ax2, marker='o')
+plot_vs_IP(vcos_hiR_median, 'orange', 'purple', ax2, marker='s', plotlegend=False)
 finish_IPplot(ax2, 'cos_R2E4_vmaxvmean_vsIP.pdf')
 
+plt.close("all")
 ax3 = fig.add_subplot(111)  # Plot velocities for the COS stack
-plot_vs_IP(vcos_loR_whtavg, 'red', 'blue', ax3)
-plot_vs_IP(vcos_loR_median, 'orange', 'purple', ax3, fillstyle='top')
+plot_vs_IP(vcos_loR_whtavg, 'red', 'blue', ax3, marker='o')
+plot_vs_IP(vcos_loR_median, 'orange', 'purple', ax3, marker='s')
 finish_IPplot(ax3, 'cos_R3500_vmaxvmean_vsIP.pdf')
 
 

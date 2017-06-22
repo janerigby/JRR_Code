@@ -16,7 +16,7 @@ def make_one_2D_absline_plot(filename, linewave, linewin, contwave, contwin):
     label = str(filename) + "_" + str(thiswave) + "_z" + str(zz)
     plt.annotate(label, (0.1,0.96), xycoords="figure fraction")
 
-    xx = jrr.Mage_2D_iswave(filename, contwave)  # Show the continuum
+    xx = int(jrr.mage.mage2D_iswave(filename, contwave))  # Show the continuum
     cont, header = fits.getdata(filename, header=True) 
     ccutout = cont[0:18, xx-contwin : xx+contwin]
     ax1.imshow(ccutout, cmap='gray', interpolation='none', origin='lower')
@@ -24,7 +24,7 @@ def make_one_2D_absline_plot(filename, linewave, linewin, contwave, contwin):
     ax1.annotate("Continuum", (0.1,0.96), xycoords="axes fraction")
     ax1.autoscale(False)
 
-    xx = jrr.Mage_2D_iswave(filename, thiswave)  # Show the absorption line
+    xx = int(jrr.mage.mage2D_iswave(filename, thiswave))  # Show the absorption line
     data, header = fits.getdata(filename, header=True) 
     cutout = data[0:18, xx-win : xx+win]
     profile = np.median(cutout, axis=1)
@@ -48,17 +48,32 @@ def make_one_2D_absline_plot(filename, linewave, linewin, contwave, contwin):
     plt.savefig(outfile)
     plt.show()
 
-    
-# Let's look at the interveing MgII absorber in S1527
-zz = 1.2823
-wave = np.array((2796., 2803)) * (1.0+zz)
-contwave = np.array((6340.))
-win = 10 # window around the wavelength.  *KLUDGE
-contwin = win *2
-filename = ("s1527-2d-278/s1527-2d-278-009sum.fits", "s1527-2d-278/s1527-2d-278-010sum.fits", "s1527-2d-280/s1527-2d-280-009sum.fits", "s1527-2d-280/s1527-2d-280-010sum.fits")
-cwd = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/Mage/Redux/Mage_July2008/Mage_pipe/Slit2_bin1x2"
+
+if False :
+    # Let's look at the interveing MgII absorber in S1527
+    zz = 1.2823
+    wave = np.array((2796., 2803)) * (1.0+zz)
+    contwave = np.array((6340.))
+    win = 10 # window around the wavelength.  *KLUDGE
+    contwin = win *2
+    filename = ("s1527-2d-278/s1527-2d-278-009sum.fits", "s1527-2d-278/s1527-2d-278-010sum.fits", "s1527-2d-280/s1527-2d-280-009sum.fits", "s1527-2d-280/s1527-2d-280-010sum.fits")
+    cwd = "/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Redux/Mage_July2008/Mage_pipe/Slit2_bin1x2"
+    os.chdir(cwd)
+    for thisfile in filename :
+        for thiswave in wave :
+            make_one_2D_absline_plot(thisfile, thiswave, win, contwave, contwin)  # do all the work here.
+
+# Do it again for the DLA in S1527 that John O'Meara likes
+zz = 2.543
+wave = np.array((1216.,)) * (1.0+zz)
+contwave = np.array((4535,))
+win = 50 # window around the wavelength.  *KLUDGE
+contwin = 50
+filename = ("s1527-2d-280/s1527-2d-280-014sum.fits", "s1527-2d-280/s1527-2d-280-015sum.fits")
+cwd = "/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Redux/Mage_July2008/Mage_pipe/Slit2_bin1x2"
 os.chdir(cwd)
 
 for thisfile in filename :
     for thiswave in wave :
         make_one_2D_absline_plot(thisfile, thiswave, win, contwave, contwin)  # do all the work here.
+

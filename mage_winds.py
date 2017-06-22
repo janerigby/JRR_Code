@@ -147,7 +147,7 @@ def plot_Heckman_like() :
     mycol = ('black', 'green')
     vwin = (-3000, 1010)
     for ii, thistype in enumerate(whichtype) :
-        (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
+        (sp, LL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
         cos_df = jrr.mage.read_our_COS_stack(resoln=thistype)
         jrr.plot.velocity_overplot(cos_df.rest_wave, cos_df.fweightavg, line_label_Heck2, line_center_Heck2, 0.0, -1600, 500, (8,5), colortab=mycol2)
         plt.savefig("COS_likeHeckman2015fig1_"+coslabel[ii]+".pdf", bbox_inches='tight', pad_inches=0.1)

@@ -73,7 +73,7 @@ def plot_vs_IP(df, color1, color2, ax, label, marker='o', s=60) :  # Plotting pr
     return(0)
 
 def finish_IPplot(ax, pdfout) :
-    plt.xlabel("IP (eV)") ; plt.ylabel(r"v ($km~s^{-1}$)")
+    plt.xlabel("IP (eV)") ; plt.ylabel(r'v ($km$ $s^{-1}$)') 
     plt.xlim(10,70) ; plt.ylim(50,-2900)
     ax.legend(loc='upper left', labelspacing=0.2, borderpad=0.1)
     plt.tight_layout()

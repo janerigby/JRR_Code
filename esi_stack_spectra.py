@@ -16,7 +16,7 @@ from astropy.coordinates import SkyCoord, EarthLocation
 # jrigby, Feb 2017
 
 
-def get_the_spectra(filenames, obslog, colwav='obswave') :
+def get_the_spectra(filenames, obslog, colwave='obswave') :
     df = {}
     for thisfile in filenames :
         print "loading file ", thisfile
@@ -35,27 +35,14 @@ def get_the_spectra(filenames, obslog, colwav='obswave') :
         df[thisfile]['Nfiles'] = 1 # N of exposures that went into this spectrum
     return(df)  # return a dictionary of dataframes of spectra
 
-def jrr_filter(out, thresh=2.5, mintoreplace=1E-16, low_wave_cut=4600.) :
-    ''' Filter the spectrum.  First, remove the low-wavelength stuff b/c it's junk.
-    Second, filter out errant sky lines, without altering the line ratios, as follows:
+def jrr_filter(out, thresh=2.5, mintoreplace=1E-16) :
+    ''' Filter the spectrum.
+    Filter out errant sky lines, without altering the line ratios, as follows:
     Make new column, ['flam_sum_jrr'], which is mostly straight sum ([flam][sum]),
     but replaces extreme values (sum > thresh*median*N) w the median*N    '''
     out2 = out.copy(deep=True)
-    out2 = out2[out2.index > low_wave_cut]
-    thefilter =  (out2['flam'] > thresh * out2['flam_median_xN']) & (out2['flam'] > mintoreplace)
-    out2['flam_sum_jrr']  = np.where(thefilter, out2['flam_median_xN'], out2['flam'])
-    out2['replaced']      = np.where(thefilter, True, False)
-    return(out2) 
-
-def jrr_filter_old(out, thresh=2.5, mintoreplace=1E-16, low_wave_cut=4600.) :
-    ''' Filter the spectrum.  First, remove the low-wavelength stuff b/c it's junk.
-    Second, filter out errant sky lines, without altering the line ratios, as follows:
-    Make new column, ['flam_sum_jrr'], which is mostly straight sum ([flam][sum]),
-    but replaces extreme values (sum > thresh*median*N) w the median*N    '''
-    out2 = out.copy(deep=True)
-    out2 = out2[out2.index > low_wave_cut]
-    thefilter =  (out2['flam']['sum'] > thresh * out2['flam_median_xN']) & (out2['flam']['sum'] > mintoreplace)
-    out2['flam_sum_jrr']  = np.where(thefilter, out2['flam_median_xN'], out2['flam']['sum'])
+    thefilter =  (out2['fsum'] > thresh * out2['fmedianxN']) & (out2['fsum'] > mintoreplace)
+    out2['fsum_jrr']  = np.where(thefilter, out2['fmedianxN'], out2['fsum'])
     out2['replaced']      = np.where(thefilter, True, False)
     return(out2) 
     
@@ -80,11 +67,11 @@ def plot_the_results(filenames, df, out2, groupby=False) :
         plt.scatter(out2.wave, out2['replaced']*out2['flam_sum_jrr'], label="replaced")
         plt.plot(out2.wave, out2['flam_sum_jrr'], color='black')
     else :
-        plt.plot(out2.wave, out2['flam'], color='purple', label="flam")
-        plt.plot(out2.wave, out2['flam_median_xN'], color='green', label="median*N")
-        plt.plot(out2.wave, out2['flam_u'], color='orange', label="flam_u")
-        plt.scatter(out2.wave, out2['replaced']*out2['flam_sum_jrr'], label="replaced")
-        plt.plot(out2.wave, out2['flam_sum_jrr'], color='black')
+        plt.plot(out2.wave, out2['fsum'], color='purple', label="flam")
+        plt.plot(out2.wave, out2['fmedianxN'], color='green', label="median*N")
+        plt.plot(out2.wave, out2['fsum_u'], color='orange', label="flam_u")
+        plt.scatter(out2.wave, out2['replaced']*out2['fsum_jrr'], label="replaced")
+        plt.plot(out2.wave, out2['fsum_jrr'], color='black')
     plt.legend()
     plt.show()
     return(0)
@@ -92,7 +79,7 @@ def plot_the_results(filenames, df, out2, groupby=False) :
 def write_spectrum_to_file(out2, outfile, prefix, filenames, header, thresh) :
     '''Make a simplifed outfile '''
     print "Writing to file"
-    cols = ['wave', 'flam_sum_jrr', 'flam_u', 'flam_median_xN', 'Nfiles', 'replaced']
+    cols = ['wave', 'fsum_jrr', 'fsum_u', 'fmedianxN', 'fjack_std', 'Ngal', 'replaced']
     simple_df = out2[cols] 
     shutil.copy(header, outfile)
     with open(outfile, 'a') as f:  simple_df.to_csv(f, sep='\t', index=False)
@@ -101,10 +88,11 @@ def write_spectrum_to_file(out2, outfile, prefix, filenames, header, thresh) :
     jrr.util.replace_text_in_file("INDYSPECTRANAMES", ''.join(filenames), outfile)
     return(0)
 
-def make_a_stack(filenames, obslog, prefix, thresh, mintoreplace, low_wave_cutoff) :     # Put it all together
+def make_a_stack(filenames, obslog, prefix, thresh, mintoreplace) :     # Put it all together
     df = get_the_spectra(filenames, obslog)
-    out = jrr.spec.stack_spectra(df, straight_sum=True, colwav='wave', colf='flam', colfu='flam_u')
-    out2 = jrr_filter(out, thresh, mintoreplace, low_wave_cutoff)    
+    wavearray = jrr.spec.make_wavearray_constant_resoln(4000.0, 1.0E4, 4000.0, p=2.2, asSeries=True)
+    (out, nf, nf_u) = jrr.spec.stack_spectra(df, colwave='wave', colf='flam', colfu='flam_u', output_wave_array=wavearray)
+    out2 = jrr_filter(out, thresh, mintoreplace)    
     plot_the_results(filenames, df, out2, groupby=False)
     outfile = prefix + "_ESI_JRR_sum.txt"
     write_spectrum_to_file(out2, outfile, prefix, filenames, "../JRR_header.txt", thresh)
@@ -123,22 +111,24 @@ def get_observation_datetimes() :
 
 def run_2016Aug() :
     obslog = get_observation_datetimes()
-    prefix = "s1723" 
+    prefix='s1723'
     filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
-    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16, low_wave_cutoff=4600)
+    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16)
+    subset_files = ['s1723_arc_a_esi.txt', 's1723_side_a_esi.txt', 's1723_side_b_esi.txt', 's1723_center_a_esi.txt', 's1723_center_b_esi.txt']
+    out2 = make_a_stack(subset_files, obslog, 's1723_subset', thresh=2.5, mintoreplace=1E-16)
     prefix = "s2340"
     filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
-    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=0.5E-16, low_wave_cutoff=4600)
+    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=0.5E-16)
     return(0)
 
 def run_2016Apr() :
     obslog = get_observation_datetimes()
     prefix = "J1050"
     filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
-    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16, low_wave_cutoff=4600)
+    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16)
     prefix = "J1458"
     filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
-    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16, low_wave_cutoff=4600)
+    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16)
     return(0)
     
 

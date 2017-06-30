@@ -13,7 +13,19 @@ def smooth_the_noise(sp, win=21, colwave='wave', colf='flam_cor', colfu='flam_u_
 def flag_noisy(sp, factor=10., colf='flam', colfu='flam', contmask='contmask') :
     sp.loc[(sp[colfu]/sp_MMT[colf]).gt(factor), contmask] = True
     return(0)
-    
+
+def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colfu='flam_u_cor', colcont='flamcor_autocont', new_way=False, label="") :
+    (smooth1, smooth2) =  jrr.spec.fit_autocont(sp, LL, zz, boxcar=boxcar, colf=colf,  colcont=colcont, new_way=False)
+    plt.clf()
+    plt.plot(sp[colwave],  sp[colf],    color='green', label=label)
+    plt.plot(sp[colwave],  sp[colfu],   color='lightgreen')
+    plt.plot(sp[colwave],  sp['contmask']*sp[colf].median(),   color='yellow', label='masked')
+    plt.plot(sp[colwave],  sp[colcont], color='k', label='Auto continuum fit')
+    plt.ylim(sp[colf].median() * -0.1, sp[colf].median() * 5)
+    plt.legend()
+    plt.show()
+    return(smooth1, smooth2)
+
 def check_ESI_fluxing(thisdir) :
     myfiles = ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt', 's1723_side_a_esi.txt', 's1723_side_b_esi.txt', 's1723_center_a_esi.txt', 's1723_center_b_esi.txt', 's1723_counter_a_esi.txt', 's1723_counter_b_esi.txt']
     for thisfile in myfiles :
@@ -32,7 +44,7 @@ def check_ESI_fluxing(thisdir) :
 def load_linelists(linelistdir, zz) :
     LL_uv  = pandas.read_table(linelistdir + "rest_UV_emission_linelist.txt",      delim_whitespace=True, comment="#")
     LL_opt = pandas.read_table(linelistdir + "rest_optical_emission_linelist.txt", delim_whitespace=True, comment="#")
-    (spec_path, line_path) = jrr.mage.getpath('reduction')
+    (spec_path, line_path) = jrr.mage.getpath('released')
     (LL_temp, zz_notused) =  jrr.mage.get_linelist(line_path + 's1723.linelist')
     LL_uvabs = LL_temp.loc[LL_temp['type'].eq("ISM")]  # This already has redshift from .linelist.  may be out of synch****
     LL_uv['zz']  = zz  ;   LL_opt['zz'] = zz   # Load the redshift
@@ -68,6 +80,8 @@ sp_ESI = pandas.read_table(file_ESI, delim_whitespace=True, comment="#")
 sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)
 sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True)
 sp_ESI['flam_u'] = pandas.to_numeric(sp_ESI['flam_u'], errors='coerce') # convert to float64
+sp_ESI['contmask'] = False
+sp_ESI.loc[sp_ESI['wave'].between(7582.,7750.), 'contmask'] = True   # Mask telluric A-band
 
 #### Read WFC3 spectra (w continuua, both grisms)
 names = ('wave', 'flam', 'flam_u', 'cont', 'flam_contsub')  # assumed flam. **Check w Michael
@@ -139,12 +153,11 @@ plt.legend()
 plt.show()
 print "***CAUTION: something is deeply wrong with some of these input spectra shortward of 5000A.  Have written to ask Ayan"
 
-boxcar = 151
-### Have fit nice continuum for MMT 
-(smooth1, smooth2) =  jrr.spec.fit_autocont(sp_MMT, LL, zHa, boxcar=boxcar, colf='flam_cor',  colcont='flamcor_autocont', new_way=False)
-plt.clf()
-plt.plot(sp_MMT['wave'],  sp_MMT['flam_cor'],    color='green', Label='MMT Blue Channel')
-plt.plot(sp_MMT['wave'],  sp_MMT['flam_u_cor'],    color='lightgreen')
-plt.plot(sp_MMT['wave'],  smooth2, color='k', label='autofitcont')
-plt.legend()
-plt.show()
+### Fit nice continuum for MMT.  The boxcar # is arbitrary; can make it more physical later
+(smooth1, smooth2) = wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
+
+### This is a start at a cont fit for ESI.  Need to diagnose problems w ESI extraction, then come back to this
+(smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=251, colf='flam_cor',  colcont='flamcor_autocont', label="ESI with problems at blue end")
+ 
+
+ 

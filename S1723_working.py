@@ -122,6 +122,10 @@ print "Scaled MMT BC spectrum to match scaled ESI, from median flam in range", w
 print "   by factor", f_ESIB / f_MMTB
 # ESI flux was high b/c I was summing multiple exposures. See MagE_atlas/Contrib/ESI_spectra/2016Aug/readme.txt
 
+# Now, should de-redshift the spectra
+jrr.spec.sp_MMT
+
+
 # Plot the scaled spectra
 plt.clf()
 plt.plot(sp_ESI['wave'],  sp_ESI['flam_cor'],    color='blue', label='Keck ESI')
@@ -156,7 +160,7 @@ print "***CAUTION: something is deeply wrong with some of these input spectra sh
 ### Fit nice continuum for MMT.  The boxcar # is arbitrary; can make it more physical later
 (smooth1, smooth2) = wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
 
-### This is a start at a cont fit for ESI.  Need to diagnose problems w ESI extraction, then come back to this
+### First stab at a cont fit for ESI.  Need to diagnose problems w ESI extraction, then come back to this
 (smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=251, colf='flam_cor',  colcont='flamcor_autocont', label="ESI with problems at blue end")
  
 

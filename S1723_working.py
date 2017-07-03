@@ -64,7 +64,8 @@ def load_linelists(linelistdir, zz) :
 #### Directories and filenames
 home = expanduser("~")
 wdir = home + '/Dropbox/SGAS-shared/Grism_S1723/'  
-file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_ESI_JRR_sum.txt'
+file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_ESI_JRR_sum.txt'  #**TEMP COMMENTED OUT
+file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_arc_a_esi.txt'  #TEMP KLUDGE CHECK
 file_MMT  = wdir + 'MMT_BlueChannel/spec_s1723_14b_final_F.txt'  # Updated Jan 23 2017
 file_GNIRS = wdir + 'GNIRS/s1723_gnirs_residual_subtracted_spectrum_jrr.csv'
 file_G102 = wdir + 'WFC3_fit_1Dspec/FULL_G102_coadded.dat' 
@@ -77,8 +78,9 @@ LL = load_linelists(wdir+'Linelists/', zHa)
 #### Read ESI spectra
 # Units are:  wave: barycentric corrected vacuum Angstroms;  flambda in erg/cm2/s/angstrom
 sp_ESI = pandas.read_table(file_ESI, delim_whitespace=True, comment="#")
-sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)
-sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True)
+#sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  # TEMP COMMENTED OUT ****
+#sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) # TEMP COMMENTED OUT ****
+sp_ESI['wave'] = sp_ESI['obswave'] 
 sp_ESI['flam_u'] = pandas.to_numeric(sp_ESI['flam_u'], errors='coerce') # convert to float64
 sp_ESI['contmask'] = False
 sp_ESI.loc[sp_ESI['wave'].between(7582.,7750.), 'contmask'] = True   # Mask telluric A-band
@@ -122,8 +124,11 @@ print "Scaled MMT BC spectrum to match scaled ESI, from median flam in range", w
 print "   by factor", f_ESIB / f_MMTB
 # ESI flux was high b/c I was summing multiple exposures. See MagE_atlas/Contrib/ESI_spectra/2016Aug/readme.txt
 
-# Now, should de-redshift the spectra
-jrr.spec.sp_MMT
+# De-redshift the spectra  (should loop this...)
+jrr.spec.convert2restframe_df(sp_MMT, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
+jrr.spec.convert2restframe_df(sp_ESI, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
+#jrr.spec.convert2restframe_df(sp_G102, zHa, units='flam', colwave='wave', colf='flam', colf_u='flam_u_cor')
+#jrr.spec.convert2restframe_df(sp_G141, zHa, units='flam', colwave='wave', colf='flam', colf_u='flam_u_cor')
 
 
 # Plot the scaled spectra

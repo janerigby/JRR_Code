@@ -6,6 +6,7 @@ import astropy.convolution
 import jrr
 from matplotlib import pyplot as plt
 
+
 def smooth_the_noise(sp, win=21, colwave='wave', colf='flam_cor', colfu='flam_u_cor', outcol='flam_u_col_smooth') :
     sp[outcol] =  sp[colfu].rolling(window=win, center=True).median()
     return(0)
@@ -16,14 +17,12 @@ def flag_noisy(sp, factor=10., colf='flam', colfu='flam', contmask='contmask') :
 
 def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colfu='flam_u_cor', colcont='flamcor_autocont', new_way=False, label="") :
     (smooth1, smooth2) =  jrr.spec.fit_autocont(sp, LL, zz, boxcar=boxcar, colf=colf,  colcont=colcont, new_way=False)
-    plt.clf()
     plt.plot(sp[colwave],  sp[colf],    color='green', label=label)
     plt.plot(sp[colwave],  sp[colfu],   color='lightgreen')
     plt.plot(sp[colwave],  sp['contmask']*sp[colf].median(),   color='yellow', label='masked')
     plt.plot(sp[colwave],  sp[colcont], color='k', label='Auto continuum fit')
     plt.ylim(sp[colf].median() * -0.1, sp[colf].median() * 5)
     plt.legend()
-    plt.show()
     return(smooth1, smooth2)
 
 def check_ESI_fluxing(thisdir) :
@@ -60,7 +59,14 @@ def load_linelists(linelistdir, zz) :
     LL['vmask'] = 300.  # Dummy for now
     LL.drop_duplicates(subset=('restwav', 'lab1'), inplace=True)  # drop duplicate entries, w same rest wavelength, same ion label    
     return(LL)
-    
+
+##########  END OF FUNCTIONS ###############
+
+
+#######  Housekeeping  ##############
+plt.close("all")
+figsize=(12,4)
+
 #### Directories and filenames
 home = expanduser("~")
 wdir = home + '/Dropbox/SGAS-shared/Grism_S1723/'  
@@ -117,6 +123,20 @@ f_MMTB =  sp_MMT.loc[sp_MMT['wave'].between(wavcut[2], wavcut[3])]['flam'].media
 sp_MMT['flam_cor']   = sp_MMT['flam']   * f_ESIB / f_MMTB
 sp_MMT['flam_u_cor'] = sp_MMT['flam_u'] * f_ESIB / f_MMTB
 
+#### Flux the GNIRS spectrum
+fig = plt.figure(4, figsize=figsize)
+first_guess_cont = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4, 1.56E4)]['mean'].median()
+guesspars = (100., 6564.61 *(1+zHa), 10., first_guess_cont)
+(popt, fit) = jrr.spec.fit_quick_gaussian(sp_GNIRS.interpolate(), guesspars, colwave='wave', colf='mean')
+quick_flux_Ha_GNIRS = jrr.spec.sum_of_gaussian(popt)  # In counts
+flux_Ha_G141 = 200.0E-17  # from SDSSJ1723+3411_G141.fit
+sp_GNIRS['flam'] = sp_GNIRS['mean'] * flux_Ha_G141 / quick_flux_Ha_GNIRS
+sp_GNIRS['flam_u'] = sp_GNIRS['errinmean'] * flux_Ha_G141 / quick_flux_Ha_GNIRS
+plt.plot(sp_GNIRS['wave'], sp_GNIRS['flam'], color='k', label="GNIRS flux")
+plt.plot(sp_GNIRS['wave'], sp_GNIRS['flam_u'], color='grey', label="GNIRS uncert")
+plt.legend()
+sp_GNIRS_cutout = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4,1.55E4)]
+
 # Report how I am scaling the fluxes
 print "Scaled ESI spectrum to match G102, from median flam in range", wavcut[0], "to", wavcut[1]
 print "   by factor",  f_G102A / f_ESIA
@@ -124,19 +144,22 @@ print "Scaled MMT BC spectrum to match scaled ESI, from median flam in range", w
 print "   by factor", f_ESIB / f_MMTB
 # ESI flux was high b/c I was summing multiple exposures. See MagE_atlas/Contrib/ESI_spectra/2016Aug/readme.txt
 
+print "Scaled GNIRS spectrum by ratio of Halpha flux, by factor", flux_Ha_G141 / quick_flux_Ha_GNIRS
+
 # De-redshift the spectra  (should loop this...)
 jrr.spec.convert2restframe_df(sp_MMT, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
 jrr.spec.convert2restframe_df(sp_ESI, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
 #jrr.spec.convert2restframe_df(sp_G102, zHa, units='flam', colwave='wave', colf='flam', colf_u='flam_u_cor')
 #jrr.spec.convert2restframe_df(sp_G141, zHa, units='flam', colwave='wave', colf='flam', colf_u='flam_u_cor')
 
-
 # Plot the scaled spectra
-plt.clf()
-plt.plot(sp_ESI['wave'],  sp_ESI['flam_cor'],    color='blue', label='Keck ESI')
-plt.plot(sp_ESI['wave'],  sp_ESI['flam_u_cor'],  color='lightblue', label='_nolegend_', linewidth=0.2)
-plt.plot(sp_MMT['wave'],  sp_MMT['flam_cor'],    color='green', Label='MMT Blue Channel')
-plt.plot(sp_MMT['wave'],  sp_MMT['flam_u_cor'],  color='lightgreen', label='_nolegend_', linewidth=0.2)
+fig = plt.figure(0, figsize=figsize)
+plt.plot(sp_ESI['wave'],  sp_ESI['flam_cor'],    color='green', label='Keck ESI')
+plt.plot(sp_ESI['wave'],  sp_ESI['flam_u_cor'],  color='lightgreen', label='_nolegend_', linewidth=0.2)
+plt.plot(sp_MMT['wave'],  sp_MMT['flam_cor'],    color='blue', Label='MMT Blue Channel')
+plt.plot(sp_MMT['wave'],  sp_MMT['flam_u_cor'],  color='lightblue', label='_nolegend_', linewidth=0.2)
+plt.plot(sp_GNIRS_cutout['wave'], sp_GNIRS_cutout['flam'], color='orange', label="GNIRS")
+plt.plot(sp_GNIRS_cutout['wave'], sp_GNIRS_cutout['flam_u'], color='lightgrey', label="_nolegend_")
 plt.plot(sp_G102['wave'], sp_G102['flam'],   color='red', label='WFC3 G102')
 plt.plot(sp_G102['wave'], sp_G102['flam_u'], color='red',label='_nolegend_', linewidth=0.2)
 plt.plot(sp_G141['wave'], sp_G141['flam'],   color='purple', label='WFC3 G141')
@@ -146,11 +169,12 @@ plt.ylim(0,1E-16)
 plt.xlim(3200,16000)
 plt.xlabel("Vacuum wavelength (Angstroms)")
 plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
-plt.show()
+plt.title("Have scaled continuua.")
+#plt.show()
 
 
 ### Check the fluxing of the ESI sum
-plt.clf()
+fig = plt.figure(1, figsize=figsize)
 test = check_ESI_fluxing(home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/')
 boxcar = 21
 sp_ESI['smooth'] = sp_ESI['flam_cor'].rolling(window=boxcar,center=False).median()
@@ -159,14 +183,36 @@ scaleby = sp_ESI[sp_ESI['wave'].between(7000,7200)]['smooth'].median()
 print "scaleby", scaleby
 plt.plot(sp_ESI['wave'], sp_ESI['smooth']/scaleby,  color='black', label='JRR SUM', linewidth=1.5)
 plt.legend()
-plt.show()
+plt.title("Diagnosing problems with ESI fluxing, ESI SUM")
 print "***CAUTION: something is deeply wrong with some of these input spectra shortward of 5000A.  Have written to ask Ayan"
 
 ### Fit nice continuum for MMT.  The boxcar # is arbitrary; can make it more physical later
+fig = plt.figure(2, figsize=figsize)
+plt.title("Fit continuum for MMT bluechannel")
 (smooth1, smooth2) = wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
 
 ### First stab at a cont fit for ESI.  Need to diagnose problems w ESI extraction, then come back to this
+fig = plt.figure(3, figsize=figsize)
+plt.title("First attempt to fit continuum to ESI.  Not done yet")
 (smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=251, colf='flam_cor',  colcont='flamcor_autocont', label="ESI with problems at blue end")
- 
 
+
+
+
+plt.show()  # Show all plots at once, each in a separate window
+
+
+''' To do next:
+0) DONE Flux the GNIRS spectrum, and plot w the others.
+1) Get updated ESI spectra from Ayan.
+2) Continuum-fit the ESI spectra.
+3) Check whether continuum fits for ESI, MMT agree
+4) Check scaling factors for ESI, MMT, Gemini
+5) Dump the spectra, w continua, into temp outfiles
+6) Use Ayan's line-fitter to fit the emission lines in MMT and ESI spectra
+7) Make a table of line fluxes, EWs, etc.
+8) Deredshift the spectra for convenience
+9) Make prettier plots
+'''
+ 
  

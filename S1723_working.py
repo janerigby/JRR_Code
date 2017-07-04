@@ -11,9 +11,11 @@ def smooth_the_noise(sp, win=21, colwave='wave', colf='flam_cor', colfu='flam_u_
     sp[outcol] =  sp[colfu].rolling(window=win, center=True).median()
     return(0)
 
-def flag_noisy(sp, factor=10., colf='flam', colfu='flam', contmask='contmask') :
-    sp.loc[(sp[colfu]/sp_MMT[colf]).gt(factor), contmask] = True
-    return(0)
+def flag_noise_peaks(sp, delta=0.15, colfu='flam_u', contmask='contmask') :                         
+    maxtab, mintab = jrr.peakdet.peakdet(sp[colfu], delta)  # Find peaks.
+    peak_ind =  [np.int(p[0]) for p in maxtab] # The maxima
+    sp[contmask].iloc[peak_ind] = True
+    return(peak_ind)
 
 def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colfu='flam_u_cor', colcont='flamcor_autocont', new_way=False, label="") :
     (smooth1, smooth2) =  jrr.spec.fit_autocont(sp, LL, zz, boxcar=boxcar, colf=colf,  colcont=colcont, new_way=False)
@@ -28,7 +30,7 @@ def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colf
 def check_ESI_fluxing(thisdir) :
     myfiles = ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt', 's1723_side_a_esi.txt', 's1723_side_b_esi.txt', 's1723_center_a_esi.txt', 's1723_center_b_esi.txt', 's1723_counter_a_esi.txt', 's1723_counter_b_esi.txt']
     for thisfile in myfiles :
-        print "DEBUG", thisdir, thisfile
+        #print "DEBUG", thisdir, thisfile
         df = pandas.read_table(thisdir + thisfile, delim_whitespace=True, comment="#")
         boxcar = 201
         df['smooth'] = df['flam'].rolling(window=boxcar,center=True).median()
@@ -90,6 +92,9 @@ sp_ESI['wave'] = sp_ESI['obswave']
 sp_ESI['flam_u'] = pandas.to_numeric(sp_ESI['flam_u'], errors='coerce') # convert to float64
 sp_ESI['contmask'] = False
 sp_ESI.loc[sp_ESI['wave'].between(7582.,7750.), 'contmask'] = True   # Mask telluric A-band
+sp_ESI.loc[sp_ESI['wave'].between(6300.,6303.), 'contmask'] = True   # Mask sky line
+
+
 
 #### Read WFC3 spectra (w continuua, both grisms)
 names = ('wave', 'flam', 'flam_u', 'cont', 'flam_contsub')  # assumed flam. **Check w Michael
@@ -105,7 +110,8 @@ sp_MMT['flam_u'] *= 1.0E-17
 sp_MMT['contmask'] = False
 sp_MMT.loc[sp_MMT['wave'].between(4999.,5017.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
 sp_MMT.loc[sp_MMT['wave'].gt(5200.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
-flag_noisy(sp_MMT, factor=5)
+peak_ind_MMT = flag_noise_peaks(sp_MMT, colfu='flam_u', delta=1E-17)
+
 
 #### Read GNIRS spectrum
 sp_GNIRS = pandas.read_csv(file_GNIRS, comment="#")  # This is in counts.  NOT FLUXED
@@ -176,7 +182,7 @@ plt.title("Have scaled continuua.")
 ### Check the fluxing of the ESI sum
 fig = plt.figure(1, figsize=figsize)
 test = check_ESI_fluxing(home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/')
-boxcar = 21
+boxcar = 41
 sp_ESI['smooth'] = sp_ESI['flam_cor'].rolling(window=boxcar,center=False).median()
 #sp_ESI['smooth'] = astropy.convolution.convolve(sp_ESI['flam_cor'].as_matrix(), np.ones((boxcar,))/boxcar, boundary='extend', fill_value=np.nan) # boxcar smooth
 scaleby = sp_ESI[sp_ESI['wave'].between(7000,7200)]['smooth'].median()
@@ -192,12 +198,10 @@ plt.title("Fit continuum for MMT bluechannel")
 (smooth1, smooth2) = wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
 
 ### First stab at a cont fit for ESI.  Need to diagnose problems w ESI extraction, then come back to this
+peak_ind = flag_noise_peaks(sp_ESI, colfu='flam_u_cor', delta=0.3E-17)
 fig = plt.figure(3, figsize=figsize)
 plt.title("First attempt to fit continuum to ESI.  Not done yet")
 (smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=251, colf='flam_cor',  colcont='flamcor_autocont', label="ESI with problems at blue end")
-
-
-
 
 plt.show()  # Show all plots at once, each in a separate window
 
@@ -205,7 +209,7 @@ plt.show()  # Show all plots at once, each in a separate window
 ''' To do next:
 0) DONE Flux the GNIRS spectrum, and plot w the others.
 1) Get updated ESI spectra from Ayan.
-2) Continuum-fit the ESI spectra.
+2) Continuum-fit the ESI spectra.  (DONE, just need to redo w real spectrum)
 3) Check whether continuum fits for ESI, MMT agree
 4) Check scaling factors for ESI, MMT, Gemini
 5) Dump the spectra, w continua, into temp outfiles

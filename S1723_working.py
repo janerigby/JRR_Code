@@ -71,7 +71,7 @@ figsize=(12,4)
 
 #### Directories and filenames
 home = expanduser("~")
-wdir = home + '/Dropbox/SGAS-shared/Grism_S1723/'  
+wdir = home + '/Dropbox/Grism_S1723/'  
 file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_ESI_JRR_sum.txt'  #**TEMP COMMENTED OUT
 file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_arc_a_esi.txt'  #TEMP KLUDGE CHECK
 file_MMT  = wdir + 'MMT_BlueChannel/spec_s1723_14b_final_F.txt'  # Updated Jan 23 2017

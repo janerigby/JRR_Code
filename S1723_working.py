@@ -1,4 +1,5 @@
 from os.path import expanduser, basename
+import subprocess 
 import glob
 import pandas
 import numpy as np
@@ -206,10 +207,15 @@ plt.title("First attempt to fit continuum to ESI.  Not done yet")
 
 plt.show()  # Show all plots at once, each in a separate window
 
-# Time to fit line fluxes.  Convert to text file so Ayan's code can read it in.
+print "Fitting line fluxes.  MMT first"
 sp_MMT.to_csv("s1723_MMT_wcont.txt", sep='\t')
 # Ayan first runs a translator to get it into format EW_fitter.py likes
-#run ~/Python/AYAN_Code/convert_spectra_format.py    --inpath ./  --infile s1723_MMT_wcont.txt --flamconst 1.0  --flamcol flam_cor --flamucol flam_u_cor  --wavecol wave   --flamcontcol flamcor_autocont --z 1.329279 --zu 0.000085
+subprocess.call(home + "/Python/AYAN_Code/convert_spectra_format.py --inpath ~/Dropbox/Grism_S1723/JRR_Working/ --infile s1723_MMT_wcont.txt --flamconst 1. --flamcol flam_cor --flamucol flam_u_cor --wavecol wave --flamcontcol flamcor_autocont --z 1.32952 --zu 4e-4")
+#
+subprocess.call(home + "/Python/AYAN_Code/EW_fitter.py --short s1723_MMT_wcont_new-format --spec_list_file ~/Dropbox/Grism_S1723/JRR_Working/other-spectra-filenames-redshifts.txt --silent --path ~/Dropbox/Grism_S1723/JRR_Working/ --linelistpath ~/Dropbox/Grism_S1723/JRR_Working/ --fout s1723_MMT_emission_measured.out --useflamcont flam_cont --savepdf --hide")
+
+#execfile( home + "/Python/AYAN_Code/convert_spectra_format.py    --inpath ./  --infile s1723_MMT_wcont.txt --flamconst# 1.0  --flamcol flam_cor --flamucol flam_u_cor  --wavecol wave   --flamcontcol flamcor_autocont --z 1.329279 --zu 0.000085")
+
 #run ~/Python/AYAN_Code/EW_fitter.py --short s1723_MMT_wcont_new-format  --spec_list_file ./other-spectra-filenames-redshifts.txt --silent --hide --savepdf --fout s1723_MMT_measuredlines.out --useflamcont  flam_cont --linelistpath ./
 
 

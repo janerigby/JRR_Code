@@ -49,7 +49,7 @@ def jrr_filter(out, thresh=2.5, mintoreplace=1E-16) :
 def plot_the_results(filenames, df, out2, groupby=False) :
     plt.clf()
     print "Plotting...."
-    xlim = (8000, 9000)
+    xlim = (4000, 9000)
     fig1 = plt.figure(1, figsize=(24,6))
     for thisfile in filenames :
         plt.plot(df[thisfile]["wave"], df[thisfile]["flam"], label=thisfile)
@@ -114,8 +114,9 @@ def run_2016Aug() :
     prefix='s1723'
     filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
     out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16)
-    subset_files = ['s1723_arc_a_esi.txt', 's1723_side_a_esi.txt', 's1723_side_b_esi.txt', 's1723_center_a_esi.txt', 's1723_center_b_esi.txt']
-    out2 = make_a_stack(subset_files, obslog, 's1723_subset', thresh=2.5, mintoreplace=1E-16)
+    #
+    subset_files = ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt']
+    out2 = make_a_stack(subset_files, obslog, 's1723_arc', thresh=2.5, mintoreplace=1E-16)
     prefix = "s2340"
     filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
     out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=0.5E-16)

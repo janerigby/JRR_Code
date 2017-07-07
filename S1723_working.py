@@ -28,11 +28,11 @@ def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colf
     return(smooth1, smooth2)
 
 def check_ESI_fluxing(thisdir) :
-    myfiles = ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt', 's1723_side_a_esi.txt', 's1723_side_b_esi.txt', 's1723_center_a_esi.txt', 's1723_center_b_esi.txt', 's1723_counter_a_esi.txt', 's1723_counter_b_esi.txt']
+    myfiles = ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt', 's1723_side_a_esi.txt', 's1723_side_b_esi.txt', 's1723_center_a_esi.txt', 's1723_center_b_esi.txt']#, 's1723_counter_a_esi.txt', 's1723_counter_b_esi.txt']
     for thisfile in myfiles :
         #print "DEBUG", thisdir, thisfile
         df = pandas.read_table(thisdir + thisfile, delim_whitespace=True, comment="#")
-        boxcar = 201
+        boxcar = 11
         df['smooth'] = df['flam'].rolling(window=boxcar,center=True).median()
         #smooth = astropy.convolution.convolve(df['flam'].as_matrix(), np.ones((boxcar,))/boxcar, boundary='extend', fill_value=np.nan) # boxcar smooth
         scaleby = df[df['obswave'].between(7000,7200)]['flam'].median()
@@ -72,8 +72,8 @@ figsize=(12,4)
 #### Directories and filenames
 home = expanduser("~")
 wdir = home + '/Dropbox/Grism_S1723/'  
-file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_ESI_JRR_sum.txt'  #**TEMP COMMENTED OUT
-file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_arc_a_esi.txt'  #TEMP KLUDGE CHECK
+file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_arc_ESI_JRR_sum.txt'  # currently just arc_a, arc_b
+#file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_arc_a_esi.txt'  #TEMP KLUDGE CHECK
 file_MMT  = wdir + 'MMT_BlueChannel/spec_s1723_14b_final_F.txt'  # Updated Jan 23 2017
 file_GNIRS = wdir + 'GNIRS/s1723_gnirs_residual_subtracted_spectrum_jrr.csv'
 file_G102 = wdir + 'WFC3_fit_1Dspec/FULL_G102_coadded.dat' 
@@ -86,14 +86,15 @@ LL = load_linelists(wdir+'Linelists/', zHa)
 #### Read ESI spectra
 # Units are:  wave: barycentric corrected vacuum Angstroms;  flambda in erg/cm2/s/angstrom
 sp_ESI = pandas.read_table(file_ESI, delim_whitespace=True, comment="#")
-#sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  # TEMP COMMENTED OUT ****
-#sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) # TEMP COMMENTED OUT ****
-sp_ESI['wave'] = sp_ESI['obswave'] 
+sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  # TEMP COMMENTED OUT ****
+sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) # TEMP COMMENTED OUT ****
+#sp_ESI['wave'] = sp_ESI['obswave'] 
 sp_ESI['flam_u'] = pandas.to_numeric(sp_ESI['flam_u'], errors='coerce') # convert to float64
 sp_ESI['contmask'] = False
 sp_ESI.loc[sp_ESI['wave'].between(7582.,7750.), 'contmask'] = True   # Mask telluric A-band
 sp_ESI.loc[sp_ESI['wave'].between(6300.,6303.), 'contmask'] = True   # Mask sky line
-
+sp_ESI.loc[sp_ESI['wave'].between(5047.,5057.), 'contmask'] = True   # Mask sky line
+sp_ESI.loc[sp_ESI['wave'].between(6300.,6303.), 'contmask'] = True   # Mask sky line
 
 
 #### Read WFC3 spectra (w continuua, both grisms)
@@ -179,15 +180,15 @@ plt.title("Have scaled continuua.")
 #plt.show()
 
 
-### Check the fluxing of the ESI sum
+### Check the fluxing of the ESI 
 fig = plt.figure(1, figsize=figsize)
 test = check_ESI_fluxing(home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/')
-boxcar = 41
+boxcar = 5
 sp_ESI['smooth'] = sp_ESI['flam_cor'].rolling(window=boxcar,center=False).median()
 #sp_ESI['smooth'] = astropy.convolution.convolve(sp_ESI['flam_cor'].as_matrix(), np.ones((boxcar,))/boxcar, boundary='extend', fill_value=np.nan) # boxcar smooth
 scaleby = sp_ESI[sp_ESI['wave'].between(7000,7200)]['smooth'].median()
 print "scaleby", scaleby
-plt.plot(sp_ESI['wave'], sp_ESI['smooth']/scaleby,  color='black', label='JRR SUM', linewidth=1.5)
+plt.plot(sp_ESI['wave'], sp_ESI['smooth']/scaleby,  color='black', label='JRR arc sum', linewidth=1.5)
 plt.legend()
 plt.title("Diagnosing problems with ESI fluxing, ESI SUM")
 print "***CAUTION: something is deeply wrong with some of these input spectra shortward of 5000A.  Have written to ask Ayan"
@@ -212,18 +213,3 @@ sp_MMT.to_csv("s1723_MMT_wcont.txt", sep='\t')
 #run ~/Python/AYAN_Code/EW_fitter.py --short s1723_MMT_wcont_new-format  --spec_list_file ./other-spectra-filenames-redshifts.txt --silent --hide --savepdf --fout s1723_MMT_measuredlines.out --useflamcont  flam_cont --linelistpath ./
 
 
-
-''' To do next:
-0) DONE Flux the GNIRS spectrum, and plot w the others.
-1) Get updated ESI spectra from Ayan.
-2) Continuum-fit the ESI spectra.  (DONE, just need to redo w real spectrum)
-3) Check whether continuum fits for ESI, MMT agree
-4) Check scaling factors for ESI, MMT, Gemini
-5) Dump the spectra, w continua, into temp outfiles
-6) Use Ayan's line-fitter to fit the emission lines in MMT and ESI spectra
-7) Make a table of line fluxes, EWs, etc.
-8) Deredshift the spectra for convenience
-9) Make prettier plots
-'''
- 
- 

@@ -94,16 +94,6 @@ def flag_geoMW_lines(df, geoMW_linelist, vmask, Lyamask) :
     for this in df.keys() :  # For each spectrum dataframe
         jrr.spec.flag_near_lines(df[this], geoMW_linelist, colv2mask='vmask', colwave='obswave', colmask='geoMWlinemask')
     return(0)
-#        line_cen = np.array(geoMW_linelist.obswav)
-#        vmask_ar = np.array(geoMW_linelist.vmask)
-#        line_lo   = line_cen * (1.0 - vmask_ar/2.997E5)
-#        line_hi   = line_cen * (1.0 + vmask_ar/2.997E5)
-#        temp_wave = np.array(df[this]['obswave'])
-#        temp_mask = np.zeros_like(temp_wave).astype(np.bool)
-#        for ii in range(0, len(line_lo)) :    # doing this in observed wavelength
-#            temp_mask[np.where( (temp_wave > line_lo[ii]) & (temp_wave < line_hi[ii]))] = True
-#        df[this]['geoMWlinemask'] = temp_mask  # Using temp np arrays is much faster than writing repeatedly to the pandas df
-    return(0)
 
 def from_galname_get_redshift(galname, zzlist) :
     redshift = zzlist[zzlist['galname'].eq(galname)]['zz']

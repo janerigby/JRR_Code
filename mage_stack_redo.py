@@ -14,7 +14,6 @@ import re
 import pdb
 from os.path import expanduser
 
-debug = True
 
 # July 2016, I want to make many different stacks of the MagE spectra.  Therefore, I'm going to rewrite this code,
 # with the stacking done in function make_a_stack, so that I can call it multiple times.
@@ -27,7 +26,7 @@ debug = True
 #   norm_method_text # string that describes how the individual spectra were normalized.  For header.
 #   mage_mode   # same as other mage functions.  Where to look for spectra
 #   zchoice     # How to set systemic redshift.  Choices are "stars", or "neb"
-def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, deredden=False, EBV=[], colcont="fnu_cont") :
+def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, deredden=False, EBV=[], deredden_MW=False, colcont="fnu_cont") :
     # Note: this is stacking in the rest-frame.  To stack observed, spectra, use jrr.spec.stack_observed()
     plt.close('all')
     plt.ion()
@@ -41,9 +40,8 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     disp = 0.1 # Angstroms  # observed-frame wavelength binning is ~0.3A pper pix for RCS0327.  So, want ~0.1A in rest-frame
     nbins = int((stackhi - stacklo)/disp)
     wave_stack    = np.linspace(stacklo, stackhi, num=nbins)
-    nfnu_stack    = np.zeros(shape=(Nspectra, nbins))   # create array that will hold all the spectra
-    nfnu_u_stack  = np.zeros(shape=(Nspectra, nbins))
-    jackknife     = np.zeros(shape=(Nspectra, nbins))
+    nfnu_stack    = np.ma.zeros(shape=(Nspectra, nbins))   # create array that will hold all the spectra
+    nfnu_u_stack  = np.ma.zeros(shape=(Nspectra, nbins))
 
     print "Filename    label      N_pixels     rest-frame wavelength range (A)"
     for ii in range(0, Nspectra) :                  #nfnu_stack[ii] will be ii spectrum
@@ -67,9 +65,18 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
 
         # Mask out known intervening absorbers
         vmask = 200. # +-200km/s
-        jrr.spec.flag_near_lines(sp, LL, vmask, colwave='wave', linetype=('INTERVE',))
+        LL['vmask'] = vmask
+        jrr.spec.flag_near_lines(sp, LL, linetype=('INTERVE',))
         sp.fnu_u[sp['linemask']] = 1. # Set huge uncertainties at positions of known intervening absorbers
-        
+        if deredden_MW :
+            print "DEBUGGING, dereddening Milky Way extinction"
+            Rv = 3.1
+            Av = -1 * Rv *  specs['EBV_MW'][ii]  # Want to deredden, so negative sign
+            sp.fnu   = pandas.Series(extinction.apply(extinction.ccm89(sp.wave.as_matrix(), Av, Rv), sp.fnu.as_matrix()))
+            sp.fnu_u = pandas.Series(extinction.apply(extinction.ccm89(sp.wave.as_matrix(), Av, Rv), sp.fnu_u.as_matrix()))
+            sp[colcont] = pandas.Series(extinction.apply(extinction.ccm89(sp.wave.as_matrix(), Av, Rv), sp[colcont].as_matrix()))
+            sp['fnu_cont_u'] = pandas.Series(extinction.apply(extinction.ccm89(sp.wave.as_matrix(), Av, Rv), sp['fnu_cont_u'].as_matrix()))
+            
         (rest_wave, rest_fnu, rest_fnu_u) = jrr.spec.convert2restframe(sp.wave, sp.fnu,  sp.fnu_u,  zz, 'fnu')
         (junk   , rest_cont, rest_cont_u) = jrr.spec.convert2restframe(sp.wave, sp[colcont], sp.fnu_cont_u, zz, 'fnu')
         # should now have arrays of rest wavelength, fnubda, and continuum, as
@@ -84,12 +91,12 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
             rest_fnu    = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_fnu.as_matrix()))
             rest_fnu_u  = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_fnu_u.as_matrix()))
             rest_cont   = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_cont.as_matrix()))
-            rest_cont_u = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_cont_u.as_matrix()))
+            rest_cont_u = pandas.Series(extinction.apply(extinction.calzetti00(rest_wave.as_matrix(), Av, Rv), rest_cont_u.as_matrix()))            
         
         # Normalize the spectrum and error spectrum
         (temp_norm_fnu, temp_sig) = norm_func(rest_wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u, norm_region)
-        nfnu_stack[ii]   = jrr.spec.rebin_spec_new(rest_wave, temp_norm_fnu,   wave_stack) # normalized fnu, rebinned
-        nfnu_u_stack[ii] = jrr.spec.rebin_spec_new(rest_wave, temp_sig, wave_stack)  # uncertainty on above
+        nfnu_stack[ii]   = np.ma.masked_invalid(jrr.spec.rebin_spec_new(rest_wave, temp_norm_fnu,   wave_stack))# normalized fnu, rebinned
+        nfnu_u_stack[ii] = np.ma.masked_invalid(jrr.spec.rebin_spec_new(rest_wave, temp_sig, wave_stack)) # uncertainty on above
         plt.step(wave_stack, nfnu_stack[ii])
 
     # fnu_u_stack is 1sigma uncertainty spectrum.  weight is 1/sigma**2
@@ -103,14 +110,13 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     mask3 = np.greater(nfnu_stack, crazy_high) + np.less(nfnu_stack, -1*crazy_high)  # flag crazy flux values.
     mask = mask1 + mask2 + mask3
     print "DEBUGGING masks", mask1.sum(), mask2.sum(), mask3.sum(), mask.sum(), mask.shape
-    masked_spectrum   = np.ma.array(nfnu_stack, mask=mask)
-    nfnu_clip  = sigma_clip(masked_spectrum, sig=sig2clip, iters=None, axis=0)   ## Sigma clipping
-    X_avg,     sumweight1   = np.ma.average(masked_spectrum, axis=0, weights=weight_stack, returned=True) # weighted avg of continuum-normalized spectra
-    X_clipavg, sumweight2   = np.ma.average(nfnu_clip,      axis=0, weights=weight_stack, returned=True) # weighted avg of cont-normalized spectra, w sig clip
+    nfnu_clip  = sigma_clip(nfnu_stack, sig=sig2clip, iters=None, axis=0)   ## Sigma clipping
+    X_avg,     sumweight1   = np.ma.average(nfnu_stack, axis=0, weights=weight_stack, returned=True) # weighted avg of continuum-normalized spectra
+    X_clipavg, sumweight2   = np.ma.average(nfnu_clip,  axis=0, weights=weight_stack, returned=True) # weighted avg of cont-normalized spectra, w sig clip
     X_Ngal = np.sum((1 - mask), axis=0)        # Number of galaxies that went into the stack at that wavelength
     X_sigma     = sumweight1**-0.5
     X_clipsigma = sumweight2**-0.5  # spiky, dunno why.  Presumably legacy of sigma_clip?  Don't use it
-    X_median = np.ma.median(masked_spectrum, axis=0)
+    X_median = np.ma.median(nfnu_stack, axis=0)
 
     plt.step(wave_stack, X_avg, color="black", linewidth=3)
     plt.ylim( -1, 3)
@@ -121,16 +127,15 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     if GOSLOW :   plt.pause(4)
 
     # Jack-knife: drop one spectrum and make weighted average, repeat.  Measure the stdev.
-    jack_var = np.zeros_like(X_avg)
+    jackknife = np.ma.zeros(shape=(Nspectra, nbins))
+    jack_var  = np.ma.zeros(shape=nbins)
     for ii in range(0, Nspectra) :
+        jnf = nfnu_stack.copy()
         print "Jackknife, dropping ", specs['short_label'][ii], " from the stack"
-        dropit = np.zeros(shape=nfnu_stack.shape, dtype=bool)
-        dropit[ii] = True  # Mask out the ii-th spectrum
-        jack_mask = mask + dropit
-        masked_spectrum   = np.ma.array(nfnu_stack, mask=jack_mask)
-        jackknife[ii], weight = np.ma.average(masked_spectrum, axis=0, weights=weight_stack, returned=True)  # all the work is done here.
-        jack_var += (jackknife[ii] - X_avg)**2
-    jack_var *= ((Nspectra -1.0)/float(Nspectra))
+        jnf[ii, :].mask = True  # Mask one spectrum
+        jackknife[ii], weight = np.ma.average(jnf, axis=0, weights=weight_stack, returned=True)  # all the work is done here.
+        jack_var = jack_var +  (jackknife[ii] - X_avg)**2
+    jack_var *= ((Nspectra -1.0)/float(Nspectra))   
     X_jack_std = np.sqrt(jack_var)
     # Jackknife variance estimation, from wikipedia: var = (n-1)/n * sum(i=1 to n) of (xi  - x.)**2
 
@@ -181,7 +186,8 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     figname = long_rootname + "_quicklook.pdf"
     plt.savefig(figname)
     plt.show()
-    if GOSLOW :    plt.pause(4)
+    if GOSLOW :   plt.pause(4)
+
 
     PLOT_NGAL = True
     if PLOT_NGAL :
@@ -193,12 +199,17 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         figname = long_rootname + "_Ngals_in_stack.pdf"
         plt.savefig(figname)
         plt.show()
-    return(0)
+    #raise Exception("I need to see whats happening")
+    return(wave_stack, nfnu_stack, nfnu_u_stack)
+#return(0)
 
-
+#####################
 # Preparation
 GOSLOW = True
 mage_mode = "reduction"  # Look for files on satchmo, not released versions on Dropbox
+debug = True
+deredden_MW = True  # Added per referee's question on 14 July 2017
+
 
 # The standard stack.  Normalize the values and shape of each spectrum by the spline continuum, and stack that
 # Load the list of MagE spectrum filenames and redshifts, just for the desired spectra in labels
@@ -206,15 +217,15 @@ labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234', 
 rootname = "standard"
 norm_method_text = "Normalized by Janes hand-fit spline continuua, so both value and shape are normalized."
 norm_region_dum = (1000.0, 1001.0) # dummy value, in this case not used by byspline_norm_func
-make_a_stack(labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "stars")
-make_a_stack(labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "neb")
+(wave_stack, nfnu_stack, nfnu_u_stack) = make_a_stack(labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "stars", deredden_MW=deredden_MW)
+make_a_stack(labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "neb", deredden_MW=deredden_MW)
 
-# stopped here...
+
 ws99labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234',  'S0957+0509', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye']
 rootname = "divbyS99"  # Experimental: for each input spectrum, divide by the s99 continuum to normalize.
 norm_method_text = "Normalized by John Chisholms S99 fits to each spectrum, so both value and shape are normalized."
-make_a_stack(ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "stars", colcont='fnu_s99model')
-make_a_stack(ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "neb", colcont='fnu_s99model')
+make_a_stack(ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "stars", colcont='fnu_s99model', deredden_MW=deredden_MW)
+make_a_stack(ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,  norm_method_text, mage_mode, "neb", colcont='fnu_s99model', deredden_MW=deredden_MW)
 
 # Stack A for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -222,8 +233,8 @@ make_a_stack(ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func,
 rootname = "ChisholmstackA"
 norm_regionA = jrr.mage.Chisholm_norm_regionA()
 norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
-make_a_stack(labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'stars')
-make_a_stack(labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'neb')
+make_a_stack(labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'stars', deredden_MW=deredden_MW)
+make_a_stack(labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'neb', deredden_MW=deredden_MW)
 
 # Stack B for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -233,8 +244,8 @@ labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S14
 rootname = "ChisholmstackB"
 norm_regionB = (1040.0, 1045.0)  # Region where John Chisholm says to normalize
 norm_method_textB = "Flux normalized to median in spectral region " + str(norm_regionB)  + "but spectral shape not flattened."
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'stars')
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'neb')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'stars', deredden_MW=deredden_MW)
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'neb', deredden_MW=deredden_MW)
 
 # Stack C for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
@@ -242,8 +253,8 @@ make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, n
 labels_censored = ['S0033+0242', 'S0900+2234',  'S1050+0017',  'Horseshoe', 'S1429+1202', 'S1458-0023', 'S2111-0114', 'S1527+0652']
 # dropped s1226 from the stack, bc we're considering it individually.  Dropped Cosmic eye bc of DLA there.
 rootname = "ChisholmstackC"
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'stars')
-make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'neb')
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'stars', deredden_MW=deredden_MW)
+make_a_stack(labels_censored, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, 'neb', deredden_MW=deredden_MW)
 
 # Note:  I am passing a function to make_a_stack, which is the function that says how to
 # normalize each input spectrum and uncertainty spectrum.
@@ -260,5 +271,6 @@ deredden_labels.remove('S1050+0017')
 rootname = "dereddened_StackA"
 norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
 norm_method_textA += "\nBefore stacking, dereddened by E(B-V) values measured by Chisholm, as of 9 Dec 2016, in sb99_overview2.txt ."
-make_a_stack(deredden_labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'stars', deredden=True, EBV=S99)
-make_a_stack(deredden_labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'neb',   deredden=True, EBV=S99)
+make_a_stack(deredden_labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'stars', deredden=True, EBV=S99, deredden_MW=deredden_MW)
+make_a_stack(deredden_labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, 'neb',   deredden=True, EBV=S99, deredden_MW=deredden_MW)
+

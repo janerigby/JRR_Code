@@ -27,7 +27,7 @@ from os.path import expanduser
 #   mage_mode   # same as other mage functions.  Where to look for spectra
 #   zchoice     # How to set systemic redshift.  Choices are "stars", or "neb"
 def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, deredden=False, EBV=[], deredden_MW=False, colcont="fnu_cont") :
-    # Note: this is stacking in the rest-frame.  To stack observed, spectra, use jrr.spec.stack_observed()
+    # Note: this is stacking in the rest-frame.  
     plt.close('all')
     plt.ion()
     plt.figure(figsize=(20,5))

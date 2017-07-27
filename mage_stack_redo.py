@@ -208,7 +208,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
 GOSLOW = True
 mage_mode = "reduction"  # Look for files on satchmo, not released versions on Dropbox
 debug = True
-deredden_MW = True  # Added per referee's question on 14 July 2017
+deredden_MW = True # Added per referee's question on 14 July 2017
 
 
 # The standard stack.  Normalize the values and shape of each spectrum by the spline continuum, and stack that

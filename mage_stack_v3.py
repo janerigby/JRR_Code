@@ -43,8 +43,22 @@ def make_header_for_stack(rootname, zchoice, norm_method_text) :
     head += '# Generated from ' + str(labels) + "\n"
     head += '# ' + norm_method_text + "\n"
     return(head)
-    
-def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, outwave, deredden=False, EBV=[], deredden_MW=False, colcont="fnu_cont") :
+
+def prep_spectra_for_stacking(df, zchoice, EBV=[], deredden=False, dereddenMW=False, colcont="fnu_cont") : #Do this once per zchoice
+    for short_label in df.keys() :  # step through each spectrum in labels
+        #print "DEBUGGING, working on", short_label
+        mask_skylines(df[short_label])
+        mask_intervening(df[short_label], LL[short_label])
+        if   zchoice == 'stars' : zz = specs.ix[short_label]['z_syst']
+        elif zchoice == 'neb'   : zz = specs.ix[short_label]['z_neb']
+        if dereddenMW :    jrr.mage.deredden_MW_extinction(df[short_label], specs['EBV_MW'][short_label])  # DEPRECATED. INPUT SPECTRA NOW ALREADY DEREDDENED
+        jrr.mage.convert_spectrum_to_restframe(df[short_label], zz)
+        if deredden and short_label in EBV.index :
+            jrr.mage.deredden_internal_extinction(df[short_label], EBV.ix[short_label]['E(B-V)'], colcont)
+    return(0)
+
+
+def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, outwave, deredden=False, EBV=[], colcont="fnu_cont") :
     '''- Create the new wavelength array.  
     - Read in the individual MagE spectra
     - Mask out skylines
@@ -62,14 +76,6 @@ def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, 
     # df is a big honking dictionary of dataframes containing the spectra.  LL is a dict of dataframes containing the linelist
     for short_label in labels :  # step through each spectrum in labels
         ndf[short_label] = pandas.DataFrame(data=pandas.Series(outwave), columns=('rest_wave',))  # New data frame, rebinned wavelength
-        #print "DEBUGGING, working on", short_label
-        mask_skylines(df[short_label])
-        mask_intervening(df[short_label], LL[short_label])
-        if deredden_MW :    jrr.mage.deredden_MW_extinction(df[short_label], specs['EBV_MW'][short_label])
-        if   zchoice == 'stars' : zz = specs.ix[short_label]['z_syst']
-        elif zchoice == 'neb'   : zz = specs.ix[short_label]['z_neb']
-        jrr.mage.convert_spectrum_to_restframe(df[short_label], zz)
-        if deredden :       jrr.mage.deredden_internal_extinction(df[short_label], EBV.ix[short_label]['E(B-V)'], colcont)
         # Normalize the spectrum and error spectrum
         (temp_norm_fnu, temp_sig) = norm_func(df[short_label]['rest_wave'], df[short_label]['rest_fnu'], df[short_label]['rest_fnu_u'], df[short_label]['rest_fnu_cont'], df[short_label]['rest_fnu_cont_u'], norm_region)
         ndf[short_label]['fnorm']   = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], temp_norm_fnu,  outwave)  # normalized fnu, rebinned
@@ -107,27 +113,27 @@ norm_region_dum = (1000.0, 1001.0)
 norm_regionA = jrr.mage.Chisholm_norm_regionA()
 norm_regionB = (1040.0, 1045.0)  # Region where John Chisholm says to normalize
 
-deredden_MW = True  # Added per referee's question on 14 July 2017
-print "Deredden the MW reddening?", deredden_MW
 
 #### Make a bunch of stacks
 
 outwave1 = make_linear_wavelength_array(stacklo, stackhi, disp)  # Not ideal, but same as before.
-#(stacked) = stack_mage_spectra(testlabels, "test", norm_region_dum, jrr.spec.byspline_norm_func, "byhandfitcont", mage_mode, "neb", outwave1, deredden_MW=False)
-
-
 systemic_methods = ['stars', 'neb']
-(df, resoln, dresoln, LL, zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont', zchoice='stars') # set systemic redshift to stars for all.  Use z_neb when want neb
+
+dereddenMW=False   # Correct for MW reddening in prep_spectra_for_stacking()?
+MWdr = False        # Get spectra that have already been corrected for MW reddening?
+
 for zchoice in systemic_methods :
+    (df, resoln, dresoln, LL, zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont', zchoice='stars', MWdr=MWdr) # set systemic redshift to stars for all.  Use z_neb when want neb
+    prep_spectra_for_stacking(df, zchoice, deredden=False, dereddenMW=dereddenMW)
     # The standard stack.  Normalize the values and shape of each spectrum by the spline continuum, and stack that
     # Load the list of MagE spectrum filenames and redshifts, just for the desired spectra in labels
     rootname = "standard"
     norm_method_text = "Normalized by Janes hand-fit spline continuua, so both value and shape are normalized."
-    stacked = stack_mage_spectra(df, LL, specs, labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1, deredden_MW=deredden_MW)
+    stacked = stack_mage_spectra(df, LL, specs, labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1)
 
-    rootname = "divbyS99"  # Experimental: for each input spectrum, divide by the s99 continuum to normalize.
+    rootname = "divbyS99"  # for each input spectrum, divide by the s99 continuum to normalize.
     norm_method_text = "Normalized by John Chisholms S99 fits to each spectrum, so both value and shape are normalized."
-    stacked = stack_mage_spectra(df, LL, specs, ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1, colcont='fnu_s99model', deredden_MW=deredden_MW)
+    stacked = stack_mage_spectra(df, LL, specs, ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1, colcont='fnu_s99model')
 
     # Stack A for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
     # May be safe near the norm_region
@@ -135,25 +141,27 @@ for zchoice in systemic_methods :
     rootname = "ChisholmstackA"
     norm_regionA = jrr.mage.Chisholm_norm_regionA()
     norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
-    stacked = stack_mage_spectra(df, LL, specs, labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, zchoice, outwave1, deredden_MW=deredden_MW)
+    stacked = stack_mage_spectra(df, LL, specs, labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, zchoice, outwave1)
 
     # Stack B for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
 # May be safe near the norm_region
     # labels_censored are targets at high enough z that have flux at 1010A
     rootname = "ChisholmstackB"
     norm_method_textB = "Flux normalized to median in spectral region " + str(norm_regionB)  + "but spectral shape not flattened."
-    stacked = stack_mage_spectra(df, LL, specs, labels_censoredB, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, zchoice, outwave1, deredden_MW=deredden_MW)
+    stacked = stack_mage_spectra(df, LL, specs, labels_censoredB, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, zchoice, outwave1)
 
     # Stack C for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
     # May be safe near the norm_region
     # labels_censored are targets at high enough z that have flux at 1010A
     # dropped s1226 from the stack, bc we're considering it individually.  Dropped Cosmic eye bc of DLA there.
     rootname = "ChisholmstackC"
-    stacked = stack_mage_spectra(df, LL, specs, labels_censoredC, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, zchoice, outwave1, deredden_MW=deredden_MW)
+    stacked = stack_mage_spectra(df, LL, specs, labels_censoredC, rootname, norm_regionB, jrr.spec.norm_by_median, norm_method_textB, mage_mode, zchoice, outwave1)
 
     # Note:  I am passing a function to make_a_stack, which is the function that says how to
     # normalize each input spectrum and uncertainty spectrum.
 
+    
+for zchoice in systemic_methods:
     # Stack the derreddened spectra.  Same as Stack A, but deredden first.
     #   Get E(B-V) values that J Chisholm measured
     S99_sumfile = expanduser('~') + "/Dropbox/MagE_atlas/Contrib/S99/New_right_flam/sb99_overview2.txt"
@@ -162,4 +170,7 @@ for zchoice in systemic_methods :
     rootname = "dereddened_StackA"
     norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
     norm_method_textA += "\nBefore stacking, dereddened by E(B-V) values measured by Chisholm, as of 9 Dec 2016, in sb99_overview2.txt ."
-    stacked = stack_mage_spectra(df, LL, specs, deredden_labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, zchoice, outwave1, deredden=True, EBV=S99, deredden_MW=deredden_MW)
+    # Reload everything fresh, because need to deredden these.
+    (df, resoln, dresoln, LL, zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont', zchoice='stars', MWdr=MWdr) # set systemic redshift to stars for all.  Use z_neb when want neb
+    prep_spectra_for_stacking(df, zchoice, S99, deredden=True, dereddenMW=dereddenMW)
+    stacked = stack_mage_spectra(df, LL, specs, deredden_labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, zchoice, outwave1)

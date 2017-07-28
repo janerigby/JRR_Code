@@ -14,24 +14,20 @@ mage_mode = 'reduction'
 zchoice = 'stars'
 
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
-speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all", zchoice=zchoice)
+speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all", zchoice=zchoice, MWdr=False)  # MWdr=False to read the files that are not corrected for MWreddening
 for label in speclist.index:  # For each file in spectra-filenames-redshifts.txt
     infile = speclist.filename[label]
     EBV = speclist['EBV_MW'][label]
-    print "Looking at ", label, infile, EBV
+    print "Looking at ", label, infile, EBV, 
     header = jrr.util.read_header_from_file(infile, comment="#")  # save the header
-    sp = pandas.read_table(spec_path + infile, delim_whitespace=True, comment="#", header=0)
+    header += ("# MW reddening correction of E(B-V)="+str(EBV)+" , Rv=3.1, CCM has been applied\n")
+    sp = pandas.read_table(spec_path + infile, delim_whitespace=True, comment="#", header=0, dtype=np.float64)
+    jrr.util.check_df_for_Object(sp)   # Check if Pandas has erroneously read column as Object instead of float64
     jrr.mage.deredden_MW_extinction(sp, EBV, colwave='wave', colf='fnu', colfu='noise', colcont='cont_fnu', colcontu='cont_uncert')
     sp.replace([np.inf, -np.inf], np.nan, inplace=True)
-    # Man. this to_precision() stuff is clunky, but I can't figure out how to do this in pandas.
-    sp['wave']   = sp['wave'].map(  lambda x: to_precision.to_precision(x, 8, notation='standard'), na_action='ignore')
-    sp['obswave'] = sp['obswave'].map(lambda x: to_precision.to_precision(x, 8, notation='standard'), na_action='ignore')
-    sp['fnu'] = sp['fnu'].map(lambda x: to_precision.to_precision(x, 4, notation='sci'), na_action='ignore')
-    sp['noise'] = sp['noise'].map(lambda x: to_precision.to_precision(x, 4, notation='sci'), na_action='ignore')
-    if 'cont_fnu' in sp.keys() :
-        sp['cont_fnu']    = sp['cont_fnu'].map(   lambda x: to_precision.to_precision(x, 4, notation='sci'), na_action='ignore')
-        sp['cont_uncert'] = sp['cont_uncert'].map(lambda x: to_precision.to_precision(x, 4, notation='sci'), na_action='ignore')
+    sp.replace(["Infinity", "-Infinity"], np.nan, inplace=True)
     outfile = re.sub('.txt', '_MWdr.txt', infile)
-    sp.to_csv('temp', sep='\t', index=False)
+    jrr.util.check_df_for_Object(sp)   # Check if Pandas has erroneously read column as Object instead of float64
+    sp.to_csv('temp', sep='\t', index=False, float_format="% 1.8E", na_rep=' NaN          ')
     jrr.util.put_header_on_file('temp', header, outfile)
      

@@ -64,17 +64,16 @@ awin10 =(datetime.date(2019, 2,28), datetime.date(2019, 9,21))
 awin11 =(datetime.date(2020, 2,28), datetime.date(2020, 4, 1))
 # S1110
 awin12 =(datetime.date(2019, 1, 1), datetime.date(2019, 5,12))
-awin13 =(datetime.date(2019,10,28), datetime.date(2019, 4, 1))
+awin13 =(datetime.date(2019,10,28), datetime.date(2020, 4, 1))
 # S1050
 awin14 =(datetime.date(2019, 1, 1), datetime.date(2019, 1,19))
 awin15 =(datetime.date(2019, 4,19), datetime.date(2019, 6,10))
 awin16 =(datetime.date(2019,12, 1), datetime.date(2020, 1,20))
 
 awindows = (awin1,        awin2, awin3,        awin4, awin5,        awin6,         awin7,     awin8,     awin9,  awin10,      awin11, awin12,  awin13, awin14, awin15,   awin16)  
-anames   = ("SPT2134-50", noL,   "SPT2147-50", noL,   'SPT0532-50', 'SPT0532-50',  'RCS0327', 'RCS0327', noL,    'PlanckArc', noL,    "S1110", noL,    "S1050", "S1050", noL)     
-anamesz  = ("SPT2134 (z=2.78)", noL,   "SPT2147 (z=3.76)", noL,   'SPT0532 (z=3.40)', 'SPT0532 (z=3.40)',  'RCS0327 (z=1.70)', 'RCS0327 (z=1.70)', noL,    'PlanckArc (z=2.37)', noL,    "S1110 (z=2.48)", noL,    "S1050 (z=3.63)", "S1050 (z=3.63)", noL)     
-
-aoffsets = (0,            0,     .5,            .5,     1,            1,             1.5,      1.5,      1.5,    2,           2,      2.5,      2.5,    3,      3,        3)       
+anamesz  = ("SPT2134 (z=2.78)", noL,   "SPT2147 (z=3.76)", noL,   'SPT0532 (z=3.40)', 'SPT0532 (z=3.40)',  'RCS0327 (z=1.70)', 'RCS0327 (z=1.70)', noL,    'PlanckArc (z=2.37)', noL,    noL, "S1110 (z=2.48)",   "S1050 (z=3.63)", "S1050 (z=3.63)", noL)     
+anames   = ("SPT2134-50", noL,   "SPT2147-50", noL,   'SPT0532-50', 'SPT0532-50',  'RCS0327', 'RCS0327', noL,    'PlanckArc', noL,    "S1110", noL,    "S1050", "S1050", noL) 
+aoffsets = (0,            0,     .5,            .5,     1,            1,             1.5,      1.5,      1.5,    2,           2,      2.5,      2.5,    3,      3,        3)      
 acolor   = ('g',          'g',   'g',          'g',   'g',          'g',           'g',       'g',       'g',    'g',         'g',    'g',     'g',    'g',    'g',      'g')     
 
 
@@ -95,13 +94,11 @@ ax1.set_xlim(xmin, xmax)
 ax1.set_ylim(ymin, ymax)
 draw_ERS_box(ax1, ERSwin, ymin, ymax)
 
-# Draw some alternative boxes, temp:
-draw_ERS_box(ax1, (datetime.date(2019, 7, 1), datetime.date(2019, 11, 30)), ymin, ymax, color='yellow')
-draw_ERS_box(ax1, (datetime.date(2019, 10, 1), datetime.date(2020, 2, 28)), ymin, ymax, color='pink')
+# Draw some alternative boxes, temporary
+#draw_ERS_box(ax1, (datetime.date(2019, 7, 1), datetime.date(2019, 11, 30)), ymin, ymax, color='yellow')
+#draw_ERS_box(ax1, (datetime.date(2019, 10, 1), datetime.date(2020, 2, 28)), ymin, ymax, color='pink')
 
-
-
-ax1.set_title("High priority targets")
+ax1.set_title("Primary targets")
 adjust_date_axis2(ax1) 
 
 ax2 = fig.add_subplot(1, 2, 2)
@@ -118,6 +115,9 @@ adjust_date_axis2(ax2)
 
 ax1.get_yaxis().set_visible(False)
 ax2.get_yaxis().set_visible(False)
+
+
+fig.subplots_adjust(left=0.03, bottom=0.21, right=0.98, top=0.88, wspace=0.08, hspace=0.2)
 
 plt.show()
 

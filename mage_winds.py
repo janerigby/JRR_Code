@@ -232,7 +232,8 @@ def plot_OVI_forJC() :
     # Plot OVI for John Chisholm, just those w decent SNR.
     (line_label, line_center) = ("OVI 1031", 1031.9261)
     labels = ['S1226+2152', 'S1527+0652', 'S1527+0652-fnt', 'S1429+1202', 'S1458-0023', 'S2111-0114',  'S0033+0242']
-    specs =  jrr.mage.getlist_labels(mage_mode, labels)
+    #specs =  jrr.mage.getlist_labels(mage_mode, labels)
+    specs = jrr.mage.wrap_getlist(mage_mode, which_list='labels', labels=labels)
     jrr.mage.plot_1line_manyspectra(line_center, line_label, 20., False, mage_mode, specs, size=(8,16), fontsize=20)
     plt.tight_layout()
     plt.savefig("OVI_just_decentSNR.pdf", orientation='portrait', bbox_inches=None, pad_inches=0.) 
@@ -243,11 +244,11 @@ def plot_OVI_forJC() :
 #######################################################
 # What do I want to run today?  Running all of them is slow; I did one at a time
 #plot_wind_stack()     # outdir = ("StdStack", "StackA")
-plot_Heckman_like()
+#plot_Heckman_like()
 #plot_wind_indy()      # All_Mage/,  ../Plot-all/PDF_Out2_S99/
 #plot_onepagers()    # Each_line_all_spectra/
 #plot_some_CIV()     # .
-#plot_OVI_forJC()     # .
+plot_OVI_forJC()     # .
 #######################################################
 
 #print "STATUS:  Plotting  the Leitherer et al. 2011 composite for comparison"

@@ -102,7 +102,7 @@ draw_ERS_box(ax1, ERSwin, ymin, ymax)
 
 # Draw some alternative boxes, temporary
 #draw_ERS_box(ax1, (datetime.date(2019, 7, 1), datetime.date(2019, 11, 30)), ymin, ymax, color='yellow')
-draw_ERS_box(ax1, (datetime.date(2019, 10, 1), datetime.date(2020, 2, 28)), ymin, ymax, color='pink')
+#draw_ERS_box(ax1, (datetime.date(2019, 10, 1), datetime.date(2020, 2, 28)), ymin, ymax, color='pink')
 
 ax1.set_title("Primary targets")
 adjust_date_axis2(ax1) 

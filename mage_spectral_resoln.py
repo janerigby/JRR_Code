@@ -38,10 +38,10 @@ def MyGaussian(x, *params):   # Define a Gaussian with a linear continuum under 
 #temp_filename =  "RCS0327/KnotB/rcs0327-knotB-comb1.txt"  # Prototyped on this file.  Now, run for all.
 #temp_filename = "RCS0327/KnotE/rcs0327-knotE-allres-comb1.txt"
 
-temp_s2111_debug = False
-if temp_s2111_debug :      # This is temporary, to debug s2111
-    labels = ('S2111-0114',)
-    specs = jrr.mage.getlist_labels(mage_mode, labels)
+run_just_one = True
+if run_just_one:     # A useful way to run just one spectrum, instead of a bunch
+    labels = ('planckarc_pos1', 'planckarc_slit4')
+    specs = jrr.mage.wrap_getlist(mage_mode, which_list='labels', labels=labels)
 
 else :    # Normal mode
     (specs) = jrr.mage.getlist(mage_mode)  # get list of MagE spectrum filenames and redshifts

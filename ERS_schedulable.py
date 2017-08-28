@@ -74,7 +74,7 @@ color   = ('b',                'b',   'b',                 'b',   'r',          
 
 # New alternate targets, moving two highest-z sources from primary to alternate
 awindows = ( win5,                win7,               awin5,              awin6,               awin7,              awin8,             awin9,  awin10,               awin11, awin12,           awin13, awin14,           awin15,           awin16)  
-anamesz  = ( "SPT0346 (z=5.66)",  "SPT0418 (z=4.22)", 'SPT0532 (z=3.40)', 'SPT0532 (z=3.40)', 'RCS0327 (z=1.70)', 'RCS0327 (z=1.70)', noL,    'PlanckArc (z=2.37)', noL,    "S1110 (z=2.48)", noL,    "S1050 (z=3.63)", "S1050 (z=3.63)", noL)     
+anamesz  = ( "SPT0346 (z=5.66)",  "SPT0418 (z=4.22)", 'SPT0532 (z=3.40)', 'SPT0532 (z=3.40)', 'RCS0327 (z=1.70)', 'RCS0327 (z=1.70)', noL,    'PSZ G311.65-18 (z=2.37)', noL,    "S1110 (z=2.48)", noL,    "S1050 (z=3.63)", "S1050 (z=3.63)", noL)     
 aoffsets = ( 3,                   2.5,                1.5,                1.5,                 0.0,                0.0,               0.0,    0.5,                  0.5,      1.0,            1.0,     2.0,              2.0,             2.0)       
 acolor   = ( 'r',                 'r',                'r',                'r',                 'b',                'b',               'b',    'b',                  'b',    'b',              'b',    'b',              'b',              'b')     
 

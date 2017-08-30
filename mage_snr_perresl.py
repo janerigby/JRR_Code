@@ -2,8 +2,14 @@ import jrr
 import numpy as np
 import  matplotlib.pyplot as plt
 
+def calc_smoothSNR(sp, resoln, smooth_window, colwave='wave', colf='fnu', colfu='fnu_u', coldisp='disp') :
+    # For a mage spectrum, calculate the SNR *per resoln element*, and smooth it.
+    sp['SNRperres'] = sp[colf]/sp[colfu] * np.sqrt(sp[colwave] / resoln / sp[coldisp])
+    sp['smoothSNRperres'] = sp['SNRperres'].rolling(window=smooth_window, center=True).median()
+    return(0)
+
 mage_mode = 'released'
-smooth_window = 61
+smooth_window = 151
 
 lab1 = [ 'rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-counterarc',]
 lab2 = [ 'S1527+0652', 'S1527+0652-fnt']
@@ -13,20 +19,18 @@ lab5 = [ 'S0033+0242', 'S2243-0935', 'S2111-0114', 'S0957+0509']
 lab6 = ['S1458-0023',  'Horseshoe',  'S1050+0017']
 
 labs = (lab1, lab2, lab3, lab4, lab5, lab6)
+#labs = (lab1,)
 
 for labels in labs:
     (df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels, verbose=True, zchoice='stars', addS99=False, MWdr=False)
-     for label in df.keys():
-         sp = df[label]
-         sp['SNRperres'] = sp['fnu']/sp['fnu_u'] * np.sqrt(sp['wave'] / resoln[label] / sp['disp'])
-         sp['smoothSNRperres'] = sp['SNRperres'].rolling(window=smooth_window, center=True).median()
-         plt.plot(sp['wave'], sp['fnu']/sp['fnu_u'], label='unsmoothed')
-         plt.plot(sp['wave'], sp['smoothSNRperres'], color='orange', label='smoothed')
-  plt.ylim(0,30)
-  plt.show()
-** indentation broken
-
-
+    for label in labels:
+        sp = df[label]
+        calc_smoothSNR(sp, resoln[label], smooth_window)
+        #plt.plot(sp['wave'], sp['fnu']/sp['fnu_u'], label=label+' unsmoothed')
+        plt.plot(sp['wave'], sp['smoothSNRperres'], label=label)
+    plt.legend()
+    plt.ylim(0,30)
+    plt.show()
 
     
 '''

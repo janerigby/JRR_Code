@@ -75,7 +75,7 @@ plot_the_measurement(stack, med_stack_result, "Stack-A median ", fnucol="X_media
 
 ## Measure for individual MagE spectra, where Lycont is covered
 ## Comment out reloading spectra while debugging
-(sp, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, verbose=False)
+(sp, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, verbose=False, MWdr=False)
 result = {}
 for label in speclist['short_label'] :
     z_syst = speclist.ix[label]['z_neb']

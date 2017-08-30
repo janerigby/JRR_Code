@@ -40,7 +40,7 @@ def MyGaussian(x, *params):   # Define a Gaussian with a linear continuum under 
 
 run_just_one = True
 if run_just_one:     # A useful way to run just one spectrum, instead of a bunch
-    labels = ('planckarc_pos1', 'planckarc_slit4')
+    labels = ('planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc')
     specs = jrr.mage.wrap_getlist(mage_mode, which_list='labels', labels=labels)
 
 else :    # Normal mode

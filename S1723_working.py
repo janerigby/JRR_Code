@@ -12,16 +12,18 @@ def smooth_the_noise(sp, win=21, colwave='wave', colf='flam_cor', colfu='flam_u_
     sp[outcol] =  sp[colfu].rolling(window=win, center=True).median()
     return(0)
 
-def flag_noise_peaks(sp, delta=0.15, colfu='flam_u', contmask='contmask') :                         
+def flag_noise_peaks(sp, delta=0.15, neighborpix=2, colfu='flam_u', contmask='contmask') :                         
     maxtab, mintab = jrr.peakdet.peakdet(sp[colfu], delta)  # Find peaks.
     peak_ind =  [np.int(p[0]) for p in maxtab] # The maxima
-    sp[contmask].iloc[peak_ind] = True
+    for thispeak in peak_ind :
+        sp.iloc[thispeak - neighborpix : thispeak + neighborpix][contmask] = True
     return(peak_ind)
 
 def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colfu='flam_u_cor', colcont='flamcor_autocont', new_way=False, label="") :
     (smooth1, smooth2) =  jrr.spec.fit_autocont(sp, LL, zz, boxcar=boxcar, colf=colf,  colcont=colcont, new_way=False)
+    notmasked = sp[~sp['contmask']]
     plt.plot(sp[colwave],  sp[colf],    color='green', label=label)
-    plt.plot(sp[colwave],  sp[colfu],   color='lightgreen')
+    plt.plot(notmasked[colwave],  notmasked[colfu],   color='lightgreen')
     plt.plot(sp[colwave],  sp['contmask']*sp[colf].median(),   color='yellow', label='masked')
     plt.plot(sp[colwave],  sp[colcont], color='k', label='Auto continuum fit')
     plt.ylim(sp[colf].median() * -0.1, sp[colf].median() * 5)
@@ -59,7 +61,7 @@ def load_linelists(linelistdir, zz) :
     LL['obswav'] = LL['restwav'] * (1.0 + LL['zz'])
     LL['fake_wav'] = 0
     LL['fake_v'] = 0
-    LL['vmask'] = 300.  # Dummy for now
+    LL['vmask'] = 500.  # Dummy for now
     LL.drop_duplicates(subset=('restwav', 'lab1'), inplace=True)  # drop duplicate entries, w same rest wavelength, same ion label    
     return(LL)
 
@@ -73,8 +75,7 @@ figsize=(12,4)
 #### Directories and filenames
 home = expanduser("~")
 wdir = home + '/Dropbox/Grism_S1723/'  
-file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_arc_ESI_JRR_sum.txt'  # currently just arc_a, arc_b
-#file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_arc_a_esi.txt'  #TEMP KLUDGE CHECK
+file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_wholearc_ESI_JRR_sum.txt'   #  just arc_a, arc_b
 file_MMT  = wdir + 'MMT_BlueChannel/spec_s1723_14b_final_F.txt'  # Updated Jan 23 2017
 file_GNIRS = wdir + 'GNIRS/s1723_gnirs_residual_subtracted_spectrum_jrr.csv'
 file_G102 = wdir + 'WFC3_fit_1Dspec/FULL_G102_coadded.dat' 
@@ -82,20 +83,21 @@ file_G141 = wdir + 'WFC3_fit_1Dspec/FULL_G141_coadded.dat'
 
 #### Load the linelists, and set the redshift
 zHa   = 1.329279 ;  zHa_u = 0.000085  # From GNIRS, see gnirs_writeup.txt
+zESI_prelim = 1.3333365  # Why is this discrepant??
 LL = load_linelists(wdir+'Linelists/', zHa)
 
 #### Read ESI spectra
 # Units are:  wave: barycentric corrected vacuum Angstroms;  flambda in erg/cm2/s/angstrom
 sp_ESI = pandas.read_table(file_ESI, delim_whitespace=True, comment="#")
-sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  # TEMP COMMENTED OUT ****
-sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) # TEMP COMMENTED OUT ****
-#sp_ESI['wave'] = sp_ESI['obswave'] 
+sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  
+sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) 
 sp_ESI['flam_u'] = pandas.to_numeric(sp_ESI['flam_u'], errors='coerce') # convert to float64
 sp_ESI['contmask'] = False
-sp_ESI.loc[sp_ESI['wave'].between(7582.,7750.), 'contmask'] = True   # Mask telluric A-band
-sp_ESI.loc[sp_ESI['wave'].between(6300.,6303.), 'contmask'] = True   # Mask sky line
-sp_ESI.loc[sp_ESI['wave'].between(5047.,5057.), 'contmask'] = True   # Mask sky line
-sp_ESI.loc[sp_ESI['wave'].between(6300.,6303.), 'contmask'] = True   # Mask sky line
+sp_ESI.loc[sp_ESI['wave'].between(7576.,7739.), 'contmask'] = True   # Mask telluric A-band
+sp_ESI.loc[sp_ESI['wave'].between(5583.,5592.), 'contmask'] = True   # Mask sky line
+sp_ESI.loc[sp_ESI['wave'].between(5611.,5623.), 'contmask'] = True   # Mask sky line
+sp_ESI.loc[sp_ESI['wave'].between(6308.,6313.), 'contmask'] = True   # Mask sky line
+sp_ESI.loc[sp_ESI['flam'] == 0.00, 'contmask'] = True   # Mask bad column, which Ayan replaced w zero
 
 
 #### Read WFC3 spectra (w continuua, both grisms)
@@ -156,7 +158,7 @@ print "Scaled GNIRS spectrum by ratio of Halpha flux, by factor", flux_Ha_G141 /
 
 # De-redshift the spectra  (should loop this...)
 jrr.spec.convert2restframe_df(sp_MMT, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
-jrr.spec.convert2restframe_df(sp_ESI, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
+jrr.spec.convert2restframe_df(sp_ESI, zESI_prelim, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
 #jrr.spec.convert2restframe_df(sp_G102, zHa, units='flam', colwave='wave', colf='flam', colf_u='flam_u_cor')
 #jrr.spec.convert2restframe_df(sp_G141, zHa, units='flam', colwave='wave', colf='flam', colf_u='flam_u_cor')
 
@@ -180,35 +182,24 @@ plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
 plt.title("Have scaled continuua.")
 #plt.show()
 
-
-### Check the fluxing of the ESI 
-fig = plt.figure(1, figsize=figsize)
-test = check_ESI_fluxing(home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/')
-boxcar = 5
-sp_ESI['smooth'] = sp_ESI['flam_cor'].rolling(window=boxcar,center=False).median()
-#sp_ESI['smooth'] = astropy.convolution.convolve(sp_ESI['flam_cor'].as_matrix(), np.ones((boxcar,))/boxcar, boundary='extend', fill_value=np.nan) # boxcar smooth
-scaleby = sp_ESI[sp_ESI['wave'].between(7000,7200)]['smooth'].median()
-print "scaleby", scaleby
-plt.plot(sp_ESI['wave'], sp_ESI['smooth']/scaleby,  color='black', label='JRR arc sum', linewidth=1.5)
-plt.legend()
-plt.title("Diagnosing problems with ESI fluxing, ESI SUM")
-print "***CAUTION: something is deeply wrong with some of these input spectra shortward of 5000A.  Have written to ask Ayan"
-
 ### Fit nice continuum for MMT.  The boxcar # is arbitrary; can make it more physical later
 fig = plt.figure(2, figsize=figsize)
 plt.title("Fit continuum for MMT bluechannel")
 (smooth1, smooth2) = wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
 
 ### First stab at a cont fit for ESI.  Need to diagnose problems w ESI extraction, then come back to this
-peak_ind = flag_noise_peaks(sp_ESI, colfu='flam_u_cor', delta=0.3E-17)
+peak_ind = flag_noise_peaks(sp_ESI, colfu='flam_u_cor', delta=0.05E-17)
 fig = plt.figure(3, figsize=figsize)
-plt.title("First attempt to fit continuum to ESI.  Not done yet")
-(smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=251, colf='flam_cor',  colcont='flamcor_autocont', label="ESI with problems at blue end")
+plt.scatter(sp_ESI['wave'].iloc[peak_ind], sp_ESI['flam_cor'].iloc[peak_ind]) 
+plt.title("Continuum fitting for ESI")
+(smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=351, colf='flam_cor',  colcont='flamcor_autocont', label="ESI")
+plt.ylim(0,9E-17)
 
 plt.show()  # Show all plots at once, each in a separate window
 
 print "Fitting line fluxes.  MMT first"
-sp_MMT.to_csv("s1723_MMT_wcont.txt", sep='\t')
+sp_MMT.to_csv("s1723_MMT_wcont.txt", sep='\t', na_rep='NaN')
+sp_ESI.to_csv("s1723_ESI_wcont.txt", sep='\t', na_rep='NaN')
 # Ayan first runs a translator to get it into format EW_fitter.py likes
 subprocess.call(home + "/Python/AYAN_Code/convert_spectra_format.py --inpath ~/Dropbox/Grism_S1723/JRR_Working/ --infile s1723_MMT_wcont.txt --flamconst 1. --flamcol flam_cor --flamucol flam_u_cor --wavecol wave --flamcontcol flamcor_autocont --z 1.32952 --zu 4e-4")
 #

@@ -111,12 +111,15 @@ def get_observation_datetimes() :
 
 def run_2016Aug() :
     obslog = get_observation_datetimes()
-    prefix='s1723'
-    filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
-    out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=1E-16)
-    #
-    subset_files = ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt']
-    out2 = make_a_stack(subset_files, obslog, 's1723_arc', thresh=2.5, mintoreplace=1E-16)
+    wholearc =      ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt']
+    center_of_arc = ['s1723_center_a_esi.txt', 's1723_center_b_esi.txt']
+    side_of_arc   = ['s1723_side_a_esi.txt', 's1723_side_b_esi.txt']
+    allfiles = wholearc + center_of_arc + side_of_arc
+    out1 = make_a_stack(wholearc,      obslog, 's1723_wholearc', thresh=2.5, mintoreplace=1E-16)
+    out2 = make_a_stack(center_of_arc, obslog, 's1723_center',   thresh=2.5, mintoreplace=1E-16)
+    out3 = make_a_stack(side_of_arc,   obslog, 's1723_side_',    thresh=2.5, mintoreplace=1E-16)
+    out4 = make_a_stack(allfiles,      obslog, 's1723_all',      thresh=2.5, mintoreplace=1E-16)
+
     prefix = "s2340"
     filenames = [ basename(x) for x in glob.glob(prefix+"*_esi.txt") ]
     out2 = make_a_stack(filenames, obslog, prefix, thresh=2.5, mintoreplace=0.5E-16)

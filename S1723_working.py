@@ -1,16 +1,29 @@
 from os.path import expanduser, basename
 import subprocess 
 import glob
+import jrr
 import pandas
 import numpy as np
+import query_argonaut
 import astropy.convolution
-import jrr
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 from matplotlib import pyplot as plt
 
+''' This script processes the spatially-integrated spectra of SGAS J1723, so that we can get emission line
+fluxes.  jrigby, 2017'''
 
-def smooth_the_noise(sp, win=21, colwave='wave', colf='flam_cor', colfu='flam_u_cor', outcol='flam_u_col_smooth') :
-    sp[outcol] =  sp[colfu].rolling(window=win, center=True).median()
-    return(0)
+def annotate_header(header_ESI, header_MMT, header_GNIRS) :
+    for header in (header_ESI, header_MMT, header_GNIRS) :
+        header += ("#\n# Below is extra processing by S1723_working.py\n")
+        header_ESI +=("# Corrected for MW reddening of E(B-V)=" + str(EBV) + "\n")
+    return(header_ESI, header_MMT, header_GNIRS)
+
+def get_MWreddening_S1723() :
+    # Get MW reddening E(B-V) from Green et al. 2015, using their API query_argonaut
+    coords = SkyCoord(ra=260.9006916667, dec=34.199825, unit=(u.deg, u.deg))
+    EBV_Green2015 = query_argonaut.query(coords.ra.value, coords.dec.value, coordsys='equ', mode='sfd')  #
+    return(EBV_Green2015.values()[0])
 
 def flag_noise_peaks(sp, delta=0.15, neighborpix=2, colfu='flam_u', contmask='contmask') :                         
     maxtab, mintab = jrr.peakdet.peakdet(sp[colfu], delta)  # Find peaks.
@@ -29,21 +42,6 @@ def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colf
     plt.ylim(sp[colf].median() * -0.1, sp[colf].median() * 5)
     plt.legend()
     return(smooth1, smooth2)
-
-def check_ESI_fluxing(thisdir) :
-    myfiles = ['s1723_arc_a_esi.txt', 's1723_arc_b_esi.txt', 's1723_side_a_esi.txt', 's1723_side_b_esi.txt', 's1723_center_a_esi.txt', 's1723_center_b_esi.txt']#, 's1723_counter_a_esi.txt', 's1723_counter_b_esi.txt']
-    for thisfile in myfiles :
-        #print "DEBUG", thisdir, thisfile
-        df = pandas.read_table(thisdir + thisfile, delim_whitespace=True, comment="#")
-        boxcar = 11
-        df['smooth'] = df['flam'].rolling(window=boxcar,center=True).median()
-        #smooth = astropy.convolution.convolve(df['flam'].as_matrix(), np.ones((boxcar,))/boxcar, boundary='extend', fill_value=np.nan) # boxcar smooth
-        scaleby = df[df['obswave'].between(7000,7200)]['flam'].median()
-        print "scaleby", scaleby
-        df['smoothscaled'] = df['smooth'] / scaleby
-        plt.plot(df['obswave'], df['smoothscaled'], label=thisfile)
-    plt.ylim(-3,10) ; plt.xlim(4000, 1.E4)
-    return(myfiles)
 
 def load_linelists(linelistdir, zz) :
     LL_uv  = pandas.read_table(linelistdir + "rest_UV_emission_linelist.txt",      delim_whitespace=True, comment="#")
@@ -82,16 +80,19 @@ file_G102 = wdir + 'WFC3_fit_1Dspec/FULL_G102_coadded.dat'
 file_G141 = wdir + 'WFC3_fit_1Dspec/FULL_G141_coadded.dat'
 
 #### Load the linelists, and set the redshift
+EBV = get_MWreddening_S1723()         # Get the Milky Way reddening value
 zHa   = 1.329279 ;  zHa_u = 0.000085  # From GNIRS, see gnirs_writeup.txt
-zESI_prelim = 1.3333365  # Why is this discrepant??
-LL = load_linelists(wdir+'Linelists/', zHa)
+zESI_prelim = 1.3333365               # Why is this discrepant??
+LL = load_linelists(wdir+'Linelists/', zHa)   #Need to check, z may be discrepant **
 
 #### Read ESI spectra
 # Units are:  wave: barycentric corrected vacuum Angstroms;  flambda in erg/cm2/s/angstrom
 sp_ESI = pandas.read_table(file_ESI, delim_whitespace=True, comment="#")
+header_ESI = jrr.util.read_header_from_file(file_ESI, comment="#")  # save the header
 sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  
 sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) 
 sp_ESI['flam_u'] = pandas.to_numeric(sp_ESI['flam_u'], errors='coerce') # convert to float64
+jrr.mage.deredden_MW_extinction(sp_ESI, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
 sp_ESI['contmask'] = False
 sp_ESI.loc[sp_ESI['wave'].between(7576.,7739.), 'contmask'] = True   # Mask telluric A-band
 sp_ESI.loc[sp_ESI['wave'].between(5583.,5592.), 'contmask'] = True   # Mask sky line
@@ -99,26 +100,33 @@ sp_ESI.loc[sp_ESI['wave'].between(5611.,5623.), 'contmask'] = True   # Mask sky 
 sp_ESI.loc[sp_ESI['wave'].between(6308.,6313.), 'contmask'] = True   # Mask sky line
 sp_ESI.loc[sp_ESI['flam'] == 0.00, 'contmask'] = True   # Mask bad column, which Ayan replaced w zero
 
-
 #### Read WFC3 spectra (w continuua, both grisms)
 names = ('wave', 'flam', 'flam_u', 'cont', 'flam_contsub')  # assumed flam. **Check w Michael
 sp_G102 = pandas.read_table(file_G102, delim_whitespace=True, comment="#", names=names)
 sp_G141 = pandas.read_table(file_G141, delim_whitespace=True, comment="#", names=names)
+jrr.mage.deredden_MW_extinction(sp_G102, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub') 
+jrr.mage.deredden_MW_extinction(sp_G141, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub')
+sp_G102.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G102_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)  # writing with Milky Way dereddening correction.
+sp_G141.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G141_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)
 
 #### Read MMT Blue Channel spectrum. # wave in vacuum Ang, flam in 1E-17 erg/s/cm^2/A
 names=('wave', 'flam', 'flam_u')  
 sp_MMT = pandas.read_table(file_MMT, delim_whitespace=True, comment="#", names=names)
-sp_MMT['flam'] *= 1.0E-17   # flam was in units of 1E-17
+header_MMT =("# MMT Blue Channel spectrum of SGAS J1723.\n")  # Nothing worth grabbing from original header
+sp_MMT['flam']   *= 1.0E-17   # flam was in units of 1E-17
 sp_MMT['flam_u'] *= 1.0E-17
 #sp_MMT.replace([np.inf, -np.inf], np.nan, inplace=True)
+jrr.mage.deredden_MW_extinction(sp_MMT, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
 sp_MMT['contmask'] = False
 sp_MMT.loc[sp_MMT['wave'].between(4999.,5017.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
 sp_MMT.loc[sp_MMT['wave'].gt(5200.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
 peak_ind_MMT = flag_noise_peaks(sp_MMT, colfu='flam_u', delta=1E-17)
 
-
 #### Read GNIRS spectrum
 sp_GNIRS = pandas.read_csv(file_GNIRS, comment="#")  # This is in counts.  NOT FLUXED
+header_GNIRS = jrr.util.read_header_from_file(file_GNIRS, comment="#")  # save the header
+
+(header_ESI, header_MMT, header_GNIRS) = annotate_header(header_ESI, header_MMT, header_GNIRS)
 
 # Calculate scaling factors, and scale the spectra
 # Scale everything to G102
@@ -126,8 +134,8 @@ wavcut = np.array((8000., 9500., 4700., 5150.))
 f_G102A = sp_G102.loc[sp_G102['wave'].between(wavcut[0], wavcut[1])]['flam'].median()
 f_ESIA  = sp_ESI.loc[sp_ESI['wave'].between(wavcut[0], wavcut[1])]['flam'].median()
 sp_ESI['flam_cor']   = sp_ESI['flam']   * f_G102A / f_ESIA 
-sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] * f_G102A / f_ESIA 
-
+sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] * f_G102A / f_ESIA
+# ESI flux was high b/c I summed multiple exposures. See MagE_atlas/Contrib/ESI_spectra/2016Aug/readme.txt
 f_ESIB =  sp_ESI.loc[sp_ESI['wave'].between(wavcut[2], wavcut[3])]['flam_cor'].median()  # Scale MMT from already-scaled ESI
 f_MMTB =  sp_MMT.loc[sp_MMT['wave'].between(wavcut[2], wavcut[3])]['flam'].median()
 sp_MMT['flam_cor']   = sp_MMT['flam']   * f_ESIB / f_MMTB
@@ -136,25 +144,27 @@ sp_MMT['flam_u_cor'] = sp_MMT['flam_u'] * f_ESIB / f_MMTB
 #### Flux the GNIRS spectrum
 fig = plt.figure(4, figsize=figsize)
 first_guess_cont = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4, 1.56E4)]['mean'].median()
-guesspars = (100., 6564.61 *(1+zHa), 10., first_guess_cont)
-(popt, fit) = jrr.spec.fit_quick_gaussian(sp_GNIRS.interpolate(), guesspars, colwave='wave', colf='mean')
-quick_flux_Ha_GNIRS = jrr.spec.sum_of_gaussian(popt)  # In counts
-flux_Ha_G141 = 200.0E-17  # from SDSSJ1723+3411_G141.fit
-sp_GNIRS['flam'] = sp_GNIRS['mean'] * flux_Ha_G141 / quick_flux_Ha_GNIRS
-sp_GNIRS['flam_u'] = sp_GNIRS['errinmean'] * flux_Ha_G141 / quick_flux_Ha_GNIRS
+guesspars = (100., 6564.61 *(1+zHa), 10.)  # Fix the continuum, don't let curve_fit change it; it's drifting too high
+(popt_GNIRS, fit_GNIRS) = jrr.spec.fit_gaussian_fixedcont(sp_GNIRS.interpolate(), guesspars, contlevel=first_guess_cont, colwave='wave', colf='mean')
+quick_flux_Ha_GNIRS = jrr.spec.sum_of_gaussian(popt_GNIRS) # In counts
+flux_Ha_G141 = 204.02E-17  # from SDSSJ1723+3411_G141.fit  *** kludge, hard-coded ***
+GNIRS_scaleflux = flux_Ha_G141 / quick_flux_Ha_GNIRS
+sp_GNIRS['flam'] = sp_GNIRS['mean']        * GNIRS_scaleflux
+sp_GNIRS['flam_u'] = sp_GNIRS['errinmean'] * GNIRS_scaleflux
 plt.plot(sp_GNIRS['wave'], sp_GNIRS['flam'], color='k', label="GNIRS flux")
 plt.plot(sp_GNIRS['wave'], sp_GNIRS['flam_u'], color='grey', label="GNIRS uncert")
+plt.plot(sp_GNIRS['wave'], fit_GNIRS * GNIRS_scaleflux, color='blue', label='Ha fit')
 plt.legend()
 sp_GNIRS_cutout = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4,1.55E4)]
 
-# Report how I am scaling the fluxes
-print "Scaled ESI spectrum to match G102, from median flam in range", wavcut[0], "to", wavcut[1]
-print "   by factor",  f_G102A / f_ESIA
-print "Scaled MMT BC spectrum to match scaled ESI, from median flam in range", wavcut[2], 'to', wavcut[3]
-print "   by factor", f_ESIB / f_MMTB
-# ESI flux was high b/c I was summing multiple exposures. See MagE_atlas/Contrib/ESI_spectra/2016Aug/readme.txt
-
-print "Scaled GNIRS spectrum by ratio of Halpha flux, by factor", flux_Ha_G141 / quick_flux_Ha_GNIRS
+# Report how scaled the fluxes
+howscaled_ESI = "# flam_cor is scaled ESI flambda, to match WFC3 G102, from median flam in range " + str(wavcut[0]) + " to " + str(wavcut[1]) + "\n#    Flux was scaled by factor  " + str(f_G102A / f_ESIA) + "\n"
+howscaled_MMT = "# Scaled MMT BC spectrum to match scaled ESI, from median flam in range " + str(wavcut[2]) + ' to ' + str(wavcut[3]) + "\n#   Flux was scaled by factor " + str(f_ESIB / f_MMTB) + "\n"
+howscaled_GNIRS = "# Scaled GNIRS spectrum by ratio of Halpha flux, by factor " + str(GNIRS_scaleflux)
+header_ESI   += howscaled_ESI
+header_MMT   += howscaled_MMT
+header_GNIRS += howscaled_GNIRS 
+print "How scaled spectra\n:", howscaled_ESI, "\n", howscaled_MMT, "\n", howscaled_GNIRS, "\n"
 
 # De-redshift the spectra  (should loop this...)
 jrr.spec.convert2restframe_df(sp_MMT, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
@@ -182,24 +192,28 @@ plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
 plt.title("Have scaled continuua.")
 #plt.show()
 
-### Fit nice continuum for MMT.  The boxcar # is arbitrary; can make it more physical later
+### Fit MMT continuum.  The boxcar # is arbitrary, seems to match
 fig = plt.figure(2, figsize=figsize)
 plt.title("Fit continuum for MMT bluechannel")
 (smooth1, smooth2) = wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
 
-### First stab at a cont fit for ESI.  Need to diagnose problems w ESI extraction, then come back to this
+### Fit ESI continuum
 peak_ind = flag_noise_peaks(sp_ESI, colfu='flam_u_cor', delta=0.05E-17)
 fig = plt.figure(3, figsize=figsize)
-plt.scatter(sp_ESI['wave'].iloc[peak_ind], sp_ESI['flam_cor'].iloc[peak_ind]) 
+#plt.scatter(sp_ESI['wave'].iloc[peak_ind], sp_ESI['flam_cor'].iloc[peak_ind]) 
 plt.title("Continuum fitting for ESI")
 (smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=351, colf='flam_cor',  colcont='flamcor_autocont', label="ESI")
+header_ESI += ("# Applied smooth continuum \n")
 plt.ylim(0,9E-17)
 
 plt.show()  # Show all plots at once, each in a separate window
 
 print "Fitting line fluxes.  MMT first"
-sp_MMT.to_csv("s1723_MMT_wcont.txt", sep='\t', na_rep='NaN')
-sp_ESI.to_csv("s1723_ESI_wcont.txt", sep='\t', na_rep='NaN')
+sp_ESI.to_csv('temp1', sep='\t', na_rep='NaN')
+sp_MMT.to_csv("temp2", sep='\t', na_rep='NaN')
+jrr.util.put_header_on_file('temp1', header_ESI, "s1723_ESI_wcont.txt")
+jrr.util.put_header_on_file('temp2', header_MMT, "s1723_MMT_wcont.txt")
+
 # Ayan first runs a translator to get it into format EW_fitter.py likes
 subprocess.call(home + "/Python/AYAN_Code/convert_spectra_format.py --inpath ~/Dropbox/Grism_S1723/JRR_Working/ --infile s1723_MMT_wcont.txt --flamconst 1. --flamcol flam_cor --flamucol flam_u_cor --wavecol wave --flamcontcol flamcor_autocont --z 1.32952 --zu 4e-4")
 #

@@ -92,7 +92,8 @@ def make_a_stack(filenames, obslog, prefix, thresh, mintoreplace) :     # Put it
     df = get_the_spectra(filenames, obslog)
     wavearray = jrr.spec.make_wavearray_constant_resoln(4000.0, 1.0E4, 4000.0, p=2.2, asSeries=True)
     (out, nf, nf_u) = jrr.spec.stack_spectra(df, colwave='wave', colf='flam', colfu='flam_u', output_wave_array=wavearray)
-    out2 = jrr_filter(out, thresh, mintoreplace)    
+    out2 = jrr_filter(out, thresh, mintoreplace)
+    ## Need to add MW dereddening
     plot_the_results(filenames, df, out2, groupby=False)
     outfile = prefix + "_ESI_JRR_sum.txt"
     write_spectrum_to_file(out2, outfile, prefix, filenames, "../JRR_header.txt", thresh)

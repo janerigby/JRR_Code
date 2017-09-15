@@ -4,12 +4,13 @@ import glob
 import jrr
 import pandas
 import numpy as np
-import query_argonaut
+#import query_argonaut
 import astropy.convolution
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy import units as u
 from matplotlib import pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 
 ''' This script processes the spatially-integrated spectra of SGAS J1723, so that we can get emission line
 fluxes.  jrigby, 2017'''
@@ -23,7 +24,7 @@ def annotate_header(header_ESI, header_MMT, header_GNIRS) :
 def get_MWreddening_S1723() :
     # Get MW reddening E(B-V) from Green et al. 2015, using their API query_argonaut
     coords = SkyCoord(ra=260.9006916667, dec=34.199825, unit=(u.deg, u.deg))
-    EBV_Green2015 = query_argonaut.query(coords.ra.value, coords.dec.value, coordsys='equ', mode='sfd')  #
+    EBV_Green2015 = jrr.query_argonaut.query(coords.ra.value, coords.dec.value, coordsys='equ', mode='sfd')  #
     EBV_stashed = 0.03415
     return(EBV_Green2015.values()[0])
 
@@ -55,8 +56,8 @@ def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colf
     return(smooth1, smooth2)
 
 def load_linelists(linelistdir, zz) :
-    LL_uv  = pandas.read_table(linelistdir + "rest_UV_emission_linelist.txt",      delim_whitespace=True, comment="#")
-    LL_opt = pandas.read_table(linelistdir + "rest_optical_emission_linelist.txt", delim_whitespace=True, comment="#")
+    LL_uv  = pandas.read_table(linelistdir + "rest_UV_emission_linelist_short.txt",      delim_whitespace=True, comment="#")
+    LL_opt = pandas.read_table(linelistdir + "rest_optical_emission_linelist_short.txt", delim_whitespace=True, comment="#")
     (spec_path, line_path) = jrr.mage.getpath('released')
     (LL_temp, zz_notused) =  jrr.mage.get_linelist(line_path + 's1723.linelist')
     LL_uvabs = LL_temp.loc[LL_temp['type'].eq("ISM")]  # This already has redshift from .linelist.  may be out of synch****
@@ -74,12 +75,29 @@ def load_linelists(linelistdir, zz) :
     LL.drop_duplicates(subset=('restwav', 'lab1'), inplace=True)  # drop duplicate entries, w same rest wavelength, same ion label    
     return(LL)
 
+def adjust_plot() :
+    plt.legend()
+    x1 = 3200. ; x2 = 16900.
+    plt.ylim(0,0.3E-16)
+    plt.xlim(x1, x2)
+    plt.xlabel(r"Vacuum wavelength ($\AA$)")
+    plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
+    LL_notabs = LL.loc[LL['type'] != 'ISM']
+    jrr.mage.plot_linelist(LL_notabs, z_systemic=np.nan, restframe=False, velplot=False, line_center=np.nan) 
+    ax2 = ax.twiny()
+    ax2.set_xlim( x1/(1. + zHa), x2/(1. + zHa) )
+    ax2.set_xlabel(r"rest-frame vacuum wavelength ($\AA$)")
+    ax.xaxis.set_minor_locator(AutoMinorLocator(4))
+    ax2.xaxis.set_minor_locator(AutoMinorLocator(4))
+    fig.subplots_adjust(hspace=0)
+    return(0)
+
 ##########  END OF FUNCTIONS ###############
 
 
 #######  Housekeeping  ##############
 plt.close("all")
-figsize=(12,4)
+figsize=(16,4)
 
 #### Directories and filenames
 home = expanduser("~")
@@ -198,39 +216,50 @@ sp_MMT.to_csv("temp2", sep='\t', na_rep='NaN')
 jrr.util.put_header_on_file('temp1', header_ESI, "s1723_ESI_wcont.txt")
 jrr.util.put_header_on_file('temp2', header_MMT, "s1723_MMT_wcont.txt")
 
-
 # Plot the scaled spectra
-fig = plt.figure(0, figsize=figsize)
-plt.plot(sp_ESI['wave'],  sp_ESI['flam_cor'],    color='green', label='Keck ESI')
-plt.plot(sp_ESI['wave'],  sp_ESI['flam_u_cor'],  color='lightgreen', label='_nolegend_', linewidth=0.2)
-plt.plot(sp_MMT['wave'],  sp_MMT['flam_cor'],    color='blue', Label='MMT Blue Channel')
-plt.plot(sp_MMT['wave'],  sp_MMT['flam_u_cor'],  color='lightblue', label='_nolegend_', linewidth=0.2)
-plt.plot(sp_GNIRS_cutout['wave'], sp_GNIRS_cutout['flam'], color='orange', label="GNIRS")
-plt.plot(sp_GNIRS_cutout['wave'], sp_GNIRS_cutout['flam_u'], color='lightgrey', label="_nolegend_")
-plt.plot(sp_G102['wave'], sp_G102['flam'],   color='red', label='WFC3 G102')
-plt.plot(sp_G102['wave'], sp_G102['flam_u'], color='red',label='_nolegend_', linewidth=0.2)
-plt.plot(sp_G141['wave'], sp_G141['flam'],   color='purple', label='WFC3 G141')
-plt.plot(sp_G141['wave'], sp_G141['flam_u'], color='purple', label='_nolegend_', linewidth=0.2)
-plt.legend()
-plt.ylim(0,0.3E-16)
-plt.xlim(3200,19000)
-plt.xlabel("Vacuum wavelength (Angstroms)")
-plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
+ax = sp_ESI.plot(    x='wave', y='flam_cor', color='green',  label='Keck ESI', figsize=figsize)
+sp_GNIRS_cutout.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
+sp_MMT.plot( x='wave', y='flam_cor',    color='blue',   label='MMT BC',    ax=ax)
+sp_G102.plot(x='wave', y='flam',        color='red',    label='WFC3 G102', ax=ax)
+sp_G141.plot(x='wave', y='flam',        color='purple', label='WFC3 G141', ax=ax)
+sp_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label='_nolegend_', linewidth=0.2, ax=ax)
+sp_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label='_nolegend_', linewidth=0.2, ax=ax)
+sp_G102.plot(x='wave', y='flam_u',      color='red',label='_nolegend_', linewidth=0.2, ax=ax)
+sp_G141.plot(x='wave', y='flam_u',      color='purple', label='_nolegend_', linewidth=0.2, ax=ax)
+sp_GNIRS_cutout.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
 plt.title("Flux-scaled spectra")
+adjust_plot()
+
+fig = plt.figure(5, figsize=figsize)   # Prettier plot
+cutout_MMT   = sp_MMT.loc[sp_MMT['wave'].between(3200,4710)]
+jrr.spec.boxcar_smooth(cutout_MMT, win=31, colwave='wave', colf='flam_cor', outcol='flam_smooth', func='median')
+cutout_ESI   = sp_ESI.loc[sp_ESI['wave'].between(4650,8000)]
+jrr.spec.boxcar_smooth(cutout_ESI, win=15, colwave='wave', colf='flam_cor', outcol='flam_smooth', func='median')
+cutout_G102 = sp_G102.loc[sp_G102['wave'].between(7950,11475)]
+cutout_G141 = sp_G141.loc[sp_G141['wave'].between(1.1E4,1.7E4)]
+ax = cutout_ESI.plot(    x='wave', y='flam_smooth', color='green',  label='Keck ESI', figsize=figsize)
+#sp_GNIRS_cutout.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
+cutout_MMT.plot( x='wave', y='flam_smooth',    color='blue',   label='MMT BC',    ax=ax)
+cutout_G102.plot(x='wave', y='flam',        color='red',    label='WFC3 G102', ax=ax)
+cutout_G141.plot(x='wave', y='flam',        color='purple', label='WFC3 G141', ax=ax)
+#cutout_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label='_nolegend_', linewidth=0.2, ax=ax)
+#cutout_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label='_nolegend_', linewidth=0.2, ax=ax)
+#cutout_G102.plot(x='wave', y='flam_u',      color='red',label='_nolegend_', linewidth=0.2, ax=ax)
+#cutout_G141.plot(x='wave', y='flam_u',      color='purple', label='_nolegend_', linewidth=0.2, ax=ax)
+#sp_GNIRS_cutout.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
+#plt.title("Prettier plot.  MMT and ESI have been boxcar smoothed")
+adjust_plot()
+
 
 # Plot just the scaled continuum fits
-fig = plt.figure(4, figsize=figsize)
+fig = plt.figure(5, figsize=figsize)
 plt.plot(sp_ESI['wave'],  sp_ESI['flamcor_autocont'],    color='green', label='Keck ESI')
 plt.plot(sp_MMT['wave'],  sp_MMT['flamcor_autocont'],    color='blue', Label='MMT Blue Channel')
 #plt.plot(sp_GNIRS_cutout['wave'], sp_GNIRS_cutout['flam'], color='orange', label="GNIRS")
 plt.plot(sp_G102['wave'], sp_G102['cont'],   color='red', label='WFC3 G102')
 plt.plot(sp_G141['wave'], sp_G141['cont'],   color='purple', label='WFC3 G141')
-plt.legend()
-plt.ylim(0,0.3E-16)
-plt.xlim(3200,19000)
-plt.xlabel("Vacuum wavelength (Angstroms)")
-plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
 plt.title("Plotting the scaled continuua")
+adjust_plot()
 
 # Sanity check how I fluxed the spectra
 cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(8000., 8500.)]['flam_cor'].median() / sp_G102.loc[sp_G102['wave'].between(8000., 8500.)]['flam'].median()
@@ -252,7 +281,6 @@ plt.show()  # Show all plots at once, each in a separate window
 ##run ~/Python/AYAN_Code/EW_fitter.py --short s1723_MMT_wcont_new-format  --spec_list_file ./other-spectra-filenames-redshifts.txt --silent --hide --savepdf --fout s1723_MMT_measuredlines.out --useflamcont  flam_cont --linelistpath ./
 
 # Have scaled fluxes by emission lines.  Let's sanity check that continuum isn't too far out of agreement
-#fig = plt.figure(4, figsize=figsize)
 
 
 

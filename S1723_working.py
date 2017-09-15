@@ -250,6 +250,12 @@ cutout_G141.plot(x='wave', y='flam',        color='purple', label='WFC3 G141', a
 #plt.title("Prettier plot.  MMT and ESI have been boxcar smoothed")
 adjust_plot()
 
+# Above boxcar_smooth is stupid.  Should actually bin and reduce size of Df, like this:
+bins = np.arange(3200, 4700, 100)
+cutout_MMT['binned'] = pandas.cut(cutout_MMT['wave'], bins)
+cutout_MMT.groupby(['binned'],)['flam'].sum()  # this should be much shorter.
+####*** STOPPED HERE, pick this up here on train
+
 
 # Plot just the scaled continuum fits
 fig = plt.figure(5, figsize=figsize)

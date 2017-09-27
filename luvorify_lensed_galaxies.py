@@ -13,7 +13,7 @@ import numpy as np
 from skimage.measure import block_reduce
 import subprocess #  from comment by Adam on Python me dammit.
 import os
-
+from os.path import expanduser
 
 def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, outdir) :
     '''Take a source-plane reconstruction of a lensed galaxy, and predict what JWST would see.
@@ -29,7 +29,7 @@ def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, ou
     Outputs:      creates output images in outdir
     '''
 
-    psf_dir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/PSF/"
+    psf_dir =  expanduser('~') + "/Dropbox//SGAS-shared/S1110/Work_for_papers23/PSF/"
 
     if len(in_images) != len(filts) :
         raise Exception("in_images and filters must be same shape.")
@@ -82,10 +82,10 @@ def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, ou
     return(0)  # success
 
     
-apertures = (2.4003, 4.0, 6.0, 8., 10., 12., 14., 16.)
+apertures = (2.4003, 4.0, 6.0, 8., 10., 12., 14., 16.,  6.5, 9.2, 15.1)
 for aperture in apertures:
-    indir  = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/drizzled_source_images_23Feb2016/Ab/"
-    outdir  = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/LUVOIRify/Ab/"
+    indir  = expanduser('~') + "/Dropbox/SGAS-shared/S1110/Work_for_papers23/drizzled_source_images_23Feb2016/Ab/"
+    outdir =  expanduser('~') + "/Dropbox/SGAS-shared/S1110/Work_for_papers23/LUVOIRify_v2/Ab/"
     input_images = ('sdssj1110p6459_F390W_0.03g0.8_drc_sci_core_Ab_s01_out.fits', "sdssj1110p6459_F606W_0.03g0.8_drc_sci_core_Ab_s01_out.fits", "sdssj1110p6459_F105W_0.03g0.5_drz_sci_core_Ab_s01_out.fits")
     filts = ('F390W', 'F606W', 'F105W') # Filters I want to map this to for LUVOIR.  May not be obvious mapping
     waves = np.array((0.390, 0.606, 1.05))
@@ -97,8 +97,8 @@ print "They are the _conv_rebin.fits images in \t", outdir
 
 
 for aperture in apertures:
-    indir  = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/source_plane_model/"
-    outdir  = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/SGAS-shared/s1110-paper2/LUVOIRify/Ab_model/"
+    indir  =  expanduser('~') + "/Dropbox/SGAS-shared/S1110/Work_for_papers23/source_plane_model/"
+    outdir =  expanduser('~') + "/Dropbox/SGAS-shared/S1110/Work_for_papers23/LUVOIRify_v2/Ab_model/"
     input_images = ('source_390_all.fits', 'source_606_all.fits')
     filts = ('F390W', 'F606W') # Filters I want to map this to for LUVOIR.  May not be obvious mapping
     waves = np.array((0.390, 0.606))

@@ -15,6 +15,8 @@ from matplotlib.ticker import AutoMinorLocator
 ''' This script processes the spatially-integrated spectra of SGAS J1723, so that we can get emission line
 fluxes.  jrigby, 2017'''
 
+
+
 def annotate_header(header_ESI, header_MMT, header_GNIRS) :
     for header in (header_ESI, header_MMT, header_GNIRS) :
         header += ("#\n# Below is extra processing by S1723_working.py\n")
@@ -24,14 +26,15 @@ def annotate_header(header_ESI, header_MMT, header_GNIRS) :
 def get_MWreddening_S1723() :
     # Get MW reddening E(B-V) from Green et al. 2015, using their API query_argonaut
     coords = SkyCoord(ra=260.9006916667, dec=34.199825, unit=(u.deg, u.deg))
-    EBV_Green2015 = jrr.query_argonaut.query(coords.ra.value, coords.dec.value, coordsys='equ', mode='sfd')  #
+    #EBV_Green2015 = jrr.query_argonaut.query(coords.ra.value, coords.dec.value, coordsys='equ', mode='sfd')  #
     EBV_stashed = 0.03415
-    return(EBV_Green2015.values()[0])
+#    return(EBV_Green2015.values()[0])
+    return(EBV_stashed)  ## TEMP WHILE NO INTERNET ON TRAIN*****
 
 def MMT_barycentric_correction(sp) :  # Applying barycentric correction to wavelengths
     thistime =  Time('2014-05-05T09:21:00', format='isot', scale='utc')
     thisradec = SkyCoord("17:23:37.23", "+34:11:59.07", unit=(u.hourangle, u.deg), frame='icrs')
-    mmt= EarthLocation.of_site('mmt') # Gemini_N not in catalog, so use Keck.  Needs internet connection 
+    mmt= EarthLocation.of_site('mmt') # Needs internet connection 
     barycor_vel = jrr.barycen.compute_barycentric_correction(thistime, thisradec, location=mmt)
     print "FYI, the barycentric correction factor for s1723 was", barycor_vel
     jrr.barycen.apply_barycentric_correction(sp, barycor_vel, colwav='oldwave', colwavnew='wave') 
@@ -82,8 +85,8 @@ def adjust_plot() :
     plt.xlim(x1, x2)
     plt.xlabel(r"Vacuum wavelength ($\AA$)")
     plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
-    LL_notabs = LL.loc[LL['type'] != 'ISM']
-    jrr.mage.plot_linelist(LL_notabs, z_systemic=np.nan, restframe=False, velplot=False, line_center=np.nan) 
+    #LL_notabs = LL.loc[LL['type'] != 'ISM']
+    #jrr.mage.plot_linelist(LL_notabs, z_systemic=np.nan, restframe=False, velplot=False, line_center=np.nan) 
     ax2 = ax.twiny()
     ax2.set_xlim( x1/(1. + zHa), x2/(1. + zHa) )
     ax2.set_xlabel(r"rest-frame vacuum wavelength ($\AA$)")
@@ -145,7 +148,8 @@ header_MMT =("# MMT Blue Channel spectrum of SGAS J1723.\n")  # Nothing worth gr
 sp_MMT['flam']   *= 1.0E-17   # flam was in units of 1E-17
 sp_MMT['flam_u'] *= 1.0E-17
 #sp_MMT.replace([np.inf, -np.inf], np.nan, inplace=True)
-MMT_barycentric_correction(sp_MMT)
+#MMT_barycentric_correction(sp_MMT)  ** TEMP COMMENTING THIS blc crappy internet connection on train
+sp_MMT['wave'] = sp_MMT['oldwave']  #  TEMP BC OF CRAPPY INTERNET CONNECTION ON train
 jrr.mage.deredden_MW_extinction(sp_MMT, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
 sp_MMT['contmask'] = False
 sp_MMT.loc[sp_MMT['wave'].between(4999.,5017.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
@@ -231,37 +235,35 @@ plt.title("Flux-scaled spectra")
 adjust_plot()
 
 fig = plt.figure(5, figsize=figsize)   # Prettier plot
-cutout_MMT   = sp_MMT.loc[sp_MMT['wave'].between(3200,4710)]
-jrr.spec.boxcar_smooth(cutout_MMT, win=31, colwave='wave', colf='flam_cor', outcol='flam_smooth', func='median')
-cutout_ESI   = sp_ESI.loc[sp_ESI['wave'].between(4650,8000)]
-jrr.spec.boxcar_smooth(cutout_ESI, win=15, colwave='wave', colf='flam_cor', outcol='flam_smooth', func='median')
+how2comb = {'flam_cor': 'mean', 'flam_u_cor': jrr.util.convenience1, 'wave': 'mean', 'flamcor_autocont' : 'mean'} #how to bin
+bin_MMT =  np.arange(3200, 4800,  5)
+bin_ESI =  np.arange(4350, 8900, 10)
+cutout_MMT = jrr.spec.bin_boxcar_better(sp_MMT, bin_MMT, how2comb, bincol='wave')
+cutout_ESI = jrr.spec.bin_boxcar_better(sp_ESI, bin_ESI, how2comb, bincol='wave')
 cutout_G102 = sp_G102.loc[sp_G102['wave'].between(7950,11475)]
 cutout_G141 = sp_G141.loc[sp_G141['wave'].between(1.1E4,1.7E4)]
-ax = cutout_ESI.plot(    x='wave', y='flam_smooth', color='green',  label='Keck ESI', figsize=figsize)
+ax = cutout_ESI.plot(    x='wave', y='flam_cor', color='green',  label='Keck ESI', figsize=figsize)
 #sp_GNIRS_cutout.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
-cutout_MMT.plot( x='wave', y='flam_smooth',    color='blue',   label='MMT BC',    ax=ax)
+cutout_MMT.plot( x='wave', y='flam_cor',    color='blue',   label='MMT BC',    ax=ax)
 cutout_G102.plot(x='wave', y='flam',        color='red',    label='WFC3 G102', ax=ax)
 cutout_G141.plot(x='wave', y='flam',        color='purple', label='WFC3 G141', ax=ax)
-#cutout_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label='_nolegend_', linewidth=0.2, ax=ax)
-#cutout_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label='_nolegend_', linewidth=0.2, ax=ax)
-#cutout_G102.plot(x='wave', y='flam_u',      color='red',label='_nolegend_', linewidth=0.2, ax=ax)
-#cutout_G141.plot(x='wave', y='flam_u',      color='purple', label='_nolegend_', linewidth=0.2, ax=ax)
+cutout_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label='_nolegend_', linewidth=0.2, ax=ax)
+cutout_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label='_nolegend_', linewidth=1, ax=ax)
+cutout_G102.plot(x='wave', y='flam_u',      color='red',label='_nolegend_', linewidth=0.2, ax=ax)
+cutout_G141.plot(x='wave', y='flam_u',      color='purple', label='_nolegend_', linewidth=0.2, ax=ax)
+plt.plot(sp_ESI['wave'],  sp_ESI['flamcor_autocont'],    color='black', label='_nolegend_')
+plt.plot(sp_MMT['wave'],  sp_MMT['flamcor_autocont'],    color='black',label='_nolegend_')
+plt.plot(cutout_G102['wave'], cutout_G102['cont'],   color='black', label='_nolegend_')
+plt.plot(cutout_G141['wave'], cutout_G141['cont'],   color='black', label='_nolegend_')
 #sp_GNIRS_cutout.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
 #plt.title("Prettier plot.  MMT and ESI have been boxcar smoothed")
 adjust_plot()
-
-# Above boxcar_smooth is stupid.  Should actually bin and reduce size of Df, like this:
-bins = np.arange(3200, 4700, 100)
-cutout_MMT['binned'] = pandas.cut(cutout_MMT['wave'], bins)
-cutout_MMT.groupby(['binned'],)['flam'].sum()  # this should be much shorter.
-####*** STOPPED HERE, pick this up here on train
 
 
 # Plot just the scaled continuum fits
 fig = plt.figure(5, figsize=figsize)
 plt.plot(sp_ESI['wave'],  sp_ESI['flamcor_autocont'],    color='green', label='Keck ESI')
 plt.plot(sp_MMT['wave'],  sp_MMT['flamcor_autocont'],    color='blue', Label='MMT Blue Channel')
-#plt.plot(sp_GNIRS_cutout['wave'], sp_GNIRS_cutout['flam'], color='orange', label="GNIRS")
 plt.plot(sp_G102['wave'], sp_G102['cont'],   color='red', label='WFC3 G102')
 plt.plot(sp_G141['wave'], sp_G141['cont'],   color='purple', label='WFC3 G141')
 plt.title("Plotting the scaled continuua")

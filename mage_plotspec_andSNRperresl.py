@@ -4,7 +4,7 @@ import pandas
 import matplotlib 
 import  matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, ScalarFormatter
 import re
 
 def calc_smoothSNR(sp, resoln, smooth_window, colwave='wave', colf='fnu', colfu='fnu_u', coldisp='disp') :
@@ -14,14 +14,15 @@ def calc_smoothSNR(sp, resoln, smooth_window, colwave='wave', colf='fnu', colfu=
     sp['smoothSNRperres'] = sp['SNRperres'].rolling(window=smooth_window, center=True).median()
     return(0)
 
+
 mage_mode = 'reduction'
 matplotlib.rcParams.update({'font.size': 14})
 smooth_window = 201 #301
 figsize = (8,4)
-pp = PdfPages("snr_Aug302017.pdf")
+pp = PdfPages("snr_Sept27_2017.pdf")
 
-plot_indy = True
-if plot_indy :
+plot_indy_SNR = True
+if plot_indy_SNR :
     lab1 = [ 'rcs0327-E', 'rcs0327-G', 'rcs0327-U', 'rcs0327-B', 'rcs0327-counterarc',]
     lab2 = [ 'S1527+0652', 'S1527+0652-fnt']
     lab3 = [ 'S0004-0103', 'S0900+2234', 'S1226+2152']
@@ -31,14 +32,14 @@ if plot_indy :
 
     labs = (lab1, lab2, lab3, lab4, lab5, lab6)
     for labels in labs:
-        (df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels, verbose=True, zchoice='stars', addS99=False, MWdr=False)
+        (df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels, verbose=True, zchoice='stars', addS99=False, MWdr=True)
         #fig = plt.figure(figsize=figsize)
         fig, ax  = plt.subplots(figsize=figsize)
         for label in labels:
             sp = df[label]
             print label, resoln[label]
             calc_smoothSNR(sp, resoln[label], smooth_window)
-            labelnew = re.sub('Horseshoe', 'Cosmic Horseshoe', re.sub('fnt', 'faint', re.sub('~',' ', re.sub('rcs', 'RCS', label))))
+            labelnew = jrr.mage.prettylabel_from_shortlabel(label)
             plt.plot(sp['wave'], sp['smoothSNRperres'], label=labelnew)
         plt.legend(fontsize=10, frameon=True, labelspacing=0, loc='upper left')
         plt.ylim(0,47)
@@ -50,8 +51,8 @@ if plot_indy :
         #plt.grid()
         pp.savefig(bbox_inches='tight', pad_inches=0.1)
 
-plot_stack = True
-if plot_stack :
+plot_stack_SNR = True
+if plot_stack_SNR :
     fig, ax  = plt.subplots(figsize=figsize)
     (sp, LL) = jrr.mage.open_stacked_spectrum(mage_mode)
     RR = 3300
@@ -75,6 +76,41 @@ if plot_stack :
     plt.xlabel(r'rest-frame wavelength ($\mathrm{\AA}$)')
     plt.ylabel('SNR per resoln. element')
     pp.savefig(bbox_inches='tight', pad_inches=0.1)
+pp.close()
+plt.close("all")
 
+#plot_indy_spectra = True
+#if plot_indy_spectra:   # Now, make plots like those made by Analysis/Spectra_thumbnails/spectra.gnu, but in python
+
+figsize = (20,3)
+labels_RAorder = ['rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-counterarc', 'S1527+0652', 'S1527+0652-fnt', 'S0004-0103',  'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe',   'S1226+2152', 'S1429+1202', 'S1458-0023', 'S2111-0114',  'Cosmic~Eye', 'S2243-0935']
+(df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels_RAorder, verbose=True, zchoice='neb', addS99=False, MWdr=True)
+
+scalefactor = 1E28
+pp = PdfPages("spectra-snapshots-Sept2017.pdf")
+for label in labels_RAorder :  # temp range for debugging
+    sp = df[label].loc[~df[label]['badmask']]   # one galaxy, dont plot bad points
+    #sp = df[label]
+    fig, ax  = plt.subplots(figsize=figsize)
+    print "Plotting", label
+    labelnew = jrr.mage.prettylabel_from_shortlabel(label)
+    plt.plot(sp['wave'], sp['fnu']   * scalefactor,   label=labelnew, color='k', linewidth=0.5)
+    plt.plot(sp['wave'], sp['fnu_u'] * scalefactor, label='_nolegend_', color='lightblue', linewidth=1)
+    plt.ylim(-0.5E-28*scalefactor,  2.5E-28*scalefactor)
+    x1 = max(3200, 912*(1.+zz_sys[label]))  # plot down to 3200, unless its blueward of lyman limit
+    x2=8200.
+    plt.xlim(x1, x2)
+    plt.ylabel(r'$f_{\nu}$ ($10^{-28}$ erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$)')
+    ax.set_xlabel(r"observed wavelength ($\mathrm{\AA}$)")
+    ax.xaxis.set_minor_locator(AutoMinorLocator(10))
+    ax.get_xaxis().set_tick_params(which='both', direction='in')
+    ax2 = ax.twiny()
+    ax2.set_xlim( x1/(1. + zz_sys[label]), x2/(1. + + zz_sys[label]) )
+    ax2.set_xlabel(r"rest-frame wavelength ($\mathrm{\AA}$)")
+    ax2.xaxis.set_ticks(np.arange(1000, 5000, 1000))
+    ax2.xaxis.set_minor_locator(AutoMinorLocator(10))
+    ax2.get_xaxis().set_tick_params(which='both', direction='in')
+    plt.annotate(labelnew, (0.45,0.88), xycoords="axes fraction", fontsize=16)
+    pp.savefig(bbox_inches='tight', pad_inches=0.1)
 pp.close()
 plt.close("all")

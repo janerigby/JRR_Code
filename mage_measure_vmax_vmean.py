@@ -27,7 +27,7 @@ def cos_mark_blends(df) :
     return(0)
 
 # Good, I am now getting the uncertainty in vmean, vmax by varying the continuum via scalecont.  Hokey but realistic.
-# Use COS lowres rather than COS R2E4.  It has better noise properties, fairer comparison to MagE.  
+# Use COS lowres rather than COS R1.4E4.  It has better noise properties, fairer comparison to MagE.  
 def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red, thecenters, thelabels, IParray, pdfout) :
     scalecont = np.array((1.0, 0.98, 0.985, 0.99, 0.995, 1.01, 1.01, 1.015, 1.02)) 
     # Measure the velocities and put them in a dataframe
@@ -45,7 +45,7 @@ def wrap_measure_vmaxvmean(sp, colwave, colf, colcont, Nover_bluemax, Nover_red,
             vmax_red  = np.zeros_like(scalecont)
             for jj, sc in  enumerate(scalecont) :
                 (vmean[jj], vmax_blue[jj], vmax_red[jj]) = jrr.spec.calc_vmean_vmax(sp, colwave, colf, colcont, 1, 1, thecenters[ii], scalecont=sc, isabs=True, plotit=True, label= linelab)
-                # Now that I'm using the R3500 COS spectrum, don't need Norder_blue>1.  Should vary continuum by N% and take avg.
+                # Now that I'm using the R3300 COS spectrum, don't need Norder_blue>1.  Should vary continuum by N% and take avg.
             vmean_ar[ii]  =  np.average(vmean)
             vmax_ar[ii]   =  np.average(vmax_blue)
             vmean_std[ii] =  np.std(vmean)
@@ -118,29 +118,29 @@ print "COMPUTING vmax vmean for the MagE stacked spectrum"
 sp['unity' ] = 1.0  # continuum
 print "#  (velocities are in systemic rest frame, in km/s)"
 #vmage_df is the shape-normalized MagE stack, weighted avg
-vmage_whtavg = wrap_measure_vmaxvmean(sp, 'wave', 'X_avg',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_whtavg.pdf')
-vmage_median = wrap_measure_vmaxvmean(sp, 'wave', 'X_median', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_median.pdf')
+vmage_whtavg = wrap_measure_vmaxvmean(sp, 'wave', 'fweightavg',  'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_whtavg.pdf')
+vmage_median = wrap_measure_vmaxvmean(sp, 'wave', 'fmedian',     'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_median.pdf')
 mage_mark_blends(vmage_whtavg)  ;   mage_mark_blends(vmage_median)   # manually enter lower limits for blends
 vmage_whtavg.drop('linecen', axis=1).to_latex('mage_vmaxvmean_whtavg.tex')
 vmage_median.drop('linecen', axis=1).to_latex('mage_vmaxvmean_median.tex')
 plt.close("all")
 
-print "COMPUTING vmax vmean for the R=20000 COS stacked spectrum"
+print "COMPUTING vmax vmean for the R=1.4E4 COS stacked spectrum"
 cos_hiR = jrr.mage.read_our_COS_stack(resoln="full")
 cos_loR = jrr.mage.read_our_COS_stack(resoln="matched_mage")
-vcos_hiR_whtavg = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R2E4_whtavg.pdf')
-vcos_hiR_median = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R2E4_median.pdf')
+vcos_hiR_whtavg = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R1.4E4_whtavg.pdf')
+vcos_hiR_median = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R1.4E4_median.pdf')
 cos_mark_blends(vcos_hiR_whtavg)  ;  cos_mark_blends(vcos_hiR_median)  # Manually enter lower limits for blends
-vcos_hiR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R2E4_whtavg.tex')
-vcos_hiR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R2E4_median.tex')
+vcos_hiR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R1.4E4_whtavg.tex')
+vcos_hiR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R1.4E4_median.tex')
 plt.close("all")
 
-print "COMPUTING vmax vmean for the R=3500 COS stacked spectrum"
-vcos_loR_whtavg = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3500_whtavg.pdf')
-vcos_loR_median = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3500_median.pdf')
+print "COMPUTING vmax vmean for the R=3300 COS stacked spectrum"
+vcos_loR_whtavg = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3300_whtavg.pdf')
+vcos_loR_median = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3300_median.pdf')
 cos_mark_blends(vcos_loR_whtavg)  ;  cos_mark_blends(vcos_loR_median) # Manually enter lower limits for blends
-vcos_loR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3500_whtavg.tex')
-vcos_loR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3500_median.tex')
+vcos_loR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3300_whtavg.tex')
+vcos_loR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R3300_median.tex')
 plt.close("all")
 
 
@@ -154,7 +154,7 @@ matplotlib.rcParams.update({'font.size': 16})
 fig = plt.figure(1)
 ax1 = fig.add_subplot(111)
 plot_vs_IP(vmage_whtavg, 'red', 'blue', ax1, label1, marker='o')
-plot_vs_IP(vmage_median,  'red', 'blue', ax1, label3, marker='s')
+plot_vs_IP(vmage_median,  'red', 'blue', ax1, label3, marker='s')  # temp commented out, debuggung
 finish_IPplot(ax1, 'mage_vmaxvmean_vsIP.pdf')
 
 plt.close("all")
@@ -162,14 +162,14 @@ fig = plt.figure(2)
 ax2 = fig.add_subplot(111)  # Plot velocities for the COS stack
 plot_vs_IP(vcos_hiR_whtavg, 'red', 'blue', ax2, label2, marker='o')
 plot_vs_IP(vcos_hiR_median, 'red', 'blue', ax2, label3, marker='s')
-finish_IPplot(ax2, 'cos_R2E4_vmaxvmean_vsIP.pdf')
+finish_IPplot(ax2, 'cos_R1.4E4_vmaxvmean_vsIP.pdf')
 
 plt.close("all")
 fig = plt.figure(3)
 ax3 = fig.add_subplot(111)  # Plot velocities for the COS stack
 plot_vs_IP(vcos_loR_whtavg, 'red', 'blue', ax3, label2, marker='o')
 plot_vs_IP(vcos_loR_median, 'red', 'blue', ax3, label3, marker='s')
-finish_IPplot(ax3, 'cos_R3500_vmaxvmean_vsIP.pdf')
+finish_IPplot(ax3, 'cos_R3300_vmaxvmean_vsIP.pdf')
 
 
 

@@ -9,8 +9,8 @@ mage_mode = "reduction"
 methods = ('bystars', 'byneb')  # method of determining systemic redshift
 
 # For sanity checking, make plots of the weighted avg(std), but also the median and sqrt(jackknife variance)
-colfnu  = ('X_avg', 'X_median')
-colfnuu = ('X_sigma', 'X_jack_std')
+colfnu  = ('fweightavg', 'fmedian')
+colfnuu = ('fweightavg_u', 'fjack_std')
 avg_or_med = ('wtdavg', 'median')
 
 # Dec 2016:  Compare Steidel et al 2016 to the MagE stack.
@@ -26,7 +26,7 @@ for ii in range(0, len(colfnu)):
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_standard_comparetoSteidel2016.pdf'
         (spec_path, line_path) = jrr.mage.getpath(mage_mode)
         (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='rest_fnu_autocont', title="Standard stack"+method, waverange=(1000,3000), colortab=colortab)
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='rest_fnu_autocont', title="Standard stack"+method, waverange=(1000,2999), colortab=colortab)
         plt.clf()
 plt.close("all")
 
@@ -37,14 +37,14 @@ cos['rest_fnu_autocont'] = 1.0
 the_dfs = [sp1, cos]
 the_zzs = [0.0, 0.0]
 colortab = ('black', 'blue')
-jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile="MagE_vs_COSR3500.pdf", plot_cont=True, norm_by_cont=False, apply_bad=False, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='unity', title="MagE_vs_COS", waverange=(1000,3000), colortab=colortab)
+jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile="MagE_vs_COSR3300.pdf", plot_cont=True, norm_by_cont=False, apply_bad=False, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='unity', title="MagE_vs_COS", waverange=(1000,2999), colortab=colortab)
 plt.close("all")
 
 cos  = jrr.mage.read_our_COS_stack(resoln="full")
 the_dfs = [sp1, cos]
 the_zzs = [0.0, 0.0]
 colortab = ('black', 'blue')
-jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile="MagE_vs_COSR2E4.pdf", plot_cont=True, norm_by_cont=False, apply_bad=False, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='unity', title="MagE_vs_COS", waverange=(1000,3000), colortab=colortab)
+jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile="MagE_vs_COSR1.4E4.pdf", plot_cont=True, norm_by_cont=False, apply_bad=False, colwave='rest_wave', colfnu='rest_fnu', colfnu_u='rest_fnu_u', colcont='unity', title="MagE_vs_COS", waverange=(1000,2999), colortab=colortab)
 plt.close("all")
 
 
@@ -58,11 +58,11 @@ for ii in range(0, len(colfnu)):
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_standard.pdf'
         (spec_path, line_path) = jrr.mage.getpath(mage_mode)
         (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Standard stack"+method, waverange=(1000,3000))
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Standard stack"+method, waverange=(1000,2999))
         # make plain stack to drop into paper
         # figure out new outfile for this, so it doesn't overwrite
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_standard_nolabels.pdf'
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, colcont='unity', plot_cont=True, norm_by_cont=False, apply_bad=True, waverange=(1000,3000), plotx2=False, ylim=(0,1.3),  annotate=())
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, colcont='unity', plot_cont=True, norm_by_cont=False, apply_bad=True, waverange=(1000,2999), plotx2=False, ylim=(0,1.3),  annotate=())
         plt.clf()
 plt.close("all")
 
@@ -77,9 +77,9 @@ for ii in range(0, len(colfnu)):
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_stackA.pdf'
         (spec_path, line_path) = jrr.mage.getpath(mage_mode)
         (LL, zz) = jrr.mage.get_linelist(line_path + "stacked.linelist")  #z_syst should be zero here.
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Stack A"+method, waverange=(1000,3000))
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, title="Stack A"+method, waverange=(1000,2999))
         the_pdf =  'PDF_Out2/multipanel_stacked_'+avg_or_med[ii]+'_'+method+'_stackA_nolabels.pdf'
-        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, waverange=(1000,3000), plotx2=False, annotate=())
+        jrr.plot.echelle_spectrum(the_dfs, the_zzs, LL, outfile=the_pdf, plot_cont=True, norm_by_cont=True, apply_bad=True, waverange=(1000.,2999.), plotx2=False, annotate=())
         plt.clf()
     plt.clf()
 plt.close("all")

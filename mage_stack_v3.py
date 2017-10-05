@@ -27,12 +27,13 @@ def mask_skylines(sp, colwave='wave', colcont='fnu_cont') :
     sp.loc[sp[colcont].eq(9999), 'fnu_u'] = 1.0  # Set huge uncertainties where continuum undefined
     return(0)
 
-def mask_intervening(sp, LL) :
+def mask_intervening(sp, LL, colint='interve') :
     vmask = 200. # +-200km/s
+    sp[colint] = False
     LL['vmask'] = vmask
-    jrr.spec.flag_near_lines(sp, LL, linetype=('INTERVE',))
-    sp.loc[sp['linemask'], 'fnu_u'] = 1. # Set huge uncertainties at positions of known intervening absorbers
-    #print "DEBUGGING, I masked N pixels for intervening absorbers", sp['linemask'].sum() 
+    jrr.spec.flag_near_lines(sp, LL, linetype=('INTERVE',), colmask=colint)
+    sp.loc[sp[colint], 'fnu_u'] = 1. # Set huge uncertainties at positions of known intervening absorbers
+    print "DEBUGGING, I masked N pixels for intervening absorbers", sp[colint].sum() 
     return(0)
 
 def make_header_for_stack(rootname, zchoice, norm_method_text) :
@@ -67,7 +68,7 @@ def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, 
     - De-redshift the MagE spectra by their systemic redshifts
     - Optionally, remove internal extinction
     - Normalize the spectra by the preferred method
-    - Feed to jrr.spec.stack_spectra a dataframe of rest-frame spectra.  Stack them.
+    - Feed to jrr.spec.stack_spectra() a dataframe of rest-frame spectra.  Stack them.
     - Write output.'''
     #plt.close('all')
     #plt.ion()
@@ -78,9 +79,10 @@ def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, 
         ndf[short_label] = pandas.DataFrame(data=pandas.Series(outwave), columns=('rest_wave',))  # New data frame, rebinned wavelength
         # Normalize the spectrum and error spectrum
         (temp_norm_fnu, temp_sig) = norm_func(df[short_label]['rest_wave'], df[short_label]['rest_fnu'], df[short_label]['rest_fnu_u'], df[short_label]['rest_fnu_cont'], df[short_label]['rest_fnu_cont_u'], norm_region)
-        ndf[short_label]['fnorm']   = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], temp_norm_fnu,  outwave)  # normalized fnu, rebinned
-        ndf[short_label]['fnorm_u'] = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], temp_sig,  outwave)       # uncertainty on above
-    (stacked, nf, nf_u) = jrr.spec.stack_spectra(ndf, colwave='rest_wave', colf='fnorm', colfu='fnorm_u', output_wave_array=outwave)
+        ndf[short_label]['fnorm']    = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], temp_norm_fnu,  outwave)  # normalized fnu, rebinned
+        ndf[short_label]['fnorm_u']  = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], temp_sig,  outwave)       # uncertainty on above
+        ndf[short_label]['interve'] = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], df[short_label]['interve'],  outwave).astype('bool') #intervening
+    (stacked, nf, nf_u) = jrr.spec.stack_spectra(ndf, colwave='rest_wave', colf='fnorm', colfu='fnorm_u', colmask='interve', output_wave_array=outwave)
     long_rootname = "magestack_by" + zchoice + "_" + rootname
     outfile = long_rootname + "_spectrum.txt"
     stacked.drop(['fsum', 'fsum_u', 'fmedianxN'], axis=1, inplace=True)  # These columns arent meaningful
@@ -94,7 +96,8 @@ def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, 
     return(stacked)
 
 ##### SETUP #######
-mage_mode = 'reduction'
+#mage_mode = 'reduction'
+mage_mode = "released" # while on plane. ** TEMP
 stacklo =  800. #A      # Create a rest-frame wavelength array to stack into
 stackhi = 3000. #A
 disp = 0.1 # Angstroms  # observed-frame wavelength binning is ~0.3A pper pix for RCS0327.  So, want ~0.1A in rest-frame
@@ -120,7 +123,7 @@ outwave1 = make_linear_wavelength_array(stacklo, stackhi, disp)  # Not ideal, bu
 systemic_methods = ['stars', 'neb']
 
 dereddenMW=False   # Correct for MW reddening in prep_spectra_for_stacking()?
-MWdr = False        # Get spectra that have already been corrected for MW reddening?
+MWdr = True        # Get spectra that have already been corrected for MW reddening?  SHOULD BE TRUE
 
 for zchoice in systemic_methods :
     (df, resoln, dresoln, LL, zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont', zchoice='stars', MWdr=MWdr) # set systemic redshift to stars for all.  Use z_neb when want neb

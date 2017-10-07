@@ -3,7 +3,21 @@ the MagE stacker first, then generalized the code for reuse as jrr.spec.stack_sp
 back and rewriting the MagE stacking tool so that it uses this function, for two reasons: 
 1) I can cite the MagE stack paper for the methodology, and 
 2) doing so lets me triple-check the stacking.
-jrigby, July 2017.'''
+jrigby, July 2017.
+
+Methodology:
+
+- Create the new wavelength array.  
+- Read in the individual MagE spectra
+- Mask out skylines
+- Mask out intervening absorbers
+- Apply Galactic Extinction (added per referee's suggestion, correcting omission on our part)
+- De-redshift the MagE spectra by their systemic redshifts
+- Optionally, remove internal extinction
+- Normalize the spectra by the preferred method
+- Feed to jrr.spec.stack_spectra() a dataframe of rest-frame spectra.  Stack them.
+- Write output.'''
+
 
 import jrr
 from   astropy.stats import sigma_clip
@@ -48,6 +62,7 @@ def make_header_for_stack(rootname, zchoice, norm_method_text) :
 def prep_spectra_for_stacking(df, zchoice, EBV=[], deredden=False, dereddenMW=False, colcont="fnu_cont") : #Do this once per zchoice
     for short_label in df.keys() :  # step through each spectrum in labels
         #print "DEBUGGING, working on", short_label
+        df[short_label]['zeros'] = 0.0
         mask_skylines(df[short_label])
         mask_intervening(df[short_label], LL[short_label])
         if   zchoice == 'stars' : zz = specs.ix[short_label]['z_syst']
@@ -59,29 +74,16 @@ def prep_spectra_for_stacking(df, zchoice, EBV=[], deredden=False, dereddenMW=Fa
     return(0)
 
 
-def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, outwave, deredden=False, EBV=[], colcont="fnu_cont") :
-    '''- Create the new wavelength array.  
-    - Read in the individual MagE spectra
-    - Mask out skylines
-    - Mask out intervening absorbers
-    - Apply Galactic Extinction (added per referee's suggestion, correcting omission on our part)
-    - De-redshift the MagE spectra by their systemic redshifts
-    - Optionally, remove internal extinction
-    - Normalize the spectra by the preferred method
-    - Feed to jrr.spec.stack_spectra() a dataframe of rest-frame spectra.  Stack them.
-    - Write output.'''
-    #plt.close('all')
-    #plt.ion()
-    #plt.figure(figsize=(20,5))
+def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, norm_method_text, mage_mode, zchoice, outwave, deredden=False, EBV=[], colcont='rest_fnu_cont', colcontu='rest_fnu_cont_u') :
     ndf = {}
     # df is a big honking dictionary of dataframes containing the spectra.  LL is a dict of dataframes containing the linelist
     for short_label in labels :  # step through each spectrum in labels
         ndf[short_label] = pandas.DataFrame(data=pandas.Series(outwave), columns=('rest_wave',))  # New data frame, rebinned wavelength
         # Normalize the spectrum and error spectrum
-        (temp_norm_fnu, temp_sig) = norm_func(df[short_label]['rest_wave'], df[short_label]['rest_fnu'], df[short_label]['rest_fnu_u'], df[short_label]['rest_fnu_cont'], df[short_label]['rest_fnu_cont_u'], norm_region)
+        (temp_norm_fnu, temp_sig) = norm_func(df[short_label]['rest_wave'], df[short_label]['rest_fnu'], df[short_label]['rest_fnu_u'], df[short_label][colcont], df[short_label][colcontu], norm_region)
         ndf[short_label]['fnorm']    = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], temp_norm_fnu,  outwave)  # normalized fnu, rebinned
         ndf[short_label]['fnorm_u']  = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], temp_sig,  outwave)       # uncertainty on above
-        ndf[short_label]['interve'] = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], df[short_label]['interve'],  outwave).astype('bool') #intervening
+        ndf[short_label]['interve']  = jrr.spec.rebin_spec_new(df[short_label]['rest_wave'], df[short_label]['interve'],  outwave).astype('bool') #intervening
     (stacked, nf, nf_u) = jrr.spec.stack_spectra(ndf, colwave='rest_wave', colf='fnorm', colfu='fnorm_u', colmask='interve', output_wave_array=outwave)
     long_rootname = "magestack_by" + zchoice + "_" + rootname
     outfile = long_rootname + "_spectrum.txt"
@@ -122,7 +124,7 @@ norm_regionB = (1040.0, 1045.0)  # Region where John Chisholm says to normalize
 outwave1 = make_linear_wavelength_array(stacklo, stackhi, disp)  # Not ideal, but same as before.
 systemic_methods = ['stars', 'neb']
 
-dereddenMW=False   # Correct for MW reddening in prep_spectra_for_stacking()?
+dereddenMW=False   # Correct for MW reddening in prep_spectra_for_stacking()?  Should be FALSE, instead using input spectra that have been corrected
 MWdr = True        # Get spectra that have already been corrected for MW reddening?  SHOULD BE TRUE
 
 for zchoice in systemic_methods :
@@ -132,11 +134,11 @@ for zchoice in systemic_methods :
     # Load the list of MagE spectrum filenames and redshifts, just for the desired spectra in labels
     rootname = "standard"
     norm_method_text = "Normalized by Janes hand-fit spline continuua, so both value and shape are normalized."
-    stacked = stack_mage_spectra(df, LL, specs, labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1)
+    stacked = stack_mage_spectra(df, LL, specs, labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1, colcont='rest_fnu_cont')
 
     rootname = "divbyS99"  # for each input spectrum, divide by the s99 continuum to normalize.
     norm_method_text = "Normalized by John Chisholms S99 fits to each spectrum, so both value and shape are normalized."
-    stacked = stack_mage_spectra(df, LL, specs, ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1, colcont='fnu_s99model')
+    stacked = stack_mage_spectra(df, LL, specs, ws99labels, rootname, norm_region_dum, jrr.spec.byspline_norm_func, norm_method_text, mage_mode, zchoice, outwave1, colcont='rest_fnu_s99model', colcontu='zeros')
 
     # Stack A for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.
     # May be safe near the norm_region

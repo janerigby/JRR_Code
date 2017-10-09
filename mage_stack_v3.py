@@ -128,7 +128,7 @@ dereddenMW=False   # Correct for MW reddening in prep_spectra_for_stacking()?  S
 MWdr = True        # Get spectra that have already been corrected for MW reddening?  SHOULD BE TRUE
 
 for zchoice in systemic_methods :
-    (df, resoln, dresoln, LL, zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont', zchoice='stars', MWdr=MWdr) # set systemic redshift to stars for all.  Use z_neb when want neb
+    (df, resoln, dresoln, LL, zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont', zchoice='stars', MWdr=MWdr, addS99=True) # set systemic redshift to stars for all.  Use z_neb when want neb
     prep_spectra_for_stacking(df, zchoice, deredden=False, dereddenMW=dereddenMW)
     # The standard stack.  Normalize the values and shape of each spectrum by the spline continuum, and stack that
     # Load the list of MagE spectrum filenames and redshifts, just for the desired spectra in labels

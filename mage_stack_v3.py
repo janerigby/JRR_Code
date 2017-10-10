@@ -98,8 +98,8 @@ def stack_mage_spectra(df, LL, specs, labels, rootname, norm_region, norm_func, 
     return(stacked)
 
 ##### SETUP #######
-#mage_mode = 'reduction'
-mage_mode = "released" # while on plane. ** TEMP
+mage_mode = 'reduction'
+#mage_mode = "released" # while on plane. ** TEMP
 stacklo =  800. #A      # Create a rest-frame wavelength array to stack into
 stackhi = 3000. #A
 disp = 0.1 # Angstroms  # observed-frame wavelength binning is ~0.3A pper pix for RCS0327.  So, want ~0.1A in rest-frame

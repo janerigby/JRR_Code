@@ -145,7 +145,7 @@ for zchoice in systemic_methods :
     # Use same labels as the standard stack
     rootname = "ChisholmstackA"
     norm_regionA = jrr.mage.Chisholm_norm_regionA()
-    norm_method_textA = "Flux normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
+    norm_method_textA = "Flux density normalized to median in spectral region " + str(norm_regionA) + " but spectral shape not flattened."
     stacked = stack_mage_spectra(df, LL, specs, labels, rootname, norm_regionA, jrr.spec.norm_by_median, norm_method_textA, mage_mode, zchoice, outwave1)
 
     # Stack B for John Chisholm: normalize flux but not shape of continuum.  May have trouble w spectral tilt at red and blue ends.

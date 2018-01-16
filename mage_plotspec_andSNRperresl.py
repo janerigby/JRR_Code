@@ -19,7 +19,7 @@ mage_mode = 'reduction'
 matplotlib.rcParams.update({'font.size': 14})
 smooth_window = 201 #301
 figsize = (8,4)
-pp = PdfPages("snr_Sept27_2017.pdf")
+pp = PdfPages("snr_Oct31_2017.pdf")
 
 plot_indy_SNR = True
 if plot_indy_SNR :
@@ -87,12 +87,12 @@ labels_RAorder = ['rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-c
 (df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels_RAorder, verbose=True, zchoice='neb', addS99=False, MWdr=True)
 
 scalefactor = 1E28
-pp = PdfPages("spectra-snapshots-Sept2017.pdf")
+pp = PdfPages("spectra-snapshots-Oct2017.pdf")
 for label in labels_RAorder :  # temp range for debugging
     sp = df[label].loc[~df[label]['badmask']]   # one galaxy, dont plot bad points
     #sp = df[label]
     fig, ax  = plt.subplots(figsize=figsize)
-    print "Plotting", label
+    #print "Plotting", label
     labelnew = jrr.mage.prettylabel_from_shortlabel(label)
     plt.plot(sp['wave'], sp['fnu']   * scalefactor,   label=labelnew, color='k', linewidth=0.5)
     plt.plot(sp['wave'], sp['fnu_u'] * scalefactor, label='_nolegend_', color='lightblue', linewidth=1)
@@ -102,12 +102,16 @@ for label in labels_RAorder :  # temp range for debugging
     plt.xlim(x1, x2)
     plt.ylabel(r'$f_{\nu}$ ($10^{-28}$ erg s$^{-1}$ cm$^{-2}$ Hz$^{-1}$)')
     ax.set_xlabel(r"observed wavelength ($\mathrm{\AA}$)")
+    ax.xaxis.set_major_locator(MultipleLocator(1000))
     ax.xaxis.set_minor_locator(AutoMinorLocator(10))
     ax.get_xaxis().set_tick_params(which='both', direction='in')
     ax2 = ax.twiny()
-    ax2.set_xlim( x1/(1. + zz_sys[label]), x2/(1. + + zz_sys[label]) )
+    up_x1 = x1/(1. + zz_sys[label]);    up_x2 =  x2/(1. +  zz_sys[label])
+    # try this? ax2.set_xlim([ax.min(), ax.max())
+    ax2.set_xlim( up_x1, up_x2)
+    print "DEBUGGING", label, zz_sys[label], " : ",  x1, x2, up_x1, up_x2 
     ax2.set_xlabel(r"rest-frame wavelength ($\mathrm{\AA}$)")
-    ax2.xaxis.set_ticks(np.arange(1000, 5000, 1000))
+    ax2.xaxis.set_major_locator(MultipleLocator(200))
     ax2.xaxis.set_minor_locator(AutoMinorLocator(10))
     ax2.get_xaxis().set_tick_params(which='both', direction='in')
     plt.annotate(labelnew, (0.45,0.88), xycoords="axes fraction", fontsize=16)

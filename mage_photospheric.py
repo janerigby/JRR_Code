@@ -27,17 +27,15 @@ line_center_p = np.array((1247.38, 1296.33,      1323.93,   1343.514,  1417.24, 
 S99fits = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U',
 'S0900+2234','S0957+0509', 'Horseshoe', 'S1226+2152','S1429+1202', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye', 'chuck', 'Stack-A')
 
-# I think 0108 is showing up in the wrong order.  debug after lunch...
-sortedbyage = ('S2111-0114', 'rcs0327-E' , 'S1458-0023', 'Cosmic~Eye', 'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0957+0509', 'S0033+0242', 'S1429+1202', 'S0900+2234', 'S1226+2152', 'chuck', 'Stack-A' )
-# sorted by new ages, 9 dec 2016
+sortedbyage = ('S0957+0509', 'rcs0327-E', 'S0004-0103',  'rcs0327-G', 'rcs0327-U', 'S0033+0242', 'Horseshoe', 'S0900+2234',  'S2111-0114', 'S0108+0624', 'S1429+1202', 'S1527+0652', 'S1226+2152', 'Cosmic~Eye', 'S1458-0023', 'Stack-A', 'chuck')  # sorted by new new ages, 20 Oct 2017
 
-S99_sortbyage = ( 'S2111-0114', 'rcs0327-E', 'Cosmic~Eye',  'Horseshoe', 'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103','S0957+0509', 'S0033+0242', 'S1429+1202', 'S0900+2234', 'S1226+2152', 'chuck', 'Stack-A')
+S99_sortbyage = ('S0957+0509', 'rcs0327-E', 'S0004-0103',  'rcs0327-G', 'rcs0327-U', 'S0033+0242', 'Horseshoe', 'S0900+2234',  'S2111-0114', 'S0108+0624', 'S1429+1202', 'S1527+0652', 'S1226+2152', 'Cosmic~Eye', 'S1458-0023', 'Stack-A', 'chuck')  # sorted by new new ages, 20 Oct 2017
     
 # Picking out the higher SNR subset from those w S99 fits
 too_noisy_for_photospheric = ('S0957+0509','Horseshoe', 'S2111-0114')
-gallist_justhighSNR = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U', 'S0900+2234','S1226+2152','S1429+1202', 'S1527+0652', 'Cosmic~Eye', 'chuck', 'Stack-A')
+gallist_justhighSNR = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'rcs0327-G', 'rcs0327-U', 'S0900+2234','S1226+2152', 'S1429+1202', 'S1527+0652', 'Cosmic~Eye', 'chuck', 'Stack-A')
 
-sortedbyage_justhighSNR = ( 'rcs0327-E', 'Cosmic~Eye',  'S0108+0624', 'rcs0327-G', 'S1527+0652', 'rcs0327-U', 'S0004-0103', 'S0033+0242', 'S1429+1202','S0900+2234','S1226+2152', 'chuck',  'Stack-A')
+sortedbyage_justhighSNR = ('rcs0327-E', 'S0004-0103', 'rcs0327-G', 'rcs0327-U', 'S0033+0242', 'S0900+2234', 'S0108+0624', 'S1429+1202', 'S1527+0652', 'S1226+2152', 'Cosmic~Eye', 'chuck', 'Stack-A')
 
 print "STATUS:  Loading all the spectra (and their S99 fits) into big honking dataframes."
 (df, resoln, dresoln, big_LL, big_zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont')  # open honking

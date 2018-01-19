@@ -255,8 +255,8 @@ plt.plot(sp_ESI['wave'],  sp_ESI['flamcor_autocont'],    color='black', label='_
 plt.plot(sp_MMT['wave'],  sp_MMT['flamcor_autocont'],    color='black',label='_nolegend_')
 plt.plot(cutout_G102['wave'], cutout_G102['cont'],   color='black', label='_nolegend_')
 plt.plot(cutout_G141['wave'], cutout_G141['cont'],   color='black', label='_nolegend_')
-#sp_GNIRS_cutout.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
-#plt.title("Prettier plot.  MMT and ESI have been boxcar smoothed")
+sp_GNIRS_cutout.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
+plt.title("Prettier plot.  MMT and ESI have been boxcar smoothed")
 adjust_plot()
 
 

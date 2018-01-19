@@ -83,7 +83,8 @@ def finish_IPplot(ax, pdfout) :
 
 
 #############################################
-mage_mode = 'reduction'
+#mage_mode = 'reduction'
+mage_mode = 'released'
 ##### Define a bunch of lines. Copied from mage_winds.py
 line_label_a         = ('O I 1302', 'Si II 1260', 'Si II 1526',  'Al II 1670', 'C II 1334')
 line_center_a = np.array((1302.1685, 1260.4221,  1526.7066,  1670.7874,   1334.5323))      

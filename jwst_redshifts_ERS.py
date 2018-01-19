@@ -18,7 +18,7 @@ for ii, name in enumerate(names) :
     for jj, grating in enumerate(the_gratings) :
         print "   ", grating / (1.0+zz[ii]) , grating_names[jj]
 
-print "Idea redshifts for each grating:"
+print "Ideal redshifts for each grating:"
 for jj, grating in enumerate(the_gratings) :
     print grating_names[jj], np.average(grating) / np.average(waves) - 1.0
     

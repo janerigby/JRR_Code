@@ -55,11 +55,18 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
     filename  = specs['filename'][jj]
     zz =  specs['z_neb'][jj]
 
-    outfile   =  specdir + re.sub("-combw?C?1.txt", "-specresln.txt", filename)
-    print "DEBUG, preparing to write outfile from original filename ", outfile, filename
-    # Error checking, don't want to overwrite filename
-    if (outfile == filename) or  (re.search("-combw?C?1.txt", filename)<1) :
-        exit("DIED, filename not what was expected")  # die if it didn't change the filename
+    if re.search("-combw?C?1.txt", filename) :  # Megasaura with continuum
+        outfile   =  specdir + re.sub("-combw?C?1.txt", "-specresln.txt", filename)
+        print "DEBUG, preparing to write outfile from original filename ", outfile, filename
+        # Error checking, don't want to overwrite filename
+        if (outfile == filename) or  (re.search("-combw?C?1.txt", filename)<1) :
+            exit("DIED, filename not what was expected")  # die if it didn't change the filename
+    else :
+        outfile   =  specdir + re.sub("-comb.txt", "-specresln.txt", filename)  # new files no fit cont
+        print "DEBUG, preparing to write outfile from original filename ", outfile, filename
+        # Error checking, don't want to overwrite filename
+        if (outfile == filename) or  (re.search("-comb.txt", filename)<1) :
+            exit("DIED, filename not what was expected")  # die if it didn't change the filename
             
     outpng    = outfile.replace(".txt", "")
     (sp_temp, resoln, dresoln) = jrr.mage.open_spectrum(filename, zz, mage_mode)

@@ -40,7 +40,8 @@ def MyGaussian(x, *params):   # Define a Gaussian with a linear continuum under 
 
 run_just_some = True
 if run_just_some:     # A useful way to run just one spectrum, instead of a bunch
-    labels = ('planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325')
+    labels = ('planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc', 'planckarc', 'PSZ0441_slitA', 'PSZ0441_slitB', 'PSZ0441', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT0310', 'SPT2325')
+# Adding "Friends of Megasaura" sample
     specs = jrr.mage.wrap_getlist(mage_mode, which_list='labels', labels=labels, MWdr=False)
     
 else :    # Normal mode

@@ -19,7 +19,7 @@ mage_mode = 'reduction'
 matplotlib.rcParams.update({'font.size': 14})
 smooth_window = 201 #301
 figsize = (8,4)
-pp = PdfPages("snr_Oct31_2017.pdf")
+pp = PdfPages("snr_1Feb2018_all.pdf")
 
 plot_indy_SNR = True
 if plot_indy_SNR :
@@ -29,8 +29,10 @@ if plot_indy_SNR :
     lab4 = [ 'Cosmic~Eye', 'S0108+0624',  'S1429+1202']
     lab5 = [ 'S0033+0242', 'S2111-0114', 'S2243-0935' , 'S0957+0509']
     lab6 = ['S1458-0023',  'Horseshoe',  'S1050+0017']
-
-    labs = (lab1, lab2, lab3, lab4, lab5, lab6)
+    lab7 = ['planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc', 'planckarc', 'PSZ0441_slitA', 'PSZ0441_slitB', 'PSZ0441', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT0310', 'SPT2325']
+    #lab7 = ['planckarc', 'PSZ0441', 'SPT0310', 'SPT2325']
+    
+    labs = (lab1, lab2, lab3, lab4, lab5, lab6, lab7)
     for labels in labs:
         (df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels, verbose=True, zchoice='stars', addS99=False, MWdr=True)
         #fig = plt.figure(figsize=figsize)
@@ -84,11 +86,12 @@ plt.close("all")
 
 figsize = (20,3)
 labels_RAorder = ['rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-counterarc', 'S1527+0652', 'S1527+0652-fnt', 'S0004-0103',  'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe',   'S1226+2152', 'S1429+1202', 'S1458-0023', 'S2111-0114',  'Cosmic~Eye', 'S2243-0935']
-(df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels_RAorder, verbose=True, zchoice='neb', addS99=False, MWdr=True)
+(df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels_RAorder+lab7, verbose=True, zchoice='neb', addS99=False, MWdr=True)
 
 scalefactor = 1E28
-pp = PdfPages("spectra-snapshots-Oct2017.pdf")
-for label in labels_RAorder :  # temp range for debugging
+pp = PdfPages("spectra-snapshots-Feb2018_all.pdf")
+#for label in labels_RAorder :
+for label in (labels_RAorder + lab7) :
     sp = df[label].loc[~df[label]['badmask']]   # one galaxy, dont plot bad points
     #sp = df[label]
     fig, ax  = plt.subplots(figsize=figsize)
@@ -96,7 +99,9 @@ for label in labels_RAorder :  # temp range for debugging
     labelnew = jrr.mage.prettylabel_from_shortlabel(label)
     plt.plot(sp['wave'], sp['fnu']   * scalefactor,   label=labelnew, color='k', linewidth=0.5)
     plt.plot(sp['wave'], sp['fnu_u'] * scalefactor, label='_nolegend_', color='lightblue', linewidth=1)
-    plt.ylim(-0.5E-28*scalefactor,  2.5E-28*scalefactor)
+    if re.match("planckarc_pos1", label) or label == "planckarc" :    plt.ylim(-0.5E-28*scalefactor,  5E-27*scalefactor)
+    elif re.match("planckarc_slit", label) :    plt.ylim(-0.5E-28*scalefactor,  1E-27*scalefactor)
+    else :   plt.ylim(-0.5E-28*scalefactor,  2.5E-28*scalefactor)
     x1 = max(3200, 912*(1.+zz_sys[label]))  # plot down to 3200, unless its blueward of lyman limit
     x2=8200.
     plt.xlim(x1, x2)

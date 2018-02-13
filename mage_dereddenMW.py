@@ -13,8 +13,12 @@ import to_precision
 mage_mode = 'reduction'
 zchoice = 'stars'
 
+labels = ('planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc', 'planckarc', 'PSZ0441_slitA', 'PSZ0441_slitB', 'PSZ0441', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT0310', 'SPT2325')
+# Adding "Friends of Megasaura" sample
+
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
-speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all", zchoice=zchoice, MWdr=False)  # MWdr=False to read the files that are not corrected for MWreddening
+#speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all", zchoice=zchoice, MWdr=False)  # MWdr=False to read the files that are not corrected for MWreddening
+speclist = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=labels, zchoice=zchoice, MWdr=False)  # MWdr=False to read the files that are not corrected for MWreddening
 for label in speclist.index:  # For each file in spectra-filenames-redshifts.txt
     infile = speclist.filename[label]
     EBV = speclist['EBV_MW'][label]

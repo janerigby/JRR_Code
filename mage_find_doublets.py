@@ -14,6 +14,10 @@ were it a doublet.  Writes to a data frame.
 jrigby Jan 2017
 '''
 
+alllabels = ['rcs0327-B', 'rcs0327-E', 'rcs0327-Ehires', 'rcs0327-Elores', 'rcs0327-G', 'rcs0327-U', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152',  'S1226+2152hires', 'S1226+2152lores', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
+#these_labels = alllabels[0:1]
+these_labels = ('planckarc', 'SPT0310', 'PSZ0441', 'SPT2325' )
+
 def get_doublet_waves() :  # vacuum barycentric NIST
     MgII = np.array((2796.352, 2803.531))
     CIV  = np.array((1548.195, 1550.770))
@@ -70,12 +74,13 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
     for candidate in subset.index :   # For each peak, test whether there is a 2nd transition
         testz = sp.ix[candidate]['wave'] / doublet[0] - 1.0
         if testz <= zz_syst :
+            print "DEBUG", candidate, testz, doublet[0]
             dwave = doublet[1]*(1.+testz) / 2. / resoln  # Search +- 1 HWHM
             searchreg = sp['wave'].between((doublet[1]*(1.0+testz)-dwave), (doublet[1]*(1.0+testz)+dwave)) & sp['peak']
             if sp[searchreg]['peak'].sum() :
                 plt.clf()
                 in_forest = sp.ix[candidate]['wave'] < zz_syst * 1216.  #  In Lya Forest
-                print "Possible ", doubname, " doublet at", testz, doublet[0]*(1+testz), doublet[1]*(1+testz)
+                print "Possible ", doubname, " doublet at z=", testz, doublet[0]*(1+testz), doublet[1]*(1+testz)
                 plt.step(sp.wave, sp.W_interp, color='blue')
                 plt.title(thisgal + " " + doubname + "?")
                 plt.step(sp.wave, sp.fnu/sp.fnu_autocont, color='black', label="fnu contnorm")
@@ -101,15 +106,18 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
 
 # Actually run things
 (MgII, CIV, SiIV) = get_doublet_waves()
-siglim=5
+siglim=5 # 5, 10, 20
 ylims = (-2,2)
-the_pdf = "found_doublets_SNR" + str(siglim) + "cleanup.pdf"
-outfile = "found_doublets_SNR" + str(siglim) + "cleanup.txt"
+the_pdf = "found_doublets_SNR" + str(siglim) + ".pdf"
+outfile = "found_doublets_SNR" + str(siglim) + ".txt"
 pp = PdfPages(the_pdf)
 plt.clf()
 df = make_empty_doublet_dataframe()
-#speclist = jrr.mage.wrap_getlist(mage_mode, which_list="wcont")
-speclist = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=("Cosmic~Eye",))
+#speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all")
+speclist = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=these_labels, MWdr=True)
+if (speclist.shape[0] == 0) : raise Exception("Failed to retreive spectrum.")
+print "FINDING DOUBLETS IN SUBSET OF SPECTRA, just", these_labels
+
 for thisgal in speclist.short_label :
     (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(thisgal, mage_mode, addS99=True)  # load spectrum
     find_lines_Schneider(sp, resoln, siglim=siglim, abs=True)  #identify all the >N sigma peaks in spectrum
@@ -119,7 +127,7 @@ for thisgal in speclist.short_label :
     df3 = test_candidate_doublets(sp, zz_syst, resoln, SiIV, "SiIV", ylims=ylims)
     df  = pandas.concat([df, df1, df2, df3]).reset_index(drop=True)
 print df.head(20)
-with open(outfile, 'w') as f:
+with open(outfile, 'a') as f:
     df.to_csv(f, sep='\t')
 pp.close()
 

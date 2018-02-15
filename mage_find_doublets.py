@@ -14,9 +14,6 @@ were it a doublet.  Writes to a data frame.
 jrigby Jan 2017
 '''
 
-alllabels = ['rcs0327-B', 'rcs0327-E', 'rcs0327-Ehires', 'rcs0327-Elores', 'rcs0327-G', 'rcs0327-U', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152',  'S1226+2152hires', 'S1226+2152lores', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
-#these_labels = alllabels[0:1]
-these_labels = ('planckarc', 'SPT0310', 'PSZ0441', 'SPT2325' )
 
 def get_doublet_waves() :  # vacuum barycentric NIST
     MgII = np.array((2796.352, 2803.531))
@@ -25,7 +22,7 @@ def get_doublet_waves() :  # vacuum barycentric NIST
     return(MgII, CIV, SiIV)
 
 def make_empty_doublet_dataframe() :
-    df = pandas.DataFrame(columns=('flag', 'gal', 'zz', 'doubname', 'wave1', 'wave2', 'EW1', 'EW2', 'snr1', 'snr2', 'in_forest'))
+    df = pandas.DataFrame(columns=('flag', 'gal', 'zz', 'doubname', 'wave1', 'wave2', 'EWobs1', 'EWobs2', 'snr1', 'snr2', 'in_forest'))
     return(df)
     
 def find_lines_Schneider(sp, resoln, siglim=3., abs=True, delta=0.15) :
@@ -79,7 +76,7 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
             searchreg = sp['wave'].between((doublet[1]*(1.0+testz)-dwave), (doublet[1]*(1.0+testz)+dwave)) & sp['peak']
             if sp[searchreg]['peak'].sum() :
                 plt.clf()
-                in_forest = sp.ix[candidate]['wave'] < zz_syst * 1216.  #  In Lya Forest
+                in_forest = sp.ix[candidate]['wave'] < (1. + zz_syst) * 1216.  #  In Lya Forest
                 print "Possible ", doubname, " doublet at z=", testz, doublet[0]*(1+testz), doublet[1]*(1+testz)
                 plt.step(sp.wave, sp.W_interp, color='blue')
                 plt.title(thisgal + " " + doubname + "?")
@@ -98,13 +95,16 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                 snr1 = sp.ix[candidate].W_interp / sp.ix[candidate].W_u_interp *-1.
                 snr2 = float(np.max(sp[searchreg]['W_interp'] / sp[searchreg]['W_u_interp'] * -1.))
                 user_flag = (raw_input("Is this real? y for yes, n for no, p for possibly, b for yes but blended:")) 
-                if user_flag == "y" or user_flag == "p" or user_flag == "b":
+                if user_flag in ('y', 'p', 'b', 'pb') :
                     df.loc[counter] = (user_flag, thisgal, testz, doubname, doublet[0]*(1+testz), doublet[1]*(1+testz), EW1, EW2, snr1, snr2, in_forest)
                     pp.savefig()
                     counter += 1
     return(df)
 
 # Actually run things
+alllabels = [ 'rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
+these_labels = alllabels  
+
 (MgII, CIV, SiIV) = get_doublet_waves()
 siglim=5 # 5, 10, 20
 ylims = (-2,2)
@@ -127,8 +127,9 @@ for thisgal in speclist.short_label :
     df3 = test_candidate_doublets(sp, zz_syst, resoln, SiIV, "SiIV", ylims=ylims)
     df  = pandas.concat([df, df1, df2, df3]).reset_index(drop=True)
 print df.head(20)
-with open(outfile, 'a') as f:
+with open(outfile, 'a+') as f:
     df.to_csv(f, sep='\t')
+f.close()
 pp.close()
 
 

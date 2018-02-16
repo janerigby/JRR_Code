@@ -4,6 +4,7 @@ import numpy as np
 import pandas
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import astropy
 mage_mode = "released"
 
 ''' Code to find intervening doublets within the Megasaura MagE spectra.
@@ -14,6 +15,7 @@ were it a doublet.  Writes to a data frame.
 jrigby Jan 2017
 '''
 
+A_c_kms = astropy.constants.c.to('km/s').value
 
 def get_doublet_waves() :  # vacuum barycentric NIST
     MgII = np.array((2796.352, 2803.531))
@@ -71,18 +73,23 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
     for candidate in subset.index :   # For each peak, test whether there is a 2nd transition
         testz = sp.ix[candidate]['wave'] / doublet[0] - 1.0
         if testz <= zz_syst :
-            print "DEBUG", candidate, testz, doublet[0]
-            dwave = doublet[1]*(1.+testz) / 2. / resoln  # Search +- 1 HWHM
+            #print "DEBUG", candidate, testz, doublet[0]
+            # dwave = doublet[1]*(1.+testz) / 2. / resoln  # Search +- 1 HWHM. OLD, what was used before
+            #dwave = doublet[1]*(1.+testz)   * 1.5 / resoln  # Search +- 2 HWHM  experimenting
+            dvel_search = 100.  # (km/s) Search +- this much from expected position of 2nd line in doublet
+            dwave = doublet[1]*(1.+testz) * (dvel_search / A_c_kms)
             searchreg = sp['wave'].between((doublet[1]*(1.0+testz)-dwave), (doublet[1]*(1.0+testz)+dwave)) & sp['peak']
             if sp[searchreg]['peak'].sum() :
                 plt.clf()
                 in_forest = sp.ix[candidate]['wave'] < (1. + zz_syst) * 1216.  #  In Lya Forest
-                print "Possible ", doubname, " doublet at z=", testz, doublet[0]*(1+testz), doublet[1]*(1+testz)
+                descriptive_string = thisgal + " possible " + doubname + " doublet at z=" + str(np.round(testz, 4))
+                plt.title(descriptive_string)
+                print descriptive_string, "waves", doublet[0]*(1+testz), doublet[1]*(1+testz)
                 plt.step(sp.wave, sp.W_interp, color='blue')
-                plt.title(thisgal + " " + doubname + "?")
                 plt.step(sp.wave, sp.fnu/sp.fnu_autocont, color='black', label="fnu contnorm")
                 plt.step(sp.wave, sp.fnu_u/sp.fnu_autocont, color='grey', label="fnu_u contnorm")
                 plt.hlines( 1.0, 3000, 8500, colors='grey')
+                plt.vlines( (doublet[1]*(1+testz)-dwave, doublet[1]*(1+testz)+dwave), *ylims, colors='yellow')
                 plt.vlines( (doublet[0]*(1+testz), doublet[1]*(1+testz)), *ylims, colors='red')
                 plt.step(sp.wave, sp.W_u_interp*siglim*-1, color='green')
                 plt.xlim(doublet[0]*(1+testz) - plotwin, doublet[1]*(1+testz) + plotwin)
@@ -94,7 +101,7 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                 EW2 = float(np.min(sp[searchreg]['W_interp']))
                 snr1 = sp.ix[candidate].W_interp / sp.ix[candidate].W_u_interp *-1.
                 snr2 = float(np.max(sp[searchreg]['W_interp'] / sp[searchreg]['W_u_interp'] * -1.))
-                user_flag = (raw_input("Is this real? y for yes, n for no, p for possibly, b for yes but blended:")) 
+                user_flag = (raw_input("    Is this real? y for yes, n for no, p for possibly, b for yes but blended:")) 
                 if user_flag in ('y', 'p', 'b', 'pb') :
                     df.loc[counter] = (user_flag, thisgal, testz, doubname, doublet[0]*(1+testz), doublet[1]*(1+testz), EW1, EW2, snr1, snr2, in_forest)
                     pp.savefig()
@@ -105,8 +112,8 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
 alllabels = [ 'rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
 these_labels = alllabels  
 
-(MgII, CIV, SiIV) = get_doublet_waves()
-siglim=5 # 5, 10, 20
+(MgII, CIV, SiIV) = get_doublet_waves() 
+siglim=4 # 5, 10, 20
 ylims = (-2,2)
 the_pdf = "found_doublets_SNR" + str(siglim) + ".pdf"
 outfile = "found_doublets_SNR" + str(siglim) + ".txt"

@@ -15,12 +15,13 @@ mage_mode = "reduction"
 labels = ['rcs0327-E', 'S0004-0103', 'S0108+0624',  'S0033+0242', 'S0900+2234',  'S0957+0509', 'S1050+0017',  'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S2111-0114', 'Cosmic~Eye']
 
 labels = ['S1226+2152']  # Open a MagE spectrum
+labels = ['SPT0310',]
 for label in labels :
     (st, resoln, dresoln, LL, z_systemic)=jrr.mage.wrap_open_spectrum(label, mage_mode)
 
 # Open its S99 fit
 linelist = line_path + "stacked.linelist"
-(S99, S99LL) = jrr.mage.open_S99_spectrum("S1226+2152", 0.0)
+(S99, S99LL) = jrr.mage.open_S99_spectrum(labels[0], 0.0)
 
 plt.plot(S99.wave, S99.fnu, color='b')
 plt.plot(S99.wave, S99.data_fnu, color='g')

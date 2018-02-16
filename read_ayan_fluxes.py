@@ -4,11 +4,12 @@ import numpy as np
 from os.path import expanduser
 
 def trust_this_line(df, line,  signi_thresh=3., SNR_thresh=1.):
-    thebool = df[df['line_lab'].eq(line)].EW_signi.values[0] > signi_thresh and (df[df['line_lab'].eq(line)].f_line.values[0]/df[df['line_lab'].eq(line)].f_line_u.values[0] > SNR_thresh)
-    return(thebool)
+    condition1 = df[df['line_lab'].eq(line)].EW_signi.values[0] > signi_thresh
+    condition2 = df[df['line_lab'].eq(line)].f_line.values[0]/df[df['line_lab'].eq(line)].f_line_u.values[0] > SNR_thresh)
+    return(condition1 and condition2)
     
 homedir = expanduser("~")
-flux_file = homedir + "/Dropbox/MagE_atlas/Contrib/EWs/allspec_fitted_emission_linelist.txt"
+flux_file = homedir + "/Dropbox/MagE_atlas/Contrib/EWs/emission/allspec_fitted_emission_linelist.txt"
 df = pandas.read_table(flux_file, delim_whitespace=True, comment="#", thousands=',')
 signifi = 3.0 # sigma
 sig2 = 3
@@ -36,7 +37,7 @@ for thisgal in bygals.index :
 bygals.sort_values(by='Ndet', ascending=False, inplace=True)
 print bygals.head(20)
 
-lines_to_check = ("OIII]1666", "OIII]1660", '[OIII]2320')
+lines_to_check = ("OIII1666", "OIII1660", 'OIII2320')
 for checkline in lines_to_check :
     gooddet = df[df['line_lab'].eq(checkline) & df['EW_signi'].gt(sig2)]
     gooddet.sort_values(by='EW_signi', ascending=False, inplace=True)

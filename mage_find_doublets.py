@@ -43,7 +43,8 @@ def find_lines_Schneider(sp, resoln, siglim=3., abs=True, delta=0.15) :
         subset = sp['temp']  &  (sp['W_interp'] < sp['W_u_interp'] * siglim * -1)
     else :    # If looking for emission lines
         subset = sp['temp']  &  (sp['W_interp'] > sp['W_u_interp'] * siglim)
-    sp['peak'].ix[subset] = True  # Peaks now marked 
+    sp['peak'].ix[subset] = True  # Peaks now marked
+    sp.loc[sp['wave'].between(4737.6, 4738), 'peak'] = True  # ADD PEAK FOR S1527 at z=2.055, to work around bad skyline
     print "FINDING PEAKS (this is slow), N peaks: ", sp['temp'].sum(),  "  significant peaks: ", sp['peak'].sum()
     return(0)
 
@@ -77,12 +78,13 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
             # dwave = doublet[1]*(1.+testz) / 2. / resoln  # Search +- 1 HWHM. OLD, what was used before
             #dwave = doublet[1]*(1.+testz)   * 1.5 / resoln  # Search +- 2 HWHM  experimenting
             dvel_search = 100.  # (km/s) Search +- this much from expected position of 2nd line in doublet
+            
             dwave = doublet[1]*(1.+testz) * (dvel_search / A_c_kms)
             searchreg = sp['wave'].between((doublet[1]*(1.0+testz)-dwave), (doublet[1]*(1.0+testz)+dwave)) & sp['peak']
             if sp[searchreg]['peak'].sum() :
                 plt.clf()
                 in_forest = sp.ix[candidate]['wave'] < (1. + zz_syst) * 1216.  #  In Lya Forest
-                descriptive_string = thisgal + " possible " + doubname + " doublet at z=" + str(np.round(testz, 4))
+                descriptive_string = thisgal + " possible " + doubname + " doublet at z=" + str(np.round(testz, 5))
                 plt.title(descriptive_string)
                 print descriptive_string, "waves", doublet[0]*(1+testz), doublet[1]*(1+testz)
                 plt.step(sp.wave, sp.W_interp, color='blue')
@@ -108,9 +110,12 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                     counter += 1
     return(df)
 
+#Missed a MgII at z<1.2 in S1226?  go check...
+
 # Actually run things
 alllabels = [ 'rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
-these_labels = alllabels  
+#these_labels = alllabels  
+these_labels = ['S1226+2152',] #'S1527+0652']
 
 (MgII, CIV, SiIV) = get_doublet_waves() 
 siglim=4 # 5, 10, 20

@@ -41,7 +41,7 @@ def write_JC_S99file(tab, outdir, outfile) :  # Output file should be packaged j
 
 def read_loresS99file(modeldir, baseZ) : # Read the low-res S99 .spectrum1 file
     infile = modeldir + "low_res_" + str(baseZ) + ".spectrum1"
-    print "DEBUGGING, lores file should be", infile
+    #print "DEBUGGING, lores file should be", infile
     colnames = ('time', 'wave_Ang', 'logflam_tot', 'logflam_stellar', 'logflam_neb')
     df = pandas.read_table(infile, comment="#", skiprows=6, names=colnames, delim_whitespace=True)
     df['fnu_tot']     = jrr.spec.flam2fnu(df['wave_Ang'], 10**df['logflam_tot'])

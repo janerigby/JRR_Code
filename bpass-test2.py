@@ -13,7 +13,7 @@ def find_closest_bpass_age(df_age, age_to_find):
     closest_age = df_age.iloc[(df_age['age']- age_to_find).abs().argsort()[:1]]
     return(closest_age) # Returns the row of df_age thats closest in age.  
 
-def load_bpass_spectra(dir, filename) :
+def load_bpass_spectra(filename) :
     bpassdir = bpass_model_dir()
     df_age = bpass_ages_setup()
     df_bpass = pandas.read_table(bpassdir + filename, delim_whitespace=True, names=['wave'] + df_age['colname'].tolist())

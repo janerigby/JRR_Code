@@ -91,7 +91,7 @@ def write_cloudy_infile(Z, age, logU, cloudy_template, style) :
 
 def retrieve_cloudy_nebcont(Z, age, directory) :
     nebcontfile = directory + name_that_cloudy_file(Z, age) + '.con'
-    print "DEBUGGING, nebcontfile is", nebcontfile
+    #print "DEBUGGING, nebcontfile is", nebcontfile
     #tempneb = jrr.util.strip_pound_before_colnames(nebcontfile)
     colnames = ("wave_um", "incident", "trans", "outward", "transnet", "reflected", "total", "reflectedline", "outwardline", "dum")
     df = pandas.read_table(nebcontfile, comment="#", names=colnames, delim_whitespace=True)
@@ -120,7 +120,7 @@ def add_nebular_to_stellar(stellar_df, cloudy_df) :
     nwave1 = 1760. ;  nwave2 = 1790.
     norm1 =   cloudy_df.loc[cloudy_df['wave_Ang'].between(nwave1, nwave2)]['fnu_incident'].median()
     norm2 = stellar_df.loc[stellar_df['wave'].between(  nwave1, nwave2)]['fnu'].median()
-    print "DEBUGGING, norms are", norm1, norm2
+    #print "DEBUGGING, norms are", norm1, norm2
     stellar_df['fnu_nebonly'] =  norm2 / norm1 * jrr.spec.rebin_spec_new(cloudy_df['wave_Ang'], cloudy_df['fnu_nebcont'], stellar_df['wave'])
     stellar_df['fnu_wneb'] = stellar_df['fnu'] + stellar_df['fnu_nebonly']
     return(0) # acts on stellar_df
@@ -211,7 +211,7 @@ if analyze_cloudy :
             pp = PdfPages(the_pdf)  # output   
             chdir(nebcontdir + cloudydir)
             filenames = [ basename(x) for x in glob.glob(modeldir + '*fits')]  
-            for thisfile in filenames:  # REAL USE THIS
+            for thisfile in filenames:  
                 baseZ = re.sub('.fits', '', re.sub('sb99', '', thisfile))
                 lores_dfall = read_loresS99file(modeldir, baseZ)  # Grab the lores S99 file that was fed into Cloudy        
                 hires_tab = read_JC_S99file(modeldir, thisfile)
@@ -220,6 +220,7 @@ if analyze_cloudy :
                 for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :  
                     thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
                     (wave, flam, fnu, stellar_df) = process_S99_spectrumfile(hires_tab, baseZ, thisage, age_index)
+                    print "Working on:", baseZ, thisage, logU, style
                     cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                     lores_df = grab_age_from_lores(lores_dfall, thisage)
                     add_nebular_to_stellar(stellar_df, cloudy_df)

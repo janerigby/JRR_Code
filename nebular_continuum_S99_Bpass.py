@@ -52,10 +52,7 @@ def read_loresS99file(modeldir, baseZ) : # Read the low-res S99 .spectrum1 file
 def grab_age_from_lores(lores_df, age) :
     return lores_df.loc[lores_df['time'] == float(age)*1E6]   # return a subset w that age
 
-def name_that_cloudy_file(Z, age) :
-    return("Z" + Z + "_" + str(age) + "Myr")
-
-def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files in which JC has packaged the highres S99 spectra
+    def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files in which JC has packaged the highres S99 spectra
     table_outfile = name_that_cloudy_file(Z, age) + '.sed' 
     wave = tab['WAVE'].data[0,]
     flam = tab['FLUX'].data[0, age_index, :]
@@ -63,17 +60,21 @@ def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files i
     df = pandas.DataFrame({'wave' : wave, 'fnu' : fnu, 'flam' : flam})  # For convenience, make a pandas dataframe
     return(wave, flam, fnu, df)
 
+def name_that_cloudy_file(Z, age) :
+    return("Z" + Z + "_" + str(age) + "Myr")
+
 def write_cloudy_infile(Z, age, logU, cloudy_template, style) :  
     solarZ =  translate_Z_abs2solar(Z)
     if   style == 'JC_S99'       :   model = name_that_cloudy_file(Z, age)
     elif style == 'BPASS_binary' :   model = 'BPASSv2p1_imf135_100_burst_binary'
     elif style == 'BPASS_single' :   model = 'BPASSv2p1_imf135_100_burst_single'
     else : raise Exception("Unrecognized style")
-    infile   = name_that_cloudy_file(Z, age) + '.in'
-    outfile  = name_that_cloudy_file(Z, age) + '.out'
+    prefix = name_that_cloudy_file(Z, age)
+    infile = prefix + '.in'  ;  outfile = prefix + '.out'
     logZ_absolute = round(log10(0.02 * solarZ), 2) # log(absolute Z), where 0.02 is solar.
-    jrr.util.replace_text_in_file("MODELGOESHERE", model, cloudy_template, infile)  # This is different S99/BPASS
+    jrr.util.replace_text_in_file("MODELGOESHERE", model, cloudy_template, infile) 
     jrr.util.replace_text_in_file("AGEGOESHERE", str(age), infile)
+    jrr.util.replace_text_in_file("PREFIXGOESHERE", prefix, infile)
     jrr.util.replace_text_in_file("METALLICITYWRTSOLARGOESHERE", str(solarZ), infile) # Z in solar units
     jrr.util.replace_text_in_file("ABSOLUTEMETALLICITYGOESHERE", str(Z), infile) # Z in absolute units (solar is 0.02)
     jrr.util.replace_text_in_file("ABSOLUTELOGMETALLICITYGOESHERE", str(logZ_absolute), infile) # Z in absolute units (solar is 0.02)

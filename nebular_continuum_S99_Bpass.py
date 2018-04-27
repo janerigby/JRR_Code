@@ -52,7 +52,7 @@ def read_loresS99file(modeldir, baseZ) : # Read the low-res S99 .spectrum1 file
 def grab_age_from_lores(lores_df, age) :
     return lores_df.loc[lores_df['time'] == float(age)*1E6]   # return a subset w that age
 
-    def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files in which JC has packaged the highres S99 spectra
+def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files in which JC has packaged the highres S99 spectra
     table_outfile = name_that_cloudy_file(Z, age) + '.sed' 
     wave = tab['WAVE'].data[0,]
     flam = tab['FLUX'].data[0, age_index, :]

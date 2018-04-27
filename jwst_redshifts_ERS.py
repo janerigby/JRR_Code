@@ -22,3 +22,8 @@ print "Ideal redshifts for each grating:"
 for jj, grating in enumerate(the_gratings) :
     print grating_names[jj], np.average(grating) / np.average(waves) - 1.0
     
+print "Put Hbeta and Halpha in the same grating for these zs:"
+for jj, grating in enumerate(the_gratings) :
+    line1_zs = grating / waves[0] - 1
+    line2_zs = grating / waves[1] - 1
+    print "   ", grating_names[jj], np.round(line1_zs[0], 3), np.round(line2_zs[1], 3)

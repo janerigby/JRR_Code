@@ -28,5 +28,5 @@ print "Closest age was", closest_age, ", so the age column is", closest_age['col
 #df = pandas.read_table(filename, delim_whitespace=True, comment="#", names= ['wave'] + colnames)
 print df_age.head()
 
-df_bpass = pandas.read_table(bpassdir + filename, delim_whitespace=True, df_age['colname']))
+df_bpass = pandas.read_table(bpassdir + filename, delim_whitespace=True, names=df_age['colname'])
 

@@ -13,20 +13,20 @@ def find_closest_bpass_age(df_age, age_to_find):
     closest_age = df_age.iloc[(df_age['age']- age_to_find).abs().argsort()[:1]]
     return(closest_age) # Returns the row of df_age thats closest in age.  
 
-def load_bpass_spectrum(dir, filename, df_age) :
-    return(0) # does not work yet
+def load_bpass_spectra(dir, filename) :
+    bpassdir = bpass_model_dir()
+    df_age = bpass_ages_setup()
+    df_bpass = pandas.read_table(bpassdir + filename, delim_whitespace=True, names=['wave'] + df_age['colname'].tolist())
+    return(df_bpass)  # Wave is in Angstroms
+
     
-
-bpassdir = bpass_model_dir()
-df_age = bpass_ages_setup()
-
+print "Loading a BPASS2 file"
 filename = 'BPASSv2.1_imf135_100/spectra.z020.dat.gz'
+df_bpass = load_bpass_spectra(filename)
+
+# Find just one age of that model
+age_to_find = 8E6
 
 # Show that the age setup is working
-(closest_age) = find_closest_bpass_age(df_age, 2E6)
+(closest_age) = find_closest_bpass_age(df_age, age_to_find)
 print "Closest age was", closest_age, ", so the age column is", closest_age['colname'].values[0]
-#df = pandas.read_table(filename, delim_whitespace=True, comment="#", names= ['wave'] + colnames)
-print df_age.head()
-
-df_bpass = pandas.read_table(bpassdir + filename, delim_whitespace=True, names=['wave'] + df_age['colname'].tolist())
-

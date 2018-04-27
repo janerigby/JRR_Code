@@ -73,7 +73,7 @@ def write_cloudy_continuum(tab, Z, age, age_index) :  # NOT USED AT PRESENT.  Us
     return(0)
 
 def write_cloudy_infile(Z, age, logU, cloudy_template, style) :  
-    solarZ =  translate_Z_abs2solar(Z)q
+    solarZ =  translate_Z_abs2solar(Z)
     if   style == 'JC_S99'       :   model = name_that_cloudy_file(Z, age)
     elif style == 'BPASS_binary' :   model = 'BPASSv2p1_imf135_100_burst_binary'
     elif style == 'BPASS_single' :   model = 'BPASSv2p1_imf135_100_burst_single'

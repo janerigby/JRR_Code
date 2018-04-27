@@ -244,7 +244,11 @@ if analyze_cloudy :
                     for thisage in ages :
                         print "Working on: (Z age logU style)", baseZ, thisage, logU, style
                         cloudy_df = retrieve_cloudy_nebcont(bpassZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
-                        cloudy_df.head()
+                        cloudy_df.head()  # Need more after this; just want to show that I can read the cloudy file.
+                        # Next steps:
+                        # Go find high-res BPASS stellar continuum, b/c cloudy .con is too low res.
+                        # Add the stellar and nebular continua
+                        # Make a fits file in the format John expects.
             pp.close()
             chdir(nebcontdir)
 

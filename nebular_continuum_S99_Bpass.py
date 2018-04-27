@@ -12,6 +12,8 @@ from astropy.table import Table
 from numpy import log10, round
 import jrr
 
+# Note: run in this dir:  /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum
+
 ###### I'm gonna make me some functions ################################
 
 def translate_Z_abs2solar(absoluteZ) :

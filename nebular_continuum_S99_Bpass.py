@@ -9,14 +9,16 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas
 from astropy.table import Table
+from numpy import log10, round
 import jrr
 
 ###### I'm gonna make me some functions ################################
 
-def translate_metallicity(baseZ) :
-    Zinsolar = {'001': 0.05, '004': 0.2 , '008': 0.4, '02': 1.0, '04': 2.0}
-    return( Zinsolar[baseZ] )  # test this
-    
+def translate_Z_abs2solar(absoluteZ) :
+    Zinsolar = {'001': 0.05, '004': 0.2 , '008': 0.4, '02': 1.0, '04': 2.0, '020': 1.0, '040': 2.0}
+    # Above is repetitive, bc S99 metallicity format first, then just those that have a different BPASS metallicity syntax
+    return( Zinsolar[absoluteZ] )
+
 def normbymed(series) :
     return(series / series.median())
 
@@ -26,7 +28,7 @@ def norminrange(df, wave1, wave2, wavecol='wave', normcol='fnu') :  # Normalize 
 
 def read_JC_S99file(modeldir, S99file) :  # this is packaged as explained in sb99_readme.txt
     tab = Table.read(modeldir + S99file)
-    print "Cols are", tab.colnames
+    #print "Cols are", tab.colnames
     #for thiscol in tab.colnames :
     #     print type(tab[thiscol].data) ,  tab[thiscol].data.shape
     return(tab)
@@ -68,15 +70,19 @@ def write_cloudy_continuum(tab, Z, age, age_index) :  # NOT USED AT PRESENT.  Us
     jrr.util.put_header_on_file(tempfile, header_text, table_outfile)
     return(0)
 
-def write_cloudy_infile(Z, age, logU, cloudy_template) :
-    solarZ = translate_metallicity(Z)
-    contfile = name_that_cloudy_file(Z, age)
+def write_cloudy_infile(Z, age, logU, cloudy_template, style) :  # should this have a style flag?  Stopped here...
+    solarZ =  translate_Z_abs2solar(Z)q
+    if   style == 'JC_S99'       :   model = name_that_cloudy_file(Z, age)
+    elif style == 'BPASS_binary' :   model = 'BPASSv2p1_imf135_100_burst_binary'
+    elif style == 'BPASS_single' :   model = 'BPASSv2p1_imf135_100_burst_single'
     infile   = name_that_cloudy_file(Z, age) + '.in'
     outfile  = name_that_cloudy_file(Z, age) + '.out'
-    jrr.util.replace_text_in_file("SEDGOESHERE", contfile, cloudy_template, infile)
+    logZ_absolute = round(log10(0.02 * solarZ), 2) # log(absolute Z), where 0.02 is solar.  # WORKING HERE...
+    jrr.util.replace_text_in_file("MODELGOESHERE", model, cloudy_template, infile)  # This is different S99/BPASS
     jrr.util.replace_text_in_file("AGEGOESHERE", str(age), infile)
     jrr.util.replace_text_in_file("METALLICITYWRTSOLARGOESHERE", str(solarZ), infile) # Z in solar units
     jrr.util.replace_text_in_file("ABSOLUTEMETALLICITYGOESHERE", str(Z), infile) # Z in absolute units (solar is 0.02)
+    jrr.util.replace_text_in_file("ABSOLUTELOGMETALLICITYGOESHERE", str(logZ_absolute), infile) # Z in absolute units (solar is 0.02)
     jrr.util.replace_text_in_file("LOGUGOESHERE", str(logU), infile) # ionization parameter
     return(infile, outfile)
 
@@ -136,15 +142,19 @@ homedir   = expanduser("~")
 modeldir  = homedir + '/Dropbox/MagE_atlas/Contrib/S99/models/'
 nebcontdir = '/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum/'  # Where cloudy model results live
 # Here's what I expect in J. Chisholm's packaged S99 files. However, getting age, Z from files themselves.
-# ages = (1, 2, 3, 4, 5, 8, 10, 15, 20, 40) # Myr
-# metallicities = (0.01, 0.2, 0.4, 1.0, 2.0) # fraction of solar
+ages = (1, 2, 3, 4, 5, 8, 10, 15, 20, 40) # Myr
+absZs = ('001', '004', '008', '020', '040')  # Metallicities as BPASS expects 
+#metallicities = (0.01, 0.2, 0.4, 1.0, 2.0) # fraction of solar
 logUs = (-2.0, -2.3, -2.5, -2.7, -3.0)  # John C. wants to see impact of neb cont on different logUs
-style = ('JC_S99')  #, 'BPASS')  # need to add BPASS
+styles = ('JC_S99', 'BPASS_binary', 'BPASS_single')
+style = styles[0]  #For now, only S99 works.  Adding BPASS
+
 
 # Formatting for cloudy
 cloudy_exe = "/Volumes/Apps_and_Docs/JRR_Utils/c17.00/source/cloudy.exe"
-cloudy_template = "../S99_cloudy_template.in"  # Cloudy input template
 cloudy_script = 'run_cloudy.sh'  # Script to run all the Cloudy models
+cloudy_template = { 'JC_S99': '../S99_cloudy_template.in' , 'BPASS_binary': '../bpass_cloudy_template.in', 'BPASS_single': '../bpass_cloudy_template.in'}
+
 
 # Realized that high-res S99 output is inappropriate for Cloudy, bc it has no flux <900A.  Therefore, have compiled the
 # lowres S99 spectra from JC into Cloudy format, and am now running that in Cloudy.
@@ -152,32 +162,43 @@ cloudy_script = 'run_cloudy.sh'  # Script to run all the Cloudy models
 # and pack it up like JC expects.  Then repeat for BPASS.
 
 #  *** SWITCHES ************
-prep_cloudy =    False     # Prepare all the Cloudy input files?
-analyze_cloudy = True      # Analyze the cloudy outputs, to grab nebular continuua?
-sanity_plots   = True
+prep_cloudy =    True     # Prepare all the Cloudy input files?
+analyze_cloudy = False      # Analyze the cloudy outputs, to grab nebular continuua?
+sanity_plots   = False
 #  *************************
 
 
 
 if prep_cloudy :  # Part 1: THIS SECTION PREPARES THE CLOUDY BATCH MODE SCRIPT
-    for logU in logUs:
-        cloudydir = get_cloudydir(logU, style=style)
-        if not exists(nebcontdir + cloudydir):   makedirs(nebcontdir + cloudydir)
-        print "DEBUGGING, working on logU=", logU, "in dir", cloudydir
-        f = open(nebcontdir + cloudydir + cloudy_script, 'w')
-        chdir(nebcontdir + cloudydir)
-        filenames = [ basename(x) for x in glob.glob(modeldir + '*fits')]      # For each of J. Chisholm's packaged S99 files:
-        for thisfile in filenames:
-            baseZ = re.sub('.fits', '', re.sub('sb99', '', thisfile))
-            hires_tab = read_JC_S99file(modeldir, thisfile)
-            for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :
-                thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
-                (infile, outfile) = write_cloudy_infile(baseZ, thisage, logU, cloudy_template)  # Write Cloudy infile (ported from wrapper.py)
-                f.write(cloudy_exe + " < " + infile + " > " + outfile + "\n")
-        f.close()  # Close the cloudy_script
-        print "Done this dir", cloudydir
-    chdir(nebcontdir)
+    for style in styles :
+        for logU in logUs:
+            cloudydir = get_cloudydir(logU, style=style)
+            if not exists(nebcontdir + cloudydir):   makedirs(nebcontdir + cloudydir)
+            print "Working in dir", cloudydir
+            f = open(nebcontdir + cloudydir + cloudy_script, 'w')
+            chdir(nebcontdir + cloudydir)
+            # Below is S99-specific
+            if style == 'JC_S99' :
+                filenames = [ basename(x) for x in glob.glob(modeldir + '*fits')]      # For each of J. Chisholm's packaged S99 files:
+                for thisfile in filenames:
+                    baseZ = re.sub('.fits', '', re.sub('sb99', '', thisfile))
+                    hires_tab = read_JC_S99file(modeldir, thisfile)
+                    for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :
+                        thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
+                        (infile, outfile) = write_cloudy_infile(baseZ, thisage, logU, cloudy_template[style], style)  # Write Cloudy infile (ported from wrapper.py)
+                        f.write(cloudy_exe + " < " + infile + " > " + outfile + "\n")
+                f.close()  # Close the cloudy_script
+            elif('BPASS' in style) :  # Make the BPASS model
+                for bpassZ in absZs :
+                    for thisage in ages :
+                        (infile, outfile) = write_cloudy_infile(bpassZ, thisage, logU, cloudy_template[style], style)
+                        f.write(cloudy_exe + " < " + infile + " > " + outfile + "\n")
+                f.close()  # Close the cloudy_script
+            else : raise Exception("Unrecognized style")
+        chdir(nebcontdir)
 
+
+    
 ####  Part 2: NOW, GO RUN the Cloudy models in each dir, as:   xjobs -j 7 -s run_cloudy.sh
 
 

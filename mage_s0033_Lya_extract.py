@@ -34,7 +34,7 @@ plt.close("all")
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(111)
 
-fig2, ax2 = plt.subplots(4, 1)
+fig2, ax2 = plt.subplots(4, 1, figsize=(8,5))
 
 fig4 = plt.figure()
 ax4 = fig4.add_subplot(111)
@@ -95,7 +95,6 @@ for jj, thisfile in enumerate(infiles):
 
     ax4.plot(thisx,    df[jj]['contscaled']/ftweak[jj], color=stupid_colors[jj], label="")
     ax4.scatter(thisx, df[jj]['contscaled']/ftweak[jj], color=stupid_colors[jj], label="frame "+ str(frame_names[jj]))
-
 
     dslice = 3
     lyarange = range(lyareg[2], lyareg[3], dslice)

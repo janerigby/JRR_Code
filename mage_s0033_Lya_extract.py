@@ -97,11 +97,11 @@ for jj, thisfile in enumerate(infiles):
     ax4.scatter(thisx, df[jj]['contscaled']/ftweak[jj], color=stupid_colors[jj], label="frame "+ str(frame_names[jj]))
 
     dslice = 3
-    lyarange = range(lyareg[2], lyareg[3], dslice)
+    lyarange = range(lyareg[2] +2, lyareg[3] -2 -dslice, dslice)
     slices = [ np.nansum(im[ii : ii+dslice, lyareg[0] : lyareg[1]], axis=0) for ii in lyarange]  # wizard FDR list comprehension
     for ii, thisslice in enumerate(slices) :
         label = "slice pixs"+ str(lyarange[ii]) + " to " + str(lyarange[ii] + dslice)
-        ax2[jj].plot(thisslice, label=label, color = plt.cm.Spectral( ii *1.0 / len(slices)))
+        ax2[jj].plot(thisslice, label=label, color = plt.cm.gist_rainbow( ii *1.0 / len(slices)))
         ax2[jj].annotate("frame "+ str(frame_names[jj]), xy=(0.05, 0.89), xycoords='axes fraction', fontsize=10)
  
 ax1.set_title("Summed image, scaled by total Lya flux")
@@ -115,7 +115,7 @@ ax1.set_ylim(-0.01,0.07)
 ax4.set_ylim(-10,700)
 ax5.set_ylim(-100,7000)
 ax1.set_xlabel("x pixel value")
-ax2[-1].set_xlabel("x pixel value")
+ax2[-1].set_xlabel("x pixel value - " + str(lyareg[0]))
 ax4.set_xlabel("offset from center of continuum (\")")
 ax5.set_xlabel("offset from center of continuum (\")")
 ax1.legend()

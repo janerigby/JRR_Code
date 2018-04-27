@@ -210,7 +210,7 @@ if analyze_cloudy :
                     for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :  
                         thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
                         (wave, flam, fnu, stellar_df) = process_S99_spectrumfile(hires_tab, baseZ, thisage, age_index)
-                        print "Working on:", baseZ, thisage, logU, style
+                        print "Working on: (Z age logU style)", baseZ, thisage, logU, style
                         cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         lores_df = grab_age_from_lores(lores_dfall, thisage)
                         add_nebular_to_stellar(stellar_df, cloudy_df)
@@ -241,7 +241,7 @@ if analyze_cloudy :
             elif('BPASS' in style) :   # Input spectrum is BPASS. Much simpler.  Don't need to check that input spectra match.  Just plot cloudy infile
                 for bpassZ in absZs :
                     for thisage in ages :
-                        print "Working on:", bpassZ, thisage, logU, style
+                        print "Working on: (Z age logU style)", baseZ, thisage, logU, style
                         cloudy_df = retrieve_cloudy_nebcont(bpassZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         cloudy_df.head()
             pp.close()

@@ -55,22 +55,13 @@ def grab_age_from_lores(lores_df, age) :
 def name_that_cloudy_file(Z, age) :
     return("Z" + Z + "_" + str(age) + "Myr")
 
-def process_S99_spectrumfile(tab, Z, age, age_index) :
+def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files in which JC has packaged the highres S99 spectra
     table_outfile = name_that_cloudy_file(Z, age) + '.sed' 
     wave = tab['WAVE'].data[0,]
     flam = tab['FLUX'].data[0, age_index, :]
     fnu  = jrr.spec.flam2fnu(wave, flam)  # convert from flam to fnu, which is what Cloudy needs
     df = pandas.DataFrame({'wave' : wave, 'fnu' : fnu, 'flam' : flam})  # For convenience, make a pandas dataframe
     return(wave, flam, fnu, df)
-
-def write_cloudy_continuum(tab, Z, age, age_index) :  # NOT USED AT PRESENT.  Using low-res but larger wavelength range spectrum
-    # Write a continuum file (wave, fnu), formatted for Cloudy "Table SED" command.
-    tempfile = "temp.txt"
-    (temp_wave, temp_flam, temp_fnu, tempdf) = process_S99_spectrumfile(tab, Z, age, age_index)
-    np.savetxt(tempfile, np.transpose([temp_wave,  temp_fnu]), "%.7f  %.4E", comments="")
-    header_text = "#wave_angs  fnu\n199.000     1.0E-99  units Angstrom\n"  # See Hazy1, Table SED command.  Kludge to state units
-    jrr.util.put_header_on_file(tempfile, header_text, table_outfile)
-    return(0)
 
 def write_cloudy_infile(Z, age, logU, cloudy_template, style) :  
     solarZ =  translate_Z_abs2solar(Z)
@@ -172,18 +163,17 @@ if prep_cloudy :  # Part 1: THIS SECTION PREPARES THE CLOUDY BATCH MODE SCRIPT
             print "Working in dir", cloudydir
             f = open(nebcontdir + cloudydir + cloudy_script, 'w')
             chdir(nebcontdir + cloudydir)
-            # Below is S99-specific
-            if style == 'JC_S99' :
+            if style == 'JC_S99' :  # S99 specific file wrangling
                 filenames = [ basename(x) for x in glob.glob(modeldir + '*fits')]      # For each of J. Chisholm's packaged S99 files:
                 for thisfile in filenames:
                     baseZ = re.sub('.fits', '', re.sub('sb99', '', thisfile))
                     hires_tab = read_JC_S99file(modeldir, thisfile)
                     for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :
                         thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
-                        (infile, outfile) = write_cloudy_infile(baseZ, thisage, logU, cloudy_template[style], style)  # Write Cloudy infile (ported from wrapper.py)
+                        (infile, outfile) = write_cloudy_infile(baseZ, thisage, logU, cloudy_template[style], style)  # Write Cloudy infile
                         f.write(cloudy_exe + " < " + infile + " > " + outfile + "\n")
                 f.close()  # Close the cloudy_script
-            elif('BPASS' in style) :  # Make the BPASS model
+            elif('BPASS' in style) :  # Make the Cloudy model using BPASS as ionizing spectrum
                 for bpassZ in absZs :
                     for thisage in ages :
                         (infile, outfile) = write_cloudy_infile(bpassZ, thisage, logU, cloudy_template[style], style)
@@ -197,60 +187,63 @@ if prep_cloudy :  # Part 1: THIS SECTION PREPARES THE CLOUDY BATCH MODE SCRIPT
 ####      xjobs -j 7 -s run_cloudy.sh
 
 
-
 #### Part 3: Cloudy models run, and ready to be processed?  Good.  Pair each Cloudy .con continuum outfile with
 ##### its corresponding high-res S99 output spectra, interpolate as needed, add the two spectra, and repackage for JC.
 ## Need to repeat this packaging for BPASS results.
 
 if analyze_cloudy :  
     plt.close("all")
-    for style in styles[0:1] :  # TEMP KLUDGE! *** For now, just doing S99 models.  Add BPass compatibility in next
+    for style in styles :  # Adding BPASS compatitibility now...
         for logU in logUs:
             cloudydir = get_cloudydir(logU, style=style)
-            the_pdf = "Sanity_checks_S99_stellar_continuua_for_Cloudy_logU" + str(logU) + ".pdf"
-            pp = PdfPages(the_pdf)  # output   
+            the_pdf = "Sanity_checks_" + style + "stellar_neb_continuua_logU" + str(logU) + ".pdf"
+            pp = PdfPages(the_pdf)  # output  
             chdir(nebcontdir + cloudydir)
-            filenames = [ basename(x) for x in glob.glob(modeldir + '*fits')]  
-            for thisfile in filenames:  
-                baseZ = re.sub('.fits', '', re.sub('sb99', '', thisfile))
-                lores_dfall = read_loresS99file(modeldir, baseZ)  # Grab the lores S99 file that was fed into Cloudy        
-                hires_tab = read_JC_S99file(modeldir, thisfile)
-                hires_tab['flam_wneb']    = hires_tab['FLUX'] *0.0  # Create this new column w the right size.
-                hires_tab['flam_nebonly'] = hires_tab['FLUX'] *0.0  
-                for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :  
-                    thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
-                    (wave, flam, fnu, stellar_df) = process_S99_spectrumfile(hires_tab, baseZ, thisage, age_index)
-                    print "Working on:", baseZ, thisage, logU, style
-                    cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
-                    lores_df = grab_age_from_lores(lores_dfall, thisage)
-                    add_nebular_to_stellar(stellar_df, cloudy_df)
-                    hires_tab['flam_wneb'][0, age_index, :] = np.array(jrr.spec.fnu2flam(stellar_df['wave'], stellar_df['fnu_wneb']))
-                    hires_tab['flam_nebonly'][0, age_index, :] = np.array(jrr.spec.fnu2flam(stellar_df['wave'], stellar_df['fnu_nebonly']))
-                    # above step repackages stellar_df into fits files for john. 
-
-                    nwave1 = 2000. ;  nwave2 = 2020.  # Sanity check plots
-                    norm1 =   cloudy_df.loc[cloudy_df['wave_Ang'].between(nwave1, nwave2)]['fnu_incident'].median()
-                    norm2 = stellar_df.loc[stellar_df['wave'].between(  nwave1, nwave2)]['fnu'].median()
-                    norm3 =   lores_df.loc[lores_df['wave_Ang'].between(nwave1, nwave2)]['fnu_stellar'].median()
-                    #print "Norms are", norm1, norm2, norm3
-                    plt.plot(stellar_df['wave'], stellar_df['fnu'] /norm2, label='S99 hires spectrum')
-                    plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_incident']/ norm1, label="Cloudy incident", color='k', linewidth=2)
-                    plt.plot(stellar_df['wave'], stellar_df['fnu_nebonly'] /norm2, label='scaled neb for hires', color='pink', lw=3)
-                    plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_nebcont'] / norm1, label="Cloudy nebular continuum", color='red', linewidth=0.7)
-                    plt.plot(lores_df['wave_Ang'],   lores_df['fnu_stellar']   / norm3, label='S99 lores', linewidth=0.7)
-                    #plt.plot(lores_df['wave_Ang'],   lores_df['fnu_neb']       / norm3, label='S99-predicted nebcont') # this is zero. not sure why
-                    plt.xlim(800,3000)
-                    plt.ylim(0,2)
-                    plt.title("Z" + baseZ + ", age " + thisage + "Myr, logU="+str(logU))
-                    plt.legend()
-                    pp.savefig()
-                    plt.clf()
-                    # Check that I can read the newly-generated file
-                    suffix = "_wnebcont_logU" + str(logU) + ".fits" 
-                    outfile = re.sub('.fits', suffix, thisfile)
-                write_JC_S99file(hires_tab, modeldir + "Wnebcont/", outfile) 
-                newtab = read_JC_S99file(modeldir  + "Wnebcont/", outfile)
-                (nwave, nflam, nfnu, nstellar_df) = process_S99_spectrumfile(newtab, baseZ, thisage, age_index)
+            if style == 'JC_S99' :  # S99 specific file wrangling. Read JC's infiles, check that lowres, hires stellar spectra sortof match; check nebcont scaled right
+                filenames = [ basename(x) for x in glob.glob(modeldir + '*fits')]  
+                for thisfile in filenames:  
+                    baseZ = re.sub('.fits', '', re.sub('sb99', '', thisfile))
+                    lores_dfall = read_loresS99file(modeldir, baseZ)  # Grab the lores S99 file that was fed into Cloudy        
+                    hires_tab = read_JC_S99file(modeldir, thisfile)
+                    hires_tab['flam_wneb']    = hires_tab['FLUX'] *0.0  # Create this new column w the right size.
+                    hires_tab['flam_nebonly'] = hires_tab['FLUX'] *0.0  
+                    for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :  
+                        thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
+                        (wave, flam, fnu, stellar_df) = process_S99_spectrumfile(hires_tab, baseZ, thisage, age_index)
+                        print "Working on:", baseZ, thisage, logU, style
+                        cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
+                        lores_df = grab_age_from_lores(lores_dfall, thisage)
+                        add_nebular_to_stellar(stellar_df, cloudy_df)
+                        hires_tab['flam_wneb'][0, age_index, :] = np.array(jrr.spec.fnu2flam(stellar_df['wave'], stellar_df['fnu_wneb']))
+                        hires_tab['flam_nebonly'][0, age_index, :] = np.array(jrr.spec.fnu2flam(stellar_df['wave'], stellar_df['fnu_nebonly']))
+                        # above step repackages stellar_df into fits files for john. 
+                        nwave1 = 1760. ;  nwave2 = 1790.
+                        norm1 =   cloudy_df.loc[cloudy_df['wave_Ang'].between(nwave1, nwave2)]['fnu_incident'].median()
+                        norm2 = stellar_df.loc[stellar_df['wave'].between(  nwave1, nwave2)]['fnu'].median()
+                        norm3 =   lores_df.loc[lores_df['wave_Ang'].between(nwave1, nwave2)]['fnu_stellar'].median()
+                        plt.plot(stellar_df['wave'], stellar_df['fnu'] /norm2, label='S99 hires spectrum')
+                        plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_incident']/ norm1, label="Cloudy incident", color='k', linewidth=2)
+                        plt.plot(stellar_df['wave'], stellar_df['fnu_nebonly'] /norm2, label='scaled neb for hires', color='pink', lw=3)
+                        plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_nebcont'] / norm1, label="Cloudy nebular continuum", color='red', linewidth=0.7)
+                        plt.plot(lores_df['wave_Ang'],   lores_df['fnu_stellar']   / norm3, label='S99 lores', linewidth=0.7)
+                        #plt.plot(lores_df['wave_Ang'],   lores_df['fnu_neb']       / norm3, label='S99-predicted nebcont') # this is zero. not sure why
+                        plt.xlim(800,3000)
+                        plt.ylim(0,2)
+                        plt.title("Z" + baseZ + ", age " + thisage + "Myr, logU="+str(logU))
+                        plt.legend()
+                        pp.savefig()
+                        plt.clf()
+                        suffix = "_wnebcont_logU" + str(logU) + ".fits" 
+                        outfile = re.sub('.fits', suffix, thisfile)
+                    write_JC_S99file(hires_tab, modeldir + "Wnebcont/", outfile) 
+                    newtab = read_JC_S99file(modeldir  + "Wnebcont/", outfile)      # Check that I can read the newly-generated file
+                    (nwave, nflam, nfnu, nstellar_df) = process_S99_spectrumfile(newtab, baseZ, thisage, age_index)
+            elif('BPASS' in style) :   # Input spectrum is BPASS. Much simpler.  Don't need to check that input spectra match.  Just plot cloudy infile
+                for bpassZ in absZs :
+                    for thisage in ages :
+                        print "Working on:", bpassZ, thisage, logU, style
+                        cloudy_df = retrieve_cloudy_nebcont(bpassZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
+                        cloudy_df.head()
             pp.close()
             chdir(nebcontdir)
 

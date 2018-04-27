@@ -200,6 +200,7 @@ if prep_cloudy :  # Part 1: THIS SECTION PREPARES THE CLOUDY BATCH MODE SCRIPT
 
     
 ####  Part 2: NOW, GO RUN the Cloudy models in each dir, as:   xjobs -j 7 -s run_cloudy.sh
+#####   (takes several hr)
 
 
 #### Part 3: Cloudy models run, and ready to be processed?  Good.  Pair each Cloudy .con continuum outfile with

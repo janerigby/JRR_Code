@@ -5,7 +5,7 @@ def bpass_model_dir() : # Set this to where your models are
 
 def bpass_ages_setup() :  # Create a pandas dataframe of ages and column names ('coln'), as in BPASS v2.1 manual
     df_age = pandas.DataFrame([ 10**(6+0.1*(n-2)) for n in range(2,52+1)], columns=('age',))
-    colnames = pandas.Series(["col"+str(n) for n in range(2,52)])
+    colnames = pandas.Series(["col"+str(n) for n in range(2,52+1)])
     df_age['colname'] = colnames
     return(df_age)
 
@@ -28,5 +28,5 @@ print "Closest age was", closest_age, ", so the age column is", closest_age['col
 #df = pandas.read_table(filename, delim_whitespace=True, comment="#", names= ['wave'] + colnames)
 print df_age.head()
 
-df_bpass = pandas.read_table(bpassdir + filename, delim_whitespace=True, names=(['wave'] +  df_age['colname'].tolist()))
+df_bpass = pandas.read_table(bpassdir + filename, delim_whitespace=True, df_age['colname']))
 

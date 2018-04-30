@@ -60,19 +60,14 @@ def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files i
     df = pandas.DataFrame({'wave' : wave, 'fnu' : fnu, 'flam' : flam})  # For convenience, make a pandas dataframe
     return(wave, flam, fnu, df)
 
-def get_BPASS_spectrum(Z, age, logU, style) :
-    filename = 'BPASSv2.1_imf135_100/spectra.z020.dat.gz'  # Working on this...  *** THIS DOESNT WORK YET
-    filename = 'BPASSv2.1_imf135_100/spectra.  ***  bin or not, then z z020.dat.gz'  # Working on this...  *** THIS DOESNT WORK YET
-    df_bpass2 = jrr.bpass.load_1spectrum(filename, age_to_find)
-
 def name_that_cloudy_file(Z, age) :
     return("Z" + Z + "_" + str(age) + "Myr")
 
 def write_cloudy_infile(Z, age, logU, cloudy_template, style) :  
     solarZ =  translate_Z_abs2solar(Z)
     if   style == 'JC_S99'       :   model = name_that_cloudy_file(Z, age)
-    elif style == 'BPASS_binary' :   model = 'BPASSv2p1_imf135_100_burst_binary'
-    elif style == 'BPASS_single' :   model = 'BPASSv2p1_imf135_100_burst_single'
+    elif style == 'BPASS_binary' :   model = jrr.bpass.default_filenames()[1] + '_binary'
+    elif style == 'BPASS_single' :   model = jrr.bpass.default_filenames()[1] + '_single'
     else : raise Exception("Unrecognized style")
     prefix = name_that_cloudy_file(Z, age)
     infile = prefix + '.in'  ;  outfile = prefix + '.out'
@@ -100,14 +95,6 @@ def retrieve_cloudy_nebcont(Z, age, directory) :
     df['fnu_nebcont']  = df['nebcont']  / df['nu'] 
     return(df)
 
-def add_nebular_to_stellar_deprecated(stellar_df, cloudy_df) :  # deprecated bc this adds artifacts to the nebular cont.
-    # fnu(stellar + neb)_hires  =  [ fnu(stellar)_lores + fnu(neb)_lores ] / fnu(stellar)_lores     * fnu(stellar)_hires
-    cloudy_df['multby4neb'] =  (cloudy_df['fnu_incident'] + cloudy_df['fnu_nebcont'])  / cloudy_df['fnu_incident']
-    stellar_df['multby4neb'] = jrr.spec.rebin_spec_new(cloudy_df['wave_Ang'], cloudy_df['multby4neb'], stellar_df['wave'])
-    stellar_df['fnu_wneb'] = stellar_df['fnu'] * stellar_df['multby4neb']
-    stellar_df['fnu_nebonly'] = stellar_df['fnu'] * stellar_df['multby4neb'] -  stellar_df['fnu'] 
-    return(0)  # acts on stellar_df
-
 def add_nebular_to_stellar(stellar_df, cloudy_df) :
     # Cloudy calculates the nebular continuum for the lores S99 spectrum.  I want to add it to the hires S99 spectrum.
     # Cloudy applies a weird scaling factor, so I can't just add them.  I had done a scaling short-cut, but that
@@ -122,7 +109,24 @@ def add_nebular_to_stellar(stellar_df, cloudy_df) :
     stellar_df['fnu_wneb'] = stellar_df['fnu'] + stellar_df['fnu_nebonly']
     return(0) # acts on stellar_df
 
-    
+def plot_stellar_nebular(style, stellar_df, cloudy_df, Z, age, logU, lores_df=None, nwave1=1760., nwave2=1790.) :
+    # Plot the input spectrum (from S99 or BPASS) against the Cloudy outputs)
+    norm1 =  cloudy_df.loc[cloudy_df['wave_Ang'].between(nwave1, nwave2)]['fnu_incident'].median()
+    norm2 = stellar_df.loc[stellar_df['wave'].between(  nwave1, nwave2)]['fnu'].median()
+    plt.plot(stellar_df['wave'], stellar_df['fnu'] /norm2, label='High-res stellar spectrum')
+    plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_incident']/ norm1, label="Cloudy incident", color='k', linewidth=2)
+    plt.plot(stellar_df['wave'], stellar_df['fnu_nebonly'] /norm2, label='scaled neb for hires', color='pink', lw=3)
+    plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_nebcont'] / norm1, label="Cloudy nebular continuum", color='red', linewidth=0.7)
+    if lores_df is not None :
+        norm3 =   lores_df.loc[lores_df['wave_Ang'].between(nwave1, nwave2)]['fnu_stellar'].median()
+        plt.plot(lores_df['wave_Ang'],   lores_df['fnu_stellar']   / norm3, label='S99 lores', linewidth=0.7)
+    #plt.plot(lores_df['wave_Ang'],   lores_df['fnu_neb']       / norm3, label='S99-predicted nebcont') # this is zero. not sure why
+    plt.xlim(800,3000)
+    plt.ylim(0,2)
+    plt.title(style + " Z" + str(baseZ) + ", age " + str(thisage) + "Myr, logU="+str(logU))
+    plt.legend()
+    return(0)
+
 def get_cloudydir(logU, style='JC_S99') :   
     return(style + "_logU" + str(logU) + "/")
 
@@ -153,8 +157,8 @@ cloudy_script = 'run_cloudy.sh'  # Script to run all the Cloudy models
 cloudy_template = { 'JC_S99': '../S99_cloudy_template.in' , 'BPASS_binary': '../bpass_cloudy_template.in', 'BPASS_single': '../bpass_cloudy_template.in'}
 
 #  *** SWITCHES ************
-prep_cloudy =    True    # Prepare all the Cloudy input files?
-analyze_cloudy = False      # Analyze the cloudy outputs, to grab nebular continuua?
+prep_cloudy =    False    # Prepare all the Cloudy input files?
+analyze_cloudy = True      # Analyze the cloudy outputs, to grab nebular continuua?
 sanity_plots   = False
 #  *************************
 
@@ -202,7 +206,7 @@ if analyze_cloudy :
     for style in styles :  # Adding BPASS compatitibility now...
         for logU in logUs:
             cloudydir = get_cloudydir(logU, style=style)
-            the_pdf = "Sanity_checks_" + style + "stellar_neb_continuua_logU" + str(logU) + ".pdf"
+            the_pdf = "Sanity_checks_" + style + "_stellar_neb_continuua_logU" + str(logU) + ".pdf"
             pp = PdfPages(the_pdf)  # output  
             chdir(nebcontdir + cloudydir)
             if style == 'JC_S99' :  # S99 specific file wrangling. Read JC's infiles, check that lowres, hires stellar spectra sortof match; check nebcont scaled right
@@ -215,28 +219,15 @@ if analyze_cloudy :
                     hires_tab['flam_nebonly'] = hires_tab['FLUX'] *0.0  
                     for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) :  
                         thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
-                        (wave, flam, fnu, stellar_df) = process_S99_spectrumfile(hires_tab, baseZ, thisage, age_index)
-                        print "Working on: (Z age logU style)", baseZ, thisage, logU, style
+                        (wave, flam, fnu, stellar_df) = process_S99_spectrumfile(hires_tab, baseZ, thisage,age_index)
+                        print "Working on: (Z age logU style cloudydir)", baseZ, thisage, logU, style, cloudydir
                         cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         lores_df = grab_age_from_lores(lores_dfall, thisage)
                         add_nebular_to_stellar(stellar_df, cloudy_df)
                         hires_tab['flam_wneb'][0, age_index, :] = np.array(jrr.spec.fnu2flam(stellar_df['wave'], stellar_df['fnu_wneb']))
                         hires_tab['flam_nebonly'][0, age_index, :] = np.array(jrr.spec.fnu2flam(stellar_df['wave'], stellar_df['fnu_nebonly']))
-                        # above step repackages stellar_df into fits files for john. 
-                        nwave1 = 1760. ;  nwave2 = 1790.
-                        norm1 =   cloudy_df.loc[cloudy_df['wave_Ang'].between(nwave1, nwave2)]['fnu_incident'].median()
-                        norm2 = stellar_df.loc[stellar_df['wave'].between(  nwave1, nwave2)]['fnu'].median()
-                        norm3 =   lores_df.loc[lores_df['wave_Ang'].between(nwave1, nwave2)]['fnu_stellar'].median()
-                        plt.plot(stellar_df['wave'], stellar_df['fnu'] /norm2, label='S99 hires spectrum')
-                        plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_incident']/ norm1, label="Cloudy incident", color='k', linewidth=2)
-                        plt.plot(stellar_df['wave'], stellar_df['fnu_nebonly'] /norm2, label='scaled neb for hires', color='pink', lw=3)
-                        plt.plot(cloudy_df['wave_Ang'], cloudy_df['fnu_nebcont'] / norm1, label="Cloudy nebular continuum", color='red', linewidth=0.7)
-                        plt.plot(lores_df['wave_Ang'],   lores_df['fnu_stellar']   / norm3, label='S99 lores', linewidth=0.7)
-                        #plt.plot(lores_df['wave_Ang'],   lores_df['fnu_neb']       / norm3, label='S99-predicted nebcont') # this is zero. not sure why
-                        plt.xlim(800,3000)
-                        plt.ylim(0,2)
-                        plt.title("Z" + baseZ + ", age " + thisage + "Myr, logU="+str(logU))
-                        plt.legend()
+                        # above step repackages stellar_df into fits files for J. Chisholm
+                        plot_stellar_nebular(style, stellar_df, cloudy_df, baseZ, thisage, logU, lores_df=lores_df)
                         pp.savefig()
                         plt.clf()
                         suffix = "_wnebcont_logU" + str(logU) + ".fits" 
@@ -244,19 +235,23 @@ if analyze_cloudy :
                     write_JC_S99file(hires_tab, modeldir + "Wnebcont/", outfile) 
                     newtab = read_JC_S99file(modeldir  + "Wnebcont/", outfile)      # Check that I can read the newly-generated file
                     (nwave, nflam, nfnu, nstellar_df) = process_S99_spectrumfile(newtab, baseZ, thisage, age_index)
-            elif('BPASS' in style) :   # Input spectrum is BPASS. Much simpler.  Don't need to check that input spectra match.  Just plot cloudy infile
-                for bpassZ in absZs :
+            elif('BPASS' in style) :   # Input spectrum is BPASS. 
+                for baseZ in absZs :
                     for thisage in ages :
-                        print "Working on: (Z age logU style)", baseZ, thisage, logU, style
-                        cloudy_df = retrieve_cloudy_nebcont(bpassZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
-
+                        print "Working on: (Z age logU style cloudydir)", baseZ, thisage, logU, style, cloudydir
+                        cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         cloudy_df.head()  # Need more after this; just want to show that I can read the cloudy file.
-                        # Next steps:
-                        # Go find high-res BPASS stellar continuum, b/c cloudy .con is too low res.
-                        # Add the stellar and nebular continua
-                        # Make a fits file in the format John expects.
+                        stellar_df = jrr.bpass.wrap_load_1spectrum(baseZ, thisage*1E6, style)   # Get high-res BPASS stellar continuum. cloudy .con too low res.
+                        stellar_df['fnu']  = jrr.spec.flam2fnu(stellar_df['wave'], stellar_df['flam']) 
+                        add_nebular_to_stellar(stellar_df, cloudy_df)
+                        print "DEBUGGING"
+                        plot_stellar_nebular(style, stellar_df, cloudy_df, baseZ, thisage, logU)
+                        pp.savefig()
+                        plt.clf()
+                        # Next steps:        # Make a fits file in the format John expects.
             pp.close()
             chdir(nebcontdir)
+
 
 
 if sanity_plots :  # Part 4: make a bunch of sanity plots

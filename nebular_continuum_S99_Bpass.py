@@ -244,7 +244,6 @@ if analyze_cloudy :
                         stellar_df = jrr.bpass.wrap_load_1spectrum(baseZ, thisage*1E6, style)   # Get high-res BPASS stellar continuum. cloudy .con too low res.
                         stellar_df['fnu']  = jrr.spec.flam2fnu(stellar_df['wave'], stellar_df['flam']) 
                         add_nebular_to_stellar(stellar_df, cloudy_df)
-                        print "DEBUGGING"
                         plot_stellar_nebular(style, stellar_df, cloudy_df, baseZ, thisage, logU)
                         pp.savefig()
                         plt.clf()

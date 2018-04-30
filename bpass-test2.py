@@ -23,3 +23,9 @@ print df_bpass2.head()
 ax = df_bpass2.plot(x='wave', y='flam')
 plt.xlim(100,5000)
 plt.show()
+
+print "This is a streamlined version of above, using parameters rather than filenames"
+baseZ = '008'
+thisage = 2E6  #yr
+style = ('BPASS_binary', 'BPASS_single')
+stellar_df = jrr.bpass.wrap_load_1spectrum(baseZ, thisage, style[0]) 

@@ -60,6 +60,11 @@ def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files i
     df = pandas.DataFrame({'wave' : wave, 'fnu' : fnu, 'flam' : flam})  # For convenience, make a pandas dataframe
     return(wave, flam, fnu, df)
 
+def get_BPASS_spectrum(Z, age, logU, style) :
+    filename = 'BPASSv2.1_imf135_100/spectra.z020.dat.gz'  # Working on this...  *** THIS DOESNT WORK YET
+    filename = 'BPASSv2.1_imf135_100/spectra.  ***  bin or not, then z z020.dat.gz'  # Working on this...  *** THIS DOESNT WORK YET
+    df_bpass2 = jrr.bpass.load_1spectrum(filename, age_to_find)
+
 def name_that_cloudy_file(Z, age) :
     return("Z" + Z + "_" + str(age) + "Myr")
 
@@ -245,6 +250,7 @@ if analyze_cloudy :
                         print "Working on: (Z age logU style)", baseZ, thisage, logU, style
                         cloudy_df = retrieve_cloudy_nebcont(bpassZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         cloudy_df.head()
+                        stellar_df = () # get bpass model here
             pp.close()
             chdir(nebcontdir)
 

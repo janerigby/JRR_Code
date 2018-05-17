@@ -15,7 +15,7 @@ from matplotlib.ticker import AutoMinorLocator
 ''' This script processes the spatially-integrated spectra of SGAS J1723, so that we can get emission line
 fluxes.  jrigby, 2017'''
 
-
+# Moved some functions to jrr.grism
 
 def annotate_header(header_ESI, header_MMT, header_GNIRS) :
     for header in (header_ESI, header_MMT, header_GNIRS) :
@@ -23,13 +23,6 @@ def annotate_header(header_ESI, header_MMT, header_GNIRS) :
         header_ESI +=("# Corrected for MW reddening of E(B-V)=" + str(EBV) + "\n")
     return(header_ESI, header_MMT, header_GNIRS)
 
-def get_MWreddening_S1723() :
-    # Get MW reddening E(B-V) from Green et al. 2015, using their API query_argonaut
-    coords = SkyCoord(ra=260.9006916667, dec=34.199825, unit=(u.deg, u.deg))
-    #EBV_Green2015 = jrr.query_argonaut.query(coords.ra.value, coords.dec.value, coordsys='equ', mode='sfd')  #
-    EBV_stashed = 0.03415
-#    return(EBV_Green2015.values()[0])
-    return(EBV_stashed)  ## TEMP WHILE NO INTERNET ON TRAIN*****
 
 def MMT_barycentric_correction(sp) :  # Applying barycentric correction to wavelengths
     thistime =  Time('2014-05-05T09:21:00', format='isot', scale='utc')
@@ -46,37 +39,6 @@ def flag_noise_peaks(sp, delta=0.15, neighborpix=2, colfu='flam_u', contmask='co
     for thispeak in peak_ind :
         sp.iloc[thispeak - neighborpix : thispeak + neighborpix][contmask] = True
     return(peak_ind)
-
-def wrap_fit_continuum(sp, LL, zz, boxcar, colwave='wave', colf='flam_cor', colfu='flam_u_cor', colcont='flamcor_autocont', new_way=False, label="") :
-    (smooth1, smooth2) =  jrr.spec.fit_autocont(sp, LL, zz, boxcar=boxcar, colf=colf,  colcont=colcont, new_way=False)
-    notmasked = sp[~sp['contmask']]
-    plt.plot(sp[colwave],  sp[colf],    color='green', label=label)
-    plt.plot(notmasked[colwave],  notmasked[colfu],   color='lightgreen')
-    plt.plot(sp[colwave],  sp['contmask']*sp[colf].median(),   color='yellow', label='masked')
-    plt.plot(sp[colwave],  sp[colcont], color='k', label='Auto continuum fit')
-    plt.ylim(sp[colf].median() * -0.1, sp[colf].median() * 5)
-    plt.legend()
-    return(smooth1, smooth2)
-
-def load_linelists(linelistdir, zz) :
-    LL_uv  = pandas.read_table(linelistdir + "rest_UV_emission_linelist_short.txt",      delim_whitespace=True, comment="#")
-    LL_opt = pandas.read_table(linelistdir + "rest_optical_emission_linelist_short.txt", delim_whitespace=True, comment="#")
-    (spec_path, line_path) = jrr.mage.getpath('released')
-    (LL_temp, zz_notused) =  jrr.mage.get_linelist(line_path + 's1723.linelist')
-    LL_uvabs = LL_temp.loc[LL_temp['type'].eq("ISM")]  # This already has redshift from .linelist.  may be out of synch****
-    LL_uv['zz']  = zz  ;   LL_opt['zz'] = zz   # Load the redshift
-    LL_uv.sort_values( by='restwav', inplace=True)
-    LL_opt.sort_values(by='restwav', inplace=True)
-    LL_uvabs.sort_values(by='restwav', inplace=True)
-    LL = pandas.concat([LL_uv, LL_opt, LL_uvabs], ignore_index=True)  # Merge the two linelists
-    LL.sort_values(by='restwav', inplace=True)  # Sort by wavelength
-    LL.reset_index(drop=True, inplace=True)
-    LL['obswav'] = LL['restwav'] * (1.0 + LL['zz'])
-    LL['fake_wav'] = 0
-    LL['fake_v'] = 0
-    LL['vmask'] = 500.  # Dummy for now
-    LL.drop_duplicates(subset=('restwav', 'lab1'), inplace=True)  # drop duplicate entries, w same rest wavelength, same ion label    
-    return(LL)
 
 def adjust_plot() :
     plt.legend()
@@ -108,14 +70,14 @@ wdir = home + '/Dropbox/Grism_S1723/'
 file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_wholearc_ESI_JRR_sum.txt'   #  just arc_a, arc_b
 file_MMT  = wdir + 'MMT_BlueChannel/spec_s1723_14b_final_F.txt'  # Updated Jan 23 2017
 file_GNIRS = wdir + 'GNIRS/s1723_gnirs_residual_subtracted_spectrum_jrr.csv'
-file_G102 = wdir + 'WFC3_fit_1Dspec/FULL_G102_coadded.dat' 
+file_G102 = wdir + 'WFC3_fit_1Dspec/FULL_G102_coadded.dat'   # These are the old 3D-HST grism redux.  Replace w grizli reductions
 file_G141 = wdir + 'WFC3_fit_1Dspec/FULL_G141_coadded.dat'
 
 #### Load the linelists, and set the redshift
-EBV = get_MWreddening_S1723()         # Get the Milky Way reddening value
+EBV = jrr.grism.get_MWreddening_S1723()         # Get the Milky Way reddening value
 zHa   = 1.329279 ;  zHa_u = 0.000085  # From GNIRS, see gnirs_writeup.txt
 zESI_prelim = 1.3333365               # Why is this discrepant??
-LL = load_linelists(wdir+'Linelists/', zHa)   #Need to check, z may be discrepant **
+LL = jrr.grism.load_linelists(wdir+'Linelists/', zHa)   #Need to check, z may be discrepant **
 
 #### Read ESI spectra
 # Units are:  wave: barycentric corrected vacuum Angstroms;  flambda in erg/cm2/s/angstrom

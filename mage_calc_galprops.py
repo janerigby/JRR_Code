@@ -38,7 +38,7 @@ print("#(SFRs and fnus not yet corrected for magnification)")
 for label in speclist['short_label'] :
     fnu1500 = sp[label]['rest_fnu'].loc[sp[label]['rest_wave'].between(wave_targ - wave_win, wave_targ + wave_win)].median()
     if label in S99.index :  # if there's a EBV from S99 fit
-        jrr.mage.deredden_internal_extinction(sp[label], S99.loc[label]['EBV'])
+        jrr.spec.deredden_internal_extinction(sp[label], S99.loc[label]['EBV'])
         fnu1500_dered = sp[label]['rest_fnu_dered'].loc[sp[label]['rest_wave'].between(wave_targ - wave_win, wave_targ + wave_win)].median()
         zz = speclist.loc[label]['z_syst']
         flux_to_lum = 4 * pi * (cosmo.luminosity_distance(zz).cgs.value)**2     # Apply luminosity distance

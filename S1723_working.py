@@ -86,7 +86,7 @@ header_ESI = jrr.util.read_header_from_file(file_ESI, comment="#")  # save the h
 sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  
 sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) 
 sp_ESI['flam_u'] = pandas.to_numeric(sp_ESI['flam_u'], errors='coerce') # convert to float64
-jrr.mage.deredden_MW_extinction(sp_ESI, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
+jrr.spec.deredden_MW_extinction(sp_ESI, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
 sp_ESI['contmask'] = False
 sp_ESI.loc[sp_ESI['wave'].between(7576.,7739.), 'contmask'] = True   # Mask telluric A-band
 sp_ESI.loc[sp_ESI['wave'].between(5583.,5592.), 'contmask'] = True   # Mask sky line
@@ -98,8 +98,9 @@ sp_ESI.loc[sp_ESI['flam'] == 0.00, 'contmask'] = True   # Mask bad column, which
 names = ('wave', 'flam', 'flam_u', 'cont', 'flam_contsub')  # assumed flam. **Check w Michael
 sp_G102 = pandas.read_table(file_G102, delim_whitespace=True, comment="#", names=names)
 sp_G141 = pandas.read_table(file_G141, delim_whitespace=True, comment="#", names=names)
-jrr.mage.deredden_MW_extinction(sp_G102, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub') 
-jrr.mage.deredden_MW_extinction(sp_G141, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub')
+# The two lines below should be obsolete.  Now removing MW extinction when fitting continuum, in grism_fitcontinuum.py
+#jrr.spec.deredden_MW_extinction(sp_G102, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub') 
+#jrr.spec.deredden_MW_extinction(sp_G141, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub')
 sp_G102.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G102_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)  # writing with Milky Way dereddening correction.
 sp_G141.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G141_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)
 
@@ -112,7 +113,7 @@ sp_MMT['flam_u'] *= 1.0E-17
 #sp_MMT.replace([np.inf, -np.inf], np.nan, inplace=True)
 #MMT_barycentric_correction(sp_MMT)  ** TEMP COMMENTING THIS blc crappy internet connection on train
 sp_MMT['wave'] = sp_MMT['oldwave']  #  TEMP BC OF CRAPPY INTERNET CONNECTION ON train
-jrr.mage.deredden_MW_extinction(sp_MMT, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
+jrr.spec.deredden_MW_extinction(sp_MMT, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
 sp_MMT['contmask'] = False
 sp_MMT.loc[sp_MMT['wave'].between(4999.,5017.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
 sp_MMT.loc[sp_MMT['wave'].gt(5200.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.

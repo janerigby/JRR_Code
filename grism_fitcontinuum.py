@@ -30,7 +30,9 @@ grismdir = wdir + 'Grizli_redux/1Dsum/'
 contdir  = grismdir + "Wcont/"
 thefiles =  [ os.path.basename(x) for x in glob.glob(grismdir + "*"+which_grism+"*txt") ]   
 idlscript = 'fit_continuum_script' + which_grism + '.idl'
-grism_header = "#Wavelength (A)  Flux (ergs/sec/cm2/A)   Flux Uncertainty (1 sigma)  JRR fitted continuum\n" # From Florian's reductions
+grism_header = "# Wavelength (A)  Flux (ergs/sec/cm2/A)   Flux Uncertainty (1 sigma)  JRR fitted continuum\n" # From Florian's reductions
+extra_header = "# Milky Way dereddening (MWdr) has been applied by grism_fitcontinuum.py\n"
+EBV = jrr.grism.get_MWreddening_S1723()         # Get the Milky Way reddening value
 
 Make_IDL_script = False
 Run_IDL_script  = False
@@ -66,6 +68,8 @@ if Paste_spectra_continuua :
         if data_in.shape[0] != sp_grism.shape[0] : raise Exception("ERROR: continuum file and parent spectrum file have different # of pixels.")
         #t = Table(np.vstack(data_in))  # Temp step, into Astropy tables to get rid of bigendian littlendian
         sp_cont = Table(np.vstack(data_in)).to_pandas()
-        if sp_grism.shape[0] != sp_cont.shape[0] : raise Exception("ERROR: continuum file and parent spectrum data frames have different lengths.")                sp_grism['cont'] = sp_cont['col0']   #  Insert continuum column into spectrum
-        sp_grism.to_csv('temp', index=False)
-        jrr.util.put_header_on_file('temp', grism_header,  contdir + wcontfile)
+        if sp_grism.shape[0] != sp_cont.shape[0] : raise Exception("ERROR: continuum file and parent spectrum data frames have different lengths.")
+        sp_grism['cont'] = sp_cont['col0']   #  Insert continuum column into spectrum
+        jrr.spec.deredden_MW_extinction(sp_grism, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont')  # Apply Milky Way dereddening (MWdr)
+        sp_grism.to_csv('temp', index=False, na_rep='NaN')
+        jrr.util.put_header_on_file('temp', grism_header+extra_header,  contdir + wcontfile)

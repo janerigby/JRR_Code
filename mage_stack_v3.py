@@ -67,10 +67,10 @@ def prep_spectra_for_stacking(df, zchoice, EBV=[], deredden=False, dereddenMW=Fa
         mask_intervening(df[short_label], LL[short_label])
         if   zchoice == 'stars' : zz = specs.ix[short_label]['z_syst']
         elif zchoice == 'neb'   : zz = specs.ix[short_label]['z_neb']
-        if dereddenMW :    jrr.mage.deredden_MW_extinction(df[short_label], specs['EBV_MW'][short_label])  # DEPRECATED. INPUT SPECTRA NOW ALREADY DEREDDENED
+        if dereddenMW :    jrr.spec.deredden_MW_extinction(df[short_label], specs['EBV_MW'][short_label])  # DEPRECATED. INPUT SPECTRA NOW ALREADY DEREDDENED
         jrr.mage.convert_spectrum_to_restframe(df[short_label], zz)
         if deredden and short_label in EBV.index :
-            jrr.mage.deredden_internal_extinction(df[short_label], EBV.ix[short_label]['E(B-V)'], colcont)
+            jrr.spec.deredden_internal_extinction(df[short_label], EBV.ix[short_label]['E(B-V)'], colcont)
     return(0)
 
 

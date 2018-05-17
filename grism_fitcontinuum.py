@@ -19,8 +19,8 @@ jrigby, may 2018
 '''
 
 #### Setup  #########   By hand RUN THIS FOR BOTH DIRECTORIES, BOTH GRISMS
-which_grism = "102"  #141
-which_gal = "S2340" #"S1723" 
+which_grism = "102" #"141" # 
+which_gal = "S2340"   #"S1723" #
 ################
 
 home = os.path.expanduser("~")
@@ -63,7 +63,7 @@ if Paste_spectra_continuua :
         colnames = ('wave', 'flam', 'flam_u')
         sp_grism = pandas.read_table(grismdir + specinfile, delim_whitespace=True, comment="#", skiprows=1, names=colnames)
         contfile =  re.sub('.txt', '_cont.fits', specinfile)
-        wcontfile =  re.sub('.txt', '_wcont.txt', specinfile)
+        wcontfile =  re.sub('.txt', '_wcontMWdr.txt', specinfile)
         data_in, header = fits.getdata(contdir + contfile, header=True)
         if data_in.shape[0] != sp_grism.shape[0] : raise Exception("ERROR: continuum file and parent spectrum file have different # of pixels.")
         #t = Table(np.vstack(data_in))  # Temp step, into Astropy tables to get rid of bigendian littlendian

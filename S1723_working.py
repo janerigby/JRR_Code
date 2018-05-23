@@ -101,8 +101,8 @@ sp_G141 = pandas.read_table(file_G141, delim_whitespace=True, comment="#", names
 # The two lines below should be obsolete.  Now removing MW extinction when fitting continuum, in grism_fitcontinuum.py
 #jrr.spec.deredden_MW_extinction(sp_G102, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub') 
 #jrr.spec.deredden_MW_extinction(sp_G141, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub')
-sp_G102.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G102_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)  # writing with Milky Way dereddening correction.
-sp_G141.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G141_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)
+#sp_G102.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G102_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)  # writing with Milky Way dereddening correction.
+#sp_G141.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G141_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)
 
 #### Read MMT Blue Channel spectrum. # wave in vacuum Ang, flam in 1E-17 erg/s/cm^2/A
 names=('oldwave', 'flam', 'flam_u')  

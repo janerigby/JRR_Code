@@ -1,8 +1,13 @@
-# porting fit_g141.pro over to python, using lmfit
-# .pro readme:
+# This is a script to fit the 1D G102 and G141 WFC/HST grism spectra for S1723 and S2340.
+# It used to be in IDL (fit_g141.pro and fit_G102.pro), but I am porting it to Python.
+# At the moment, the fitting tool I am using is LMFIT.  It seems slooow.
+# Here's the old IDL readme:
 #; Fitting the G141 spectrum of S1723.  Methodology adopted from fits
 #; to RCS0327 knots E and U, that appeared in Wuyts et al. 2014, and in
 #; turn are based on fitting in Rigby et al. 2011.  
+# In the python version, I'm trying a custom fitting function, because there aren't as many
+# free parameters as the old IDL code assumed.  For example, the old IDL code let the
+# central wavelength of each line vary, but in fact, there's only 1 variable, the global redshift.
 #; jrigby, feb 2012, march 2012, oct 2016, may 2018
 
 import numpy as np
@@ -26,6 +31,42 @@ def get_grism_info(which_grism) :
 
 def get_morphological_broadening_factor() :
     return(1.3)  # DUMMY, fill this in later! ********
+
+def fitfunc_G141_small(wave, zz, morph_broad, A0, A1, A2, A3) : #  This is probably obsolete.  Delete when no longer needed.
+    theAs       = np.array((A0, A1, A2, A3))
+    restwaves   = np.array((4862.683,  4960.295,  5008.240,   6564.61))
+    linenames   =  ['Hbeta',   '[O~III]', '[O~III]',  'Halpha']
+    grism_info = get_grism_info(which_grism) 
+    sigmas      = restwaves * (1+zz) / ( grism_info['R'] *2.35482/morph_broad)
+    y = np.zeros_like(wave)
+    for ii, restwave in enumerate(restwaves) :
+        y += jrr.spec.onegaus(wave, theAs[ii], restwaves[ii]*(1+zz), sigmas[ii], 0.0)
+    return(y)  
+
+def fitfunc_G141(wave, zz, morph_broad, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11) : # A custom G141 fitting function
+    theAs       = np.array((A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11))
+    restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,    6302.04064,  6313.8086,   6549.85,  6564.61,  6585.28,  6718.29,  6732.674,  7137.8))
+    linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',    '[O~I]',     '[S~III]',   '[N~II]', 'Halpha', '[N~II]', '[S~II]', '[S~II]',  '[Ar~III]']
+    grism_info = get_grism_info(which_grism) 
+    sigmas      = restwaves * (1+zz) / ( grism_info['R'] *2.35482/morph_broad)
+    y = np.zeros_like(wave)
+    for ii, restwave in enumerate(restwaves) :
+        y += jrr.spec.onegaus(wave, theAs[ii], restwaves[ii]*(1+zz), sigmas[ii], 0.0)
+    return(y)  
+
+def prep_params_G141(scale_guesses=1.0) : # Create param container for fitfunc_G141()
+    guesses =  np.array((2.,       5.0,       11.0,       0.3,         0.05,         0.05,         0.03,     5.,       0.1,      0.1,     0.5,        0.2))
+    parnames = ('zz', 'morph_broad', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A11')  # Par names from fitfunc_G141
+    return(guesses * scale_guesses, parnames)
+
+def set_params_G141(mymodel, parnames, guesses) :  # Set initial values of params for fitfunc_G141
+    mypars = mymodel.make_params()
+    mypars.add('zz', value=zz, vary=True)
+    mypars.add('morph_broad', value=1., vary=True)
+    for ii, parname in enumerate(parnames[2:]) :
+        mypars.add(parname, value=guesses[ii], vary=True)
+    # Constraints could go here.
+    return(mypars)
 
 def get_emlines(which_grism, zz) :
     if   which_grism == 'G141' :
@@ -54,18 +95,6 @@ def get_emlines(which_grism, zz) :
     emlines['sigma']   = emlines['obswave'] / ( grism_info['R'] *2.35482/morph_broad) # Expected Gaussian sigma of each line.  Hold constant.
     emlines['amp_guess'] = emlines['height_guess'] * emlines['sigma'] * np.sqrt(2. * np.pi)
     return(emlines)
-
-def fitfunc_G141(wave, zz, morph_broad, A0, A1, A2, A3) : # This is an experiment
-    theAs       = np.array((A0, A1, A2, A3))
-    restwaves   = np.array((4862.683,  4960.295,  5008.240,   6564.61))
-    linenames   =  ['Hbeta',   '[O~III]', '[O~III]',  'Halpha']
-    grism_info = get_grism_info(which_grism) 
-    sigmas      = restwaves * (1+zz) / ( grism_info['R'] *2.35482/morph_broad)
-    y = np.zeros_like(wave)
-    for ii, restwave in enumerate(restwaves) :
-        y += jrr.spec.onegaus(wave, theAs[ii], restwaves[ii]*(1+zz), sigmas[ii], 0.0)
-    return(y)  # Need to define params
-
 
 
 def lock_lines_together(composite_par, S1723=None)  :  # Tie some amplitudes together by theoretical ratios or other observations
@@ -132,36 +161,36 @@ for ii, thiskey in enumerate(mod.keys()) :
         compmod += mod[thiskey]
         comppar += par[thiskey]
 
+
+'''
 # NEXT LINE IS TEMPORARILY COMMENTED OUT< DEBUGGING!
 #locked_comppar = lock_lines_together(comppar, S1723=True)  # Lock together amplitudes of lines with fixed ratios, or w measurements from ESI, GNIRS (for S1723)
-
 #BELOW IS TEMP! Should be handled in lock_lines_together
 comppar['g1_amplitude'].set(expr='g2_amplitude * 0.33189')
-    
 print "Fitting now..."
 ## This runs extremely slow!!! Trying alt aproach below.
-#result = compmod.fit(subset['flam_contsub_scaled'], comppar, x=subset['wave'], weights=subset['weight'])  # Fitting is done here.
+result = compmod.fit(subset['flam_contsub_scaled'], comppar, x=subset['wave'], weights=subset['weight'])  # Fitting is done here.
 print(result.fit_report(min_correl=0.25))
+'''
 
-print "Fitting done.  Plotting now..."
+## Trying to fit w custom function fitfunc_G141  *** STOPPED HERE, in progress
+#guesses = (2., 5., 11., 5.)  # for the smaller fitfunc_G141.  Delete when obsolete
+#parnames =('zz', 'morph_broad', 'A0', 'A1', 'A2', 'A3')
+(guesses, parnames) = prep_params_G141()   # Make container to hold the parameters
+mymodel = lmfit.Model(fitfunc_G141, independent_vars=('wave',), param_names=parnames)  # Set up a model
+mypars = set_params_G141(mymodel, parnames, guesses) # Set initial parameters for that model
+#locked_pars = lock_params_G141(mypars, S1723=True)
+result  = mymodel.fit(subset['flam_contsub_scaled'], mypars, wave=subset['wave'])  # FITTING DONE HERE
+print result.fit_report()
+# Cool.  This has all the lines, but it runs fast (1s).  Now, add the constraints. *** Paused here.
+
+
+
+print "Done fitting.  Now plotting..."
 ax = subset.plot(x='wave', y='flam_contsub_scaled', color='black')
 subset.plot(x='wave', y='flam_u', color='grey', ax=ax)
 plt.plot(subset['wave'], result.init_fit, color='orange', label='init fit')
 plt.plot(subset['wave'], result.best_fit, color='blue', label='best fit')
 plt.legend()
 plt.show()
-
-
-## Now, try fittig this custom func, below, w something like:  *** STOPPED HERE.  
-guesses = (2., 5., 11., 5.)
-parnames =('zz', 'morph_broad', 'A0', 'A1', 'A2', 'A3') # Par names from fitfunc_G141
-mymodel = lmfit.Model(fitfunc_G141, independent_vars=('wave',), param_names=parnames)
-mypars = mymodel.make_params()
-mypars.add('zz', value=zz, vary=True)
-mypars.add('morph_broad', value=1.0, vary=True)
-for ii, parname in enumerate(parnames[2:]) :  mypars.add(parname, value=guesses[ii], vary=True)
-result  = mymodel.fit(subset['flam_contsub_scaled'], mypars, wave=subset['wave'])
-# THIS IS PROMISING! Make it bigger and see if still runs... ****
-
-
 

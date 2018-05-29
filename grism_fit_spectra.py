@@ -17,8 +17,16 @@ import numpy as np
 import pandas
 import jrr
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 import lmfit 
 from os.path import expanduser, basename
+import glob
+
+
+def get_filenames(dir, which_grism) :
+    myfiles = [ basename(x) for x in glob.glob(dir + "*" + which_grism + "*.txt") ]
+    return(myfiles)
+
 
 def error_unknown_grism(which_grism) :
     raise Exception('ERROR: Cannot understand which_grism', which_grism)
@@ -33,11 +41,11 @@ def get_grism_info(which_grism) :
     return(grism_info)
 
 def fitfunc_G141(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11) : # A custom G141 fitting function
-    # parameters are the FLUX of each Gaussian, = a*c*sqrt(2pi).  Since sigmas are fixed, it is much easier to have params be FLUXES.  Easier to report, too
-    fluxes          = np.array((f0,        f1,        f2,        f3,         f4,          f5,          f6,       f7,       f8,       f9,       f10,       f11))
-    restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,    6302.04064,  6313.8086,   6549.85,  6564.61,  6585.28,  6718.29,  6732.674,  7137.8))
-    linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',    '[O~I]',     '[S~III]',   '[N~II]', 'Halpha', '[N~II]', '[S~II]', '[S~II]',  '[Ar~III]']
-    return ( fitfunc_eithergrism(wave, zz, morph_broad, restwaves, fluxes, which_grism='G141') )
+    # parameters are the FLUX of each Gaussian, = a*c*sqrt(2pi).  Since sigmas are fixed, its clearer to have params be FLUXES.
+    fluxes          = np.array((f0,        f1,        f2,        f3,         f4,          f5,          f6,       f7,   f8,      f9,       f10,       f11))
+    restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,    6302.04064,  6313.8086,   6549.85,  6564.61,  6585.28, 6718.29,  6732.674,  7137.8))     
+    linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',    '[O~I]',     '[S~III]',   '[N~II]', 'Halpha', '[N~II]', '[S~II]', '[S~II]', '[Ar~III]']
+    return (fitfunc_eithergrism(wave, zz, morph_broad, restwaves, fluxes, which_grism='G141'))
 
 def fitfunc_G102(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13) : # A custom G102 fitting function
     # parameters are the FLUX of each Gaussian, = a*c*sqrt(2pi).  Since sigmas are fixed, it is much easier to have params be FLUXES.  Easier to report, too
@@ -62,10 +70,10 @@ def pick_fitting_function(which_grism) :
 
 def prep_params(which_grism, scale_guesses=1.0) : # Create param container for fitfunc_G141 or fitfunc_G102
     if   which_grism == 'G141': 
-        guesses =  np.array((250., 500.,  1000.,  25.,   3.,    3.,    30.,  500.,    100.,      1.,     1.,     1.))
-        parnames = ('zz', 'morph_broad', 'f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11')  # Par names from fitfunc_G141
+        guesses =  np.array((             250.,  500.,  1500.,  25.,   3.,   3.,   16.,  800.,  50.,   40.,  40.,    3.))
+        parnames = ('zz', 'morph_broad', 'f0',   'f1',  'f2',  'f3',  'f4', 'f5', 'f6', 'f7',   'f8',  'f9', 'f10', 'f11')  # Par names from fitfunc_G141
     elif which_grism == 'G102' :
-        guesses = np.array((144,  200,    100,    40,     20,   30,   50,   120,      10,    10,    5,     5,  20,   250))       
+        guesses = np.array((              144,  200, 100,   40,   20,   30,   50,  120,   10,   10,    5,    5,     20,   250))       
         parnames = ('zz', 'morph_broad', 'f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12', 'f13')  # Par names from fitfunc_G102
     else : error_unknown_grism(which_grism)
     return(guesses * scale_guesses, parnames)
@@ -81,6 +89,8 @@ def set_params(mymodel, parnames, guesses, zz, morph_broad=1.) :  # Set initial 
 def lock_params(mypars, which_grism, S1723=False) :
     if which_grism == 'G141' :
         mypars['f1'].set(expr='f2 * 0.33189')           #  Lock [O III] 4959, 5007 ratio to Storey & Zeippen2000
+        mypars['f9'].set(min=0.0)  # dont let SII lines go negative
+        mypars['f10'].set(min=0.0)
         if S1723 :  
             mypars['f8'].set(expr='f7 * 0.062')         #  Lock NII/Ha ratio to what was observed for GNIRS
             mypars['f6'].set(expr='f7 * 0.062/3.071')   #  Lock [N II]  6549, 6585 ratio
@@ -101,49 +111,70 @@ zz = 1.33136
 label = 'SDSSJ1723+3411'
 datadir = expanduser("~") + '/Dropbox/Grism_S1723/Grizli_redux/1Dsum/Wcont/'
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT 
-
-# Lets try G141
-which_grism = 'G141'
-specfile = 'sgas1723_bothrolls_G141_wcontMWdr.txt'
-
-which_grism = 'G102'
-specfile = 'sgas1723_bothrolls_G102_wcontMWdr.txt'
-
 guess_morphbroad = 1.5
 
-## Read the grism spectrum file
+
+# Lets try G141
+#which_grism = 'G141'
+which_grism = 'G102'
+filenames = get_filenames(datadir, which_grism)
+
+#filenames = ('sgas1723_bothrolls_G102_wcontMWdr.txt',)
+
+
 grism_info = get_grism_info(which_grism) 
-sp  = pandas.read_csv(datadir + specfile, comment="#")
-sp['flam_contsub_scaled'] = (sp['flam'] - sp['cont']) * scalefactor
-sp['flam_u_scaled'] = sp['flam_u'] * scalefactor
-sp['weight'] = 1.0 / (sp['flam_u_scaled'])**2   # inverse variance weights
-subset = sp.loc[sp['wave'].between(grism_info['x1'], grism_info['x2'])] # subset of spectr, clean wavelength range.
+for specfile in filenames :
+    sp  = pandas.read_csv(datadir + specfile, comment="#")      ## Read the grism spectrum file
+    sp['flam_contsub_scaled'] = (sp['flam'] - sp['cont']) * scalefactor
+    sp['flam_u_scaled'] = sp['flam_u'] * scalefactor
+    sp['weight'] = 1.0 / (sp['flam_u_scaled'])**2   # inverse variance weights
+    subset = sp.loc[sp['wave'].between(grism_info['x1'], grism_info['x2'])] # subset of spectr, clean wavelength range.
 
-##  Fit w a custom function fitfunc_G141 
-(guesses, parnames) = prep_params(which_grism=which_grism)   # Make container to hold the parameters
-func2fit = pick_fitting_function(which_grism)
-mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
-mypars = set_params(mymodel, parnames, guesses, zz, morph_broad=guess_morphbroad)  # Set initial parameters for that model
-locked_params = lock_params(mypars, which_grism=which_grism, S1723=True)
-result  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'])  # fitting is done here
-print result.fit_report()
+    ##  Fit w a custom function fitfunc_G141 
+    (guesses, parnames) = prep_params(which_grism=which_grism)   # Make container to hold the parameters
+    func2fit = pick_fitting_function(which_grism)
+    mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
+    mypars = set_params(mymodel, parnames, guesses, zz, morph_broad=guess_morphbroad)  # Set initial parameters for that model
+    locked_params = lock_params(mypars, which_grism=which_grism, S1723=True)
+    result  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'])  # fitting is done here
+    print result.fit_report()
 
-# OK, these test cases are working for both G102 and G141.  Swell
-# Cool!  Lots of progress here.  Next tasks:
-# - Fine-tune the fitting, esp for G102.  Extra lines?
+''' Status report:
+After labor day: I was able to implement the new method, where the line centroids are only allowed to move with a global
+redshift.  It's nifty, and may work well for other kinds of spectra.  However, for the grism, the relative wavelength 
+calibration problems are leading to obvious shifts in the lines, particularly in Hbeta at the red end of G102.  
+It's clear that I need to go back to the logic of the old IDL mpfit routines, where the wavelength of each line
+is allowed to move by N sigma.   Now, last time I tried this, I couldn't get the fitter to work.  Since then, 
+I've gotten use to lmfit, so perhaps I was just doing something dumb.  Let's save changes, and do better tomorrow.
+
+Other issues and things to do:
 # - What's wrong w Hbeta fit in G102?
 #     - what's the extra line at 4481A?
 #     - Split HeI/H8? or are they really at the same Wave?
 # - Check units of output.  Should be fluxes in erg/s/cm^2
+# - Deal with scaling?  Michael has added multiple positions, may need to scale. **
 # - Dump results to files.
 # - Document what I've done.
 
+'''
 
-print "Done fitting.  Now plotting..."
-ax = subset.plot(x='wave', y='flam_contsub_scaled', color='black')
-subset.plot(x='wave', y='flam_u', color='grey', ax=ax)
-plt.plot(subset['wave'], result.init_fit, color='orange', label='init fit')
-plt.plot(subset['wave'], result.best_fit, color='blue', label='best fit')
-plt.legend()
-plt.show()
+    print "Done fitting", specfile,  ". Now plotting..."
+    ax = subset.plot(x='wave', y='flam_contsub_scaled', color='black', linestyle='steps')
+    subset.plot(x='wave', y='flam_u_scaled', color='grey', ax=ax)
+    plt.plot(subset['wave'], result.init_fit, color='orange', label='init fit')
+#    plt.plot(subset['wave'], result.best_fit, color='blue', label='best fit')
+    xfine = np.linspace(grism_info['x1'], grism_info['x2'], 1000)
+    plt.plot(xfine, func2fit(xfine, **result.values), color='blue', label='best fit')
+    plt.xlabel("observed wavelength (A)")
+    plt.ylabel(r"Scaled, continuum-subtracted  $f_\lambda$")
+    plt.title(label + "  " + which_grism, position=(0.4, 0.9))
+    plt.xlim(grism_info['x1'], grism_info['x2'])
+    plt.legend()
+    ax2 = ax.twiny()
+    zz_fit = result.params['zz'].value
+    ax2.set_xlim( grism_info['x1']/(1. + zz_fit), grism_info['x2']/(1. + zz_fit))
+    ax2.set_xlabel(r"rest-frame vacuum wavelength ($\AA$)")
+    ax.xaxis.set_minor_locator(AutoMinorLocator(4))
+    ax2.xaxis.set_minor_locator(AutoMinorLocator(4))    
+    plt.show()
 

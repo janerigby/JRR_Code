@@ -41,21 +41,21 @@ def get_grism_info(which_grism) :
     else : error_unknown_grism(which_grism)
     return(grism_info)
 
-def fitfunc_G141(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) : # A custom G141 fitting function
+def fitfunc_G141(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8) : # A custom G141 fitting function
     # Parameters are the FLUX of each Gaussian, = a*c*sqrt(2pi).  Since sigmas are fixed, its clearer to have params be FLUXES.
     # This version fits a global redshift zz, and allows no wavelength miscalibration between lines.
-    fluxes          = np.array((f0,        f1,        f2,        f3,         f4,          f5,          f6,       f7,   f8,      f9,     f10))
-    restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,    6302.04064,  6313.8086,   6549.85,  6564.61,  6585.28, 6725,  7137.8))     
-    linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',    '[O~I]',     '[S~III]',   '[N~II]', 'Halpha', '[N~II]', '[S~II]', '[Ar~III]']
+    fluxes          = np.array((f0,        f1,        f2,        f3,         f4,          f5,          f6,       f7,   f8))
+    restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,       6549.85,  6564.61,  6585.28, 6725,  7137.8))     
+    linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',     '[N~II]', 'Halpha', '[N~II]', '[S~II]', '[Ar~III]']
     return (fitfunc_eithergrism(wave, zz, morph_broad, restwaves, fluxes, which_grism='G141'))
 
-def fitfunc_G141_waveoff(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10) : # A custom G141 fitting function
+def fitfunc_G141_waveoff(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8, d0, d1, d2, d3, d4, d5, d6, d7, d8) : # A custom G141 fitting function
     # parameters are the FLUX of each Gaussian, = a*c*sqrt(2pi).  Since sigmas are fixed, its clearer to have params be FLUXES.
     # This version lets each line have a dwave offset, to deal w relative wavelength calibration problems in grism spectra
-    fluxes          = np.array((f0,        f1,        f2,        f3,         f4,          f5,          f6,       f7,   f8,      f9,       f10))
-    dwaves       = np.array((d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10))
-    restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,    6302.04064,  6313.8086,   6549.85,  6564.61,  6585.28, 6725.0,  7137.8))     
-    linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',    '[O~I]',     '[S~III]',   '[N~II]', 'Halpha', '[N~II]', '[S~II]','[Ar~III]']
+    fluxes          = np.array((f0,        f1,        f2,        f3,      f4,      f5,      f6,       f7,   f8))
+    dwaves       = np.array((d0, d1, d2, d3, d4, d5, d6, d7, d8))
+    restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,  6549.85,  6564.61,  6585.28, 6725.0,  7137.8))     
+    linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',  '[N~II]', 'Halpha', '[N~II]', '[S~II]','[Ar~III]']
     return (fitfunc_eithergrism(wave, zz, morph_broad, restwaves, fluxes, which_grism='G141', dwaves=dwaves))
 
 def fitfunc_G102(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13) : # A custom G102 fitting function
@@ -94,12 +94,12 @@ def pick_fitting_function(which_grism, waveoff=False) :
 
 def prep_params(which_grism, scale_guesses=1.0, waveoff=False, scale=1.) : # Create param container for fitfunc_G141 or fitfunc_G102
     if   which_grism == 'G141': 
-        guesses =  np.array((             250.,  500., 1500., 25.,  3.,   3.,  16.,  800.,  50.,  80.,   3.))
+        guesses =  np.array((             250.,  500., 1500., 25.,  16.,  800.,  50.,  80.,   3.))
         if waveoff :
-            parnames = ('zz', 'morph_broad', 'f0',  'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'd0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'd10') #fitfunc_G141_waveoff
-            guesses  = np.concatenate((guesses, np.zeros(11))) * scale  # initialize the dwavelengths
+            parnames = ('zz', 'morph_broad', 'f0',  'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'd0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8') #fitfunc_G141_waveoff
+            guesses  = np.concatenate((guesses, np.zeros(9))) * scale  # initialize the dwavelengths
         else:
-            parnames = ('zz', 'morph_broad', 'f0',  'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10')  # Par names from fitfunc_G141
+            parnames = ('zz', 'morph_broad', 'f0',  'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8')  # Par names from fitfunc_G141
 
     elif which_grism == 'G102' :
         guesses = np.array((              144,  200, 100,   40,   20,   30,   50,  120,   10,   10,    5,    5,     20,   250))       
@@ -128,13 +128,11 @@ def lock_params(mypars, which_grism, waveoff=False, sigoff=0.0, S1723=False) :
             mypars[dwave].set(max=       sigoff * grism_info['wave_unc'])
     if which_grism == 'G141' :
         mypars['f1'].set(expr='f2 * 0.33189')           #  Lock [O III] 4959, 5007 ratio to Storey & Zeippen2000
-        mypars['f9'].set(min=0.0)  # dont let SII lines go negative
-        mypars['f10'].set(min=0.0)
         if S1723 :  
-            mypars['f8'].set(expr='f7 * 0.062')         #  Lock NII/Ha ratio to what was observed for GNIRS
-            mypars['f6'].set(expr='f7 * 0.062/3.071')   #  Lock [N II]  6549, 6585 ratio
+            mypars['f6'].set(expr='f5 * 0.062')         #  Lock NII/Ha ratio to what was observed for GNIRS
+            mypars['f4'].set(expr='f5 * 0.062/3.071')   #  Lock [N II]  6549, 6585 ratio
         else :  # Any other galaxy
-            mypars['f6'].set(expr='f8 / 3.071')         #  Lock [N II]  6549, 6585 ratio
+            mypars['f4'].set(expr='f6 / 3.071')         #  Lock [N II]  6549, 6585 ratio
     elif which_grism == 'G102' :
         mypars['f5'].set(expr='f2 * 0.316555')          # Lock [Ne III] flux ratio to Storey & Zeippen2000
         if S1723 :  mypars['f1'].set(expr='f0 * 1.3699') # Lock [O III] flux ratio to what was measured in ESI
@@ -185,7 +183,7 @@ Other issues and things to do:
 '''
 
 grism_info = get_grism_info(which_grism) 
-for specfile in filenames[0:1] :
+for specfile in filenames :
     sp  = pandas.read_csv(datadir + specfile, comment="#")      ## Read the grism spectrum file
     sp['flam_contsub_scaled'] = (sp['flam'] - sp['cont']) * scalefactor
     sp['flam_u_scaled'] = sp['flam_u'] * scalefactor
@@ -203,6 +201,7 @@ for specfile in filenames[0:1] :
     result1  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'])  # fitting is done here
     print result1.fit_report()
     zz_fit = result1.best_values['zz']
+    print " ******************************************************"
     
     # REFIT, Fix the redshift, but allow the individual line wavelengths to move around.  Grism wavelength calib is terrible, +-0.5 pix
     (guesses, parnames) = prep_params(which_grism=which_grism, waveoff=True, scale=scale)   # Make container to hold the parameters
@@ -211,7 +210,7 @@ for specfile in filenames[0:1] :
     mypars = set_params(mymodel, parnames, guesses, zz, morph_broad=guess_morphbroad)  # Set initial parameters for that model
     locked_params = lock_params(mypars, which_grism=which_grism, S1723=True, waveoff=True, sigoff=3.)
     locked_params['zz'].vary=False  # FIX THE REDSHIFT
-    print locked_params
+    #print locked_params
     result2  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'], verbose=True)  # fitting is done here
     print result2.fit_report()
     print " ******************************************************"
@@ -234,4 +233,5 @@ for specfile in filenames[0:1] :
     ax.xaxis.set_minor_locator(AutoMinorLocator(4))
     ax2.xaxis.set_minor_locator(AutoMinorLocator(4))    
     plt.show()
+
 

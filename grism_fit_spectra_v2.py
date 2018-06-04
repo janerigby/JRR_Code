@@ -21,7 +21,8 @@ from matplotlib.ticker import AutoMinorLocator
 import lmfit 
 from os.path import expanduser, basename
 import glob
-from re import match
+import re
+import time
 
 
 def get_filenames(dir, which_grism) :
@@ -122,7 +123,7 @@ def set_params(mymodel, parnames, guesses, zz, morph_broad=1.) :  # Set initial 
 def lock_params(mypars, which_grism, waveoff=False, sigoff=0.0, S1723=False) :
     grism_info = get_grism_info(which_grism)
     if waveoff :   # need to set bounds on d0...dX, to sigoff*wave uncert
-        dwave_keys = [x for x in mypars.keys() if match('d', x)]  # find all the d0... dX wavelength offset pars
+        dwave_keys = [x for x in mypars.keys() if re.match('d', x)]  # find all the d0... dX wavelength offset pars
         for dwave in dwave_keys :
             mypars[dwave].set(min= -1. * sigoff * grism_info['wave_unc'])
             mypars[dwave].set(max=       sigoff * grism_info['wave_unc'])
@@ -149,6 +150,7 @@ datadir = expanduser("~") + '/Dropbox/Grism_S1723/Grizli_redux/1Dsum/Wcont/'
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT 
 guess_morphbroad = 1.5
 zz = 1.331366
+show_initial_fit = False
 
 # Lets try G141
 which_grism = 'G141'
@@ -182,17 +184,25 @@ Other issues and things to do:
 
 '''
 
+header = "# Fitting HST grism spectra with grism_fit_spectra_v2.py\n"
+
 grism_info = get_grism_info(which_grism) 
-for specfile in filenames :
+for specfile in filenames[0:1] :   # KLUDGE! REMOVE THIS, just fitting 1 spectrum now...
+    outfile = re.sub('.txt', '.fit', specfile)
+    f = open(outfile, 'w')  # Over-ride the IDL script to fit the continuum
+    f.write(header)
+    f.write("# FILENAME "+ specfile + "\n")
+    f.write("# GRISM " + which_grism + "\n")
+    f.write("# TIME_FIT " + time.strftime("%c") + "\n")
     sp  = pandas.read_csv(datadir + specfile, comment="#")      ## Read the grism spectrum file
     sp['flam_contsub_scaled'] = (sp['flam'] - sp['cont']) * scalefactor
     sp['flam_u_scaled'] = sp['flam_u'] * scalefactor
     sp['weight'] = 1.0 / (sp['flam_u_scaled'])**2   # inverse variance weights
     subset = sp.loc[sp['wave'].between(grism_info['x1'], grism_info['x2'])] # subset of spectr, clean wavelength range.
-    if 'both' in specfile : scale=1.
-    else:                   scale=0.5
+    if 'both' in specfile : scale=1.    # Guesses were done for the bothrolls sum.
+    else:                   scale=0.5   # Just adjusting the guesses to be close to right.
 
-    # FIT but don't adjust the wavelengths.  This gives the best-fit redshift
+    print "INITIAL FIT, to determine the best-fit redshift. Wavelengths fixed."
     (guesses, parnames) = prep_params(which_grism=which_grism, scale=scale)   # Make container to hold the parameters
     func2fit = pick_fitting_function(which_grism, waveoff=False)
     mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
@@ -201,9 +211,9 @@ for specfile in filenames :
     result1  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'])  # fitting is done here
     print result1.fit_report()
     zz_fit = result1.best_values['zz']
+
     print " ******************************************************"
-    
-    # REFIT, Fix the redshift, but allow the individual line wavelengths to move around.  Grism wavelength calib is terrible, +-0.5 pix
+    print "SECOND FIT, for good.  Redshift fixed, allow individual line centroids to move, b/c grism wavelength calib is terrible."
     (guesses, parnames) = prep_params(which_grism=which_grism, waveoff=True, scale=scale)   # Make container to hold the parameters
     func2fit = pick_fitting_function(which_grism, waveoff=True)
     mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
@@ -213,12 +223,14 @@ for specfile in filenames :
     #print locked_params
     result2  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'], verbose=True)  # fitting is done here
     print result2.fit_report()
+    f.write(result2.params.pretty_print())
+    #f.write(result2.fit_report())
     print " ******************************************************"
 
     print "Done fitting", specfile,  ". Now plotting..."
     ax = subset.plot(x='wave', y='flam_contsub_scaled', color='black', linestyle='steps-mid')
     subset.plot(x='wave', y='flam_u_scaled', color='grey', ax=ax)
-    plt.plot(subset['wave'], result2.init_fit, color='orange', label='init fit')
+    if show_initial_fit : plt.plot(subset['wave'], result2.init_fit, color='orange', label='init fit')
 #    plt.plot(subset['wave'], result2.best_fit, color='blue', label='best fit')
     xfine = np.linspace(grism_info['x1'], grism_info['x2'], 1000)
     plt.plot(xfine, func2fit(xfine, **result2.values), color='blue', label='best fit')
@@ -233,5 +245,8 @@ for specfile in filenames :
     ax.xaxis.set_minor_locator(AutoMinorLocator(4))
     ax2.xaxis.set_minor_locator(AutoMinorLocator(4))    
     plt.show()
+    f.close()
 
 
+
+# The uncertainties in the fits are hard to find.  They're here:  result2.params['f1'].stderr

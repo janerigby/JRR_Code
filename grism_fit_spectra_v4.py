@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import AutoMinorLocator
 import lmfit 
-from os.path import expanduser, basename, abspath
+from os.path import expanduser, basename, abspath, exists
+from os import makedirs
 import glob
 import re
 import time
@@ -189,7 +190,7 @@ def parse_filename(grism_filename) :
     return(mydict)
 
 def plot_results(df_data, fit_result, func2fit, title, grism_info, show_initial_fit=False, scalefactor=1.0, units=1.0) :
-    print "Done fitting", title,  ". Now plotting..."
+    print "   Plotting"
     ax = df_data.plot(x='wave', y='flam_contsub_scaled', color='black', linestyle='steps-mid', lw=1.5, legend=False)
     df_data.plot(x='wave', y='flam_u_scaled', color='grey', ax=ax, legend=False)
     if show_initial_fit : plt.plot(df_data['wave'], fit_result.init_fit, color='orange', label='init fit')
@@ -198,9 +199,8 @@ def plot_results(df_data, fit_result, func2fit, title, grism_info, show_initial_
     plt.plot(xfine, func2fit(xfine, **fit_result.values), color='blue', label='best fit')
     plt.xlabel(r"observed wavelength ($\AA$)")
     plt.ylabel(r"continuum-subtracted  $f_\lambda$ ("+str(1./scalefactor) + " " + units + ")")
-    mydict = parse_filename(title)
-    pretty_title = mydict['gname'] + " " + mydict['descrip'] + " "+ mydict['roll'] + " "+ mydict['grating']
-    plt.title(pretty_title, position=(0.65, 0.9), fontsize=14)# position=(0.7, 0.9),)
+    pretty_title = re.sub("wcontMWdr.txt ", "", re.sub("_", " ", title))
+    plt.title(pretty_title, position=(0.5, 0.9), fontsize=9)# position=(0.7, 0.9),)
     #plt.suptitle(title, y=0.995, fontsize=10)
     plt.xlim(grism_info['x1'], grism_info['x2'])
     (restwaves, linenames) = get_line_wavelengths(which_grism)
@@ -215,17 +215,50 @@ def plot_results(df_data, fit_result, func2fit, title, grism_info, show_initial_
     ax2.xaxis.set_minor_locator(AutoMinorLocator(4))    
     plt.show()
 
+def  convert_lmfitresults_2df(LMresult, parnames, sigoff, grism_info, restwaves, linenames):
+    # Reformat LMFIT results as a dataframe
+    fkeys   = [x for x in parnames if re.match('f', x)]
+    dkeys   = [x for x in parnames if re.match('d', x)]
+    flux    = [LMresult.params[key].value  for key in fkeys]
+    flux_u  = [LMresult.params[key].stderr for key in fkeys]
+    if len(dkeys) == 0 :  # In Method 1, no wavelength offsets allowed, so fill w zeros
+        doffAng   = np.zeros(shape=len(fkeys))
+        doffAng_u = np.zeros(shape=len(fkeys))
+    else :
+        doffAng  = [LMresult.params[key].value  for key in dkeys]
+        doffAng_u= [LMresult.params[key].stderr for key in dkeys]
+    df = pandas.DataFrame({ 'restwave':restwaves, 'linename':linenames, 'flux':flux, 'flux_u':flux_u, 'doffAng':doffAng, 'doffAng_u':doffAng_u})
+    df = df[['restwave', 'linename', 'flux', 'flux_u', 'doffAng', 'doffAng_u']] # force reorder
+    df['doffsig'] = df['doffAng'].abs() / grism_info['wave_unc']
+    df['dbad']    = df['doffsig'] > sigoff 
+    return(df)
+
+def check4zero_errorbars(LMresult, parnames) :
+    fkeys   = [x for x in parnames if re.match('f', x)]
+    flux_u  = np.array([LMresult.params[key].stderr for key in fkeys])
+    if np.count_nonzero(flux_u) == 0 :
+        return(1)     # FAILS,  errorbars are zero
+    else : return(0)  # Passes, errorbars are not zero
+            
+def supplemental_header(LMresult) :
+    suphead = "# REDSHIFT " + str(LMresult.params['zz'].value) + "\n# Z_UNCERT " + str(LMresult.params['zz'].stderr)
+    suphead += "\n# MORPH_BROAD " +  str(LMresult.params['morph_broad'].value) + "\n# MB_UNCERT "  + str(LMresult.params['morph_broad'].stderr) + "\n"
+    suphead += "\n# read this as pandas.read_csv(INFILE, comment='#')\n";
+    return(suphead)
+
 ######################################################################
 
     
 ##  Setup
 infile = 'S1723_G102_grism2process.txt'  # CHANGE THIS.  Keep format
+infile = 'S1723_G141_grism2process.txt'  # CHANGE THIS.  Keep format
 figsize = (8,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT
 units = "erg/s/cm^2"
 guess_morphbroad = 1.5
 sigoff=3 # Warn if the delta wavelengths exceed this
-show_initial_fit = True
+show_initial_fit = False
+print_fitreports = False
 
 ''' Status report:
 This works pretty well, It's a two-step approach.  Step 1 moves all the line centroids in unison, 
@@ -238,9 +271,10 @@ Other issues and things to do:
 '''
 
 # Input the list of spectra to fit
-m = re.search('(\S+)_(\S+)_(\S+)', infile)
+m = re.search('(\S+)_(\S+)_(\S+)', infile)   # Formart of input file tells us which galaxy, which grism
 which_gal   = m.group(1)
 which_grism = m.group(2)
+(restwaves, linenames) = get_line_wavelengths(which_grism)
 df = pandas.read_table(infile, comment="#", delim_whitespace=True)  # Read the list of files to process
 
 # Gather info needed for fitting
@@ -248,20 +282,27 @@ zz = get_redshift(which_gal)
 grism_info = get_grism_info(which_grism) 
 pp = PdfPages("grism_fitspectra_"+which_gal+"_"+which_grism+".pdf")
 
-for row in df[0:1].itertuples() :
+for row in df.itertuples() :
     specfile = basename(row.filename)
+    print row.filename
+    subdir = re.split("/", row.filename)[-3] + "/" # This should be the dir, like 1Dsum
+    if not exists(subdir):  makedirs(subdir)
     tweak_wav = row.tweak_wav
     specfile_dict = parse_filename(specfile)
-    outfile1 = re.sub('.txt', '.fit', specfile)
-    f = open(outfile1, 'w')  
-    header = "# Fitting HST grism spectra with grism_fit_spectra_v3.py\n# FILENAME "+ specfile + "\n# GRISM " + which_grism
-    header += "\n# TIME_FIT " + time.strftime("%c") + "\n# UNITS " + str(1./scalefactor) + " " +units
-    header += "# Note: For S1723 NII/Ha ratios are set from GNIRS, and [O II] 3727/3729 ratio set from ESI.\n"
+    outfile0 = subdir + re.sub('.txt', '.fitreport', specfile)
+    outfile1 = subdir + re.sub('.txt', '_meth1.fitdf', specfile)
+    outfile2 = subdir + re.sub('.txt', '_meth2.fitdf', specfile)
+    f = open(outfile0, 'w')  
+    header = "# Fitting HST grism spectra with grism_fit_spectra_v4.py\n# FILENAME "+ specfile
+    header += "\n# FILENAME_WPATH " + row.filename + "\n# WHICH_GAL " + which_gal
+    header += "\n# WHICH_GRISM " + which_grism + "\n# ROLL " + specfile_dict['roll'] + "\n# DESCRIP " +  specfile_dict['descrip']
+    header += "\n# TIME_FIT " + time.strftime("%c") + "\n# SCALEFACTOR " + str(1./scalefactor) + "\n# UNITS " + units
+    header += "\n# Note: For S1723 NII/Ha ratios are set from GNIRS, and [O II] 3727/3729 ratio set from ESI.\n"
     header += "# Note: For S2340, NII fluxes were fixed to zero; what is reported as Ha is actually the blend of [N II]+Ha+[N II].\n"
     header += "# Note on fluxing for S1723/1Dsum: In the bothrolls files, Michael had summed the flux over both rolls.  Here those fluxes\n"
     header += "#                   have been divided by 2, and therefore should match the fluxes of the spectra extracted from a single roll.\n"
     header += "# Note on fluxing for S1723/1Dbyclumps, and all S2340: The fluxing is weird, b/c Michael added multiple clumps from whichever\n"
-    header += "# rolls were clean.  So the fluxing is super-weird, and should only be used in a relative sense.  Divide by Hbeta and move on."
+    header += "# rolls were clean.  So the fluxing is super-weird, and should only be used in a relative sense.  Divide by Hbeta and move on.\n#\n"
     f.write(header)
     sp  = pandas.read_csv(row.filename,  comment="#")      ## Read the grism spectrum file
     if which_gal == 'S1723' and 'both' in specfile : bothrollsfactor = 0.5  # Michael has summed the flux in both rolls.  Compensating here
@@ -270,65 +311,47 @@ for row in df[0:1].itertuples() :
     sp['flam_u_scaled'] = sp['flam_u'] * scalefactor * bothrollsfactor
     sp['weight'] = 1.0 / (sp['flam_u_scaled'])**2   # inverse variance weights
     subset = sp.loc[sp['wave'].between(grism_info['x1'], grism_info['x2'])] # subset of spectr, clean wavelength range.
-    if which_gal == 'S1723': 
-        if 'both' in specfile : scale=0.5    # Scale just adjuststhe guesses to be close to right.  Not used for anything else.
-        else:                   scale=0.4   # 
-    else :
-        if 'both' in specfile : scale=0.5  
-        else:                   scale=0.05
-
-    print "INITIAL FIT, to determine the best-fit redshift. Wavelengths fixed."
-    (guesses, parnames) = prep_params(which_grism=which_grism, scale=scale)   # Make container to hold the parameters
+            
+    print "   METHOD 1 fit, to determine the best-fit redshift. Wavelengths fixed."
+    (guesses, parnames) = prep_params(which_grism=which_grism, scale=row.scale_guess)   # Make container to hold the parameters
     func2fit = pick_fitting_function(which_grism, waveoff=False)
     mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
     mypars = set_params(mymodel, parnames, guesses, zz, morph_broad=guess_morphbroad)  # Set initial parameters for that model
     locked_params = lock_params(mypars, which_grism=which_grism, which_gal=which_gal, limit_wave=False)
     result1  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'])  # fitting is done here
     zz_fit = result1.best_values['zz']
-    print result1.fit_report()
-    plot_results(subset, result1, func2fit, specfile + " FIRST FIT", grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
+    if print_fitreports : print result1.fit_report()
+    f.write(result1.fit_report())
+    plot_label = subdir + " " + specfile + " fit 1"
+    plot_results(subset, result1, func2fit, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
     pp.savefig(bbox_inches='tight', pad_inches=0.1)
-
-    print " ******************************************************"
-    print "SECOND FIT, for good.  Redshift fixed, allow individual line centroids to move, b/c grism wavelength calib is iffy."
-    (guesses, parnames) = prep_params(which_grism=which_grism, waveoff=True, scale=scale)   # Make container to hold the parameters
-    func2fit = pick_fitting_function(which_grism, waveoff=True)
-    mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
-    mypars = set_params(mymodel, parnames, guesses, zz, morph_broad=guess_morphbroad)  # Set initial parameters for that model
-    locked_params = lock_params(mypars, which_grism=which_grism, which_gal=which_gal, waveoff=True, sigoff=sigoff)
-    locked_params['zz'].vary=False  # FIX THE REDSHIFT
-    #print locked_params
-    result2  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'], verbose=True)  # fitting is done here
-    print result2.fit_report()
-    f.write(result2.fit_report())
-    print " ******************************************************"
-
+    df1 = convert_lmfitresults_2df(result1, parnames, sigoff, grism_info, restwaves, linenames)
+    df1.to_csv('/tmp/foo', float_format='%.3f', index=False)    
+    jrr.util.put_header_on_file('/tmp/foo', header + supplemental_header(result1), outfile1)
+    if check4zero_errorbars(result1, parnames) : print "####### WARNING: errorbars were zero! ####### "
+       
+    if row.tweak_wav :  # If input file requests a second fit, w line centroids allowed to very:
+        #print "   ******************************************************"
+        print "   METHOD 2 fit: Redshift fixed, allowing individual line centroids to move, to compensate for relative wavelength uncertanty in grism."
+        (guesses, parnames) = prep_params(which_grism=which_grism, waveoff=True, scale=row.scale_guess)   # Make container to hold the parameters
+        func2fit = pick_fitting_function(which_grism, waveoff=True)
+        mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
+        mypars = set_params(mymodel, parnames, guesses, zz, morph_broad=guess_morphbroad)  # Set initial parameters for that model
+        locked_params = lock_params(mypars, which_grism=which_grism, which_gal=which_gal, waveoff=True, sigoff=sigoff)
+        locked_params['zz'].vary=False  # FIX THE REDSHIFT
+        result2  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'], verbose=True)  # fitting is done here
+        if print_fitreports : print result2.fit_report()
+        f.write(result2.fit_report())
+        plot_label = subdir + " " + specfile + " fit 2"
+        plot_results(subset, result2, func2fit, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
+        pp.savefig(bbox_inches='tight', pad_inches=0.1)
+        df2 = convert_lmfitresults_2df(result2, parnames, sigoff, grism_info, restwaves, linenames)
+        df2.to_csv('/tmp/foo', float_format='%.3f', index=False)
+        jrr.util.put_header_on_file('/tmp/foo', header + supplemental_header(result2), outfile2)
+        if check4zero_errorbars(result2, parnames) : print "####### WARNING: errorbars were zero! ####### "
     f.close()
-    plot_results(subset, result2, func2fit, specfile + "", grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
-    pp.savefig(bbox_inches='tight', pad_inches=0.1)
 
-    (restwaves, linenames) = get_line_wavelengths(which_grism)
-    #print "# index restwave  linename   flux     dflux   constraint waveoffset   dwaveoffset"
-    #print "#  --      (A)       --      ("+str(1/scalefactor)+" "+units+")   same   expr    (obsA)     (obsA)"
+# Monday update: This is working fine.  Remaking to get the indices on the df files as I want them. Then go back and run G102.  Then, done w S1723 (I think)
 
-    # Next up: Reformat result2 as a dataframe, and then print it out
-    fkeys   = [x for x in parnames if re.match('f', x)]
-    dkeys   = [x for x in parnames if re.match('d', x)]
-    flux    = [result2.params[key].value  for key in fkeys]
-    flux_u  = [result2.params[key].stderr for key in fkeys]
-    doffAng  = [result2.params[key].value  for key in dkeys]
-    doffAng_u= [result2.params[key].stderr for key in dkeys]
-    df = pandas.DataFrame({ 'restwave':restwaves, 'linename':linenames, 'flux':flux, 'flux_u':flux_u, 'doffAng':doffAng, 'doffAng_u':doffAng_u})
-    df = df[['restwave', 'linename', 'flux', 'flux_u', 'doffAng', 'doffAng_u']] # force reorder
-    df['doffsig'] = df['doffAng'].abs() / grism_info['wave_unc']
-    df['dbad']    = df['doffsig'] > sigoff 
 
-    
-'''    for ii, restwave in enumerate(restwaves):        
-        print ii, restwave, linenames[ii], result2.params['f'+str(ii)].value, result2.params['f'+str(ii)].stderr, result2.params['f'+str(ii)].expr,
-        print  result2.params['d'+str(ii)].value, result2.params['d'+str(ii)].stderr
-        # Do some error checking: ##
-        if np.abs(result2.params['d'+str(ii)].value) > sigoff*grism_info['wave_unc'] : print "# WARNING! Wavelength drift was large!  d"+ str(ii)
-        if result2.params['f'+str(ii)].stderr    > result2.params['f'+str(ii)].value : print "# WARNING! FLUX HIGHLY UNCERTAIN!  f" + str(ii)
-'''
 pp.close()

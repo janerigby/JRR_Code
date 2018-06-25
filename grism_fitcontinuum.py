@@ -18,25 +18,29 @@ It shouldn't matter what dir this script gets run in.
 jrigby, may 2018
 '''
 
-#### Setup  #########   By hand RUN THIS FOR BOTH DIRECTORIES, BOTH GRISMS
-which_grism = "102" #"141" # 
-which_gal = "S2340"   #"S1723" #
+#### Setup  #########   By hand RUN THIS FOR EACH DIRECTORY, BOTH GRISMS
+which_grism = "141" # "102" #
+which_dirnum = 4 # Step through the dirs by hand
+Make_IDL_script = True
+Run_IDL_script  = True
+Paste_spectra_continuua = True
 ################
 
 home = os.path.expanduser("~")
-if   which_gal == "S1723" :   wdir = home + '/Dropbox/Grism_S1723/'
-elif which_gal == "S2340" :   wdir = home + '/Dropbox/Grism_S2340/'
-grismdir = wdir + 'Grizli_redux/1Dsum/'
+wdir1 = home + '/Dropbox/Grism_S1723/Grizli_redux/'
+wdir2 = home + '/Dropbox/Grism_S2340/Grizli_redux/'
+#              0X                      1                       2                                 3X                 4
+alldirs = (wdir1 + '1Dsum/', wdir1 + '1Dbyclumps/', wdir1 + '1D_complete_images_A2_A3/', wdir2 + '1Dsum/', wdir2 + '1Dbyclumps/') 
+grismdir = alldirs[which_dirnum]  # Step through
 contdir  = grismdir + "Wcont/"
+
 thefiles =  [ os.path.basename(x) for x in glob.glob(grismdir + "*"+which_grism+"*txt") ]   
 idlscript = 'fit_continuum_script' + which_grism + '.idl'
 grism_header = "# Wavelength (A)  Flux (ergs/sec/cm2/A)   Flux Uncertainty (1 sigma)  JRR fitted continuum\n" # From Florian's reductions
 extra_header = "# Milky Way dereddening (MWdr) has been applied by grism_fitcontinuum.py\n"
 EBV = jrr.grism.get_MWreddening_S1723()         # Get the Milky Way reddening value
 
-Make_IDL_script = False
-Run_IDL_script  = False
-Paste_spectra_continuua = True
+
 
 ## PART 1:  Write the IDL script to fit the continuum.
 if Make_IDL_script :

@@ -34,8 +34,8 @@ def error_unknown_grism(which_grism) :
 def get_grism_info(which_grism) :
     # R is FWHM, for a pt source.  For extended source will be morphologically broadened
     # wave_unc is relative wavelength uncertainty, in Angstroms, from wfc3 data handbook, S9.4.8
-    if   which_grism == 'G141' :   grism_info = {'R':130., 'x1':11000., 'x2':16600., 'wave_unc':20.}
-    elif which_grism == 'G102' :   grism_info = {'R':210., 'x1': 8000., 'x2':11500., 'wave_unc':10. }
+    if   which_grism == 'G141' :   grism_info = {'R':130., 'x1':11000., 'x2':16600., 'wave_unc':9.}
+    elif which_grism == 'G102' :   grism_info = {'R':210., 'x1': 8000., 'x2':11500., 'wave_unc':6. }
     else : error_unknown_grism(which_grism)
     return(grism_info)
 
@@ -271,12 +271,9 @@ Method 1 moves all the line centroids in unison, by a global redshift. It's run 
 all cases.  Method 2 fixes the redshift as the result from method 1, and then re-fits, 
 allowing the wavelengths of groups of lines to  move together.  The input file "infile"
 tells the script whether to run Method 2, and scales the initial guess of linestrength.
-# Method 2 works great for all S1723 spectra, both grisms.  
-# Now need to run S2340.  For some the SNR is low and may not handle Method 2.  Select as needed.
+Method 2 works great for all S1723 spectra, both grisms.  
+Method 2 works great for almost all S2340 spectra. For a few at low SNR it stalls, so I used method 1 instead.  
 '''
-
-''' 1 paragraph explaining the line fitting, for use in the S1723 paper:'''
-
 
 # Input the list of spectra to fit
 m = re.search('(\S+)_(\S+)_(\S+)', infile)   # Formart of input file tells us which galaxy, which grism

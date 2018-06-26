@@ -3,6 +3,8 @@
 # spectra of RCS0327 knots, as published in Wuyts et al 2014.
 # Now ported to Python, using LMFIT as the fitting package.
 # ** This code assumes the continuum has already been removed.**
+# Run from each of these 2 dirs:  Dropbox/Grism_S2340/WFC3_fit_1Dspec,  Dropbox/Grism_S1723/WFC3_fit_1Dspec
+# Run twice in each dir, for G102, and G141.  So, a total of 4 infiles to process both galaxies.
 #; jrigby, feb 2012, march 2012, oct 2016, may 2018
 
 import numpy as np
@@ -242,16 +244,19 @@ def check4zero_errorbars(LMresult, parnames) :
             
 def supplemental_header(LMresult) :
     suphead = "# REDSHIFT " + str(LMresult.params['zz'].value) + "\n# Z_UNCERT " + str(LMresult.params['zz'].stderr)
-    suphead += "\n# MORPH_BROAD " +  str(LMresult.params['morph_broad'].value) + "\n# MB_UNCERT "  + str(LMresult.params['morph_broad'].stderr) + "\n"
-    suphead += "\n# read this as pandas.read_csv(INFILE, comment='#')\n";
+    suphead += "\n# MORPH_BROAD " +  str(LMresult.params['morph_broad'].value) + "\n# MB_UNCERT "  + str(LMresult.params['morph_broad'].stderr)
+    suphead += "\n# How to read this file in python:  pandas.read_csv(INFILE, comment='#')\n#\n";
     return(suphead)
 
 ######################################################################
 
     
 ##  Setup
-infile = 'S1723_G102_grism2process.txt'  # CHANGE THIS.  Keep format
-infile = 'S1723_G141_grism2process.txt'  # CHANGE THIS.  Keep format
+#infile = 'S1723_G141_grism2process.txt'
+#infile = 'S1723_G102_grism2process.txt'
+#infile = 'S2340_G102_grism2process.txt'  # CHANGE THIS.  Keep format
+infile = 'S2340_G141_grism2process.txt'  
+
 figsize = (8,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT
 units = "erg/s/cm^2"
@@ -261,14 +266,17 @@ show_initial_fit = False
 print_fitreports = False
 
 ''' Status report:
-This works pretty well, It's a two-step approach.  Step 1 moves all the line centroids in unison, 
-by a global redshift.    Step 2 fixes the redshift as the result from step1, then re-fits, allowing 
-the wavelengths of groups of lines to  move together.  
-# But, S2340 has lower SNR, doesn't seem to handle the Step2 that well for G102.  Omit?
-Other issues and things to do:
-# - Dump results to files. My custom output file needs to be output
-# - Document what I've done.
+This works pretty well.  There are 2 methods, and the user can pick which to use.  
+Method 1 moves all the line centroids in unison, by a global redshift. It's run in 
+all cases.  Method 2 fixes the redshift as the result from method 1, and then re-fits, 
+allowing the wavelengths of groups of lines to  move together.  The input file "infile"
+tells the script whether to run Method 2, and scales the initial guess of linestrength.
+# Method 2 works great for all S1723 spectra, both grisms.  
+# Now need to run S2340.  For some the SNR is low and may not handle Method 2.  Select as needed.
 '''
+
+''' 1 paragraph explaining the line fitting, for use in the S1723 paper:'''
+
 
 # Input the list of spectra to fit
 m = re.search('(\S+)_(\S+)_(\S+)', infile)   # Formart of input file tells us which galaxy, which grism
@@ -351,7 +359,6 @@ for row in df.itertuples() :
         if check4zero_errorbars(result2, parnames) : print "####### WARNING: errorbars were zero! ####### "
     f.close()
 
-# Monday update: This is working fine.  Remaking to get the indices on the df files as I want them. Then go back and run G102.  Then, done w S1723 (I think)
 
 
 pp.close()

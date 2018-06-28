@@ -252,10 +252,10 @@ def supplemental_header(LMresult) :
 
     
 ##  Setup
-#infile = 'S1723_G141_grism2process.txt'
+infile = 'S1723_G141_grism2process.txt'
 #infile = 'S1723_G102_grism2process.txt'
 #infile = 'S2340_G102_grism2process.txt'  # CHANGE THIS.  Keep format
-infile = 'S2340_G141_grism2process.txt'  
+#infile = 'S2340_G141_grism2process.txt'  
 
 figsize = (8,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT

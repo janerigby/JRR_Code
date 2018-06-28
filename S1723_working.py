@@ -1,7 +1,7 @@
 from os.path import expanduser, basename
 import subprocess 
 import glob
-import jrr
+import jrr  # Moved some functions to jrr.grism
 import pandas
 import numpy as np
 #import query_argonaut
@@ -13,9 +13,8 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 
 ''' This script processes the spatially-integrated spectra of SGAS J1723, so that we can get emission line
-fluxes.  jrigby, 2017'''
+fluxes.  jrigby, 2017.  Now updating June 2018 to use new grizli-reduced grism spectra.'''
 
-# Moved some functions to jrr.grism
 
 def annotate_header(header_ESI, header_MMT, header_GNIRS) :
     for header in (header_ESI, header_MMT, header_GNIRS) :
@@ -40,10 +39,22 @@ def flag_noise_peaks(sp, delta=0.15, neighborpix=2, colfu='flam_u', contmask='co
         sp.iloc[thispeak - neighborpix : thispeak + neighborpix][contmask] = True
     return(peak_ind)
 
+def sum_spectraline_wflatcont(sp, linewave1, linewave2, contwave1, contwave2, colwave='wave', colflam='flam') :
+    # This measures line flux via direct summation.  Used to apply relative flux scaling to the ESI and MMT spectra.
+    # sp is a dataframe
+    # linewave1, linewave2 are the begining and end wavelengths of the emission line to sum flux via direct summation
+    # contwave1, contwave2 are the begining and end wavelengths of the region to get continuum, via median
+    sp['disp'] = sp[colwave].diff()
+    contlevel  = sp.loc[sp[colwave].between(contwave1, contwave2)][colflam].median()
+    part1 = sp.loc[sp[colwave].between(linewave1, linewave2)][colflam].sum() * sp.loc[sp[colwave].between(linewave1, linewave2)]['disp'].median()
+    part2 = (linewave2 -  linewave1) * contlevel
+    lineflux = part1 - part2
+    return(lineflux)
+
 def adjust_plot() :
     plt.legend()
     x1 = 3200. ; x2 = 16900.
-    plt.ylim(0,0.3E-16)
+    plt.ylim(0,1E-16)
     plt.xlim(x1, x2)
     plt.xlabel(r"Vacuum wavelength ($\AA$)")
     plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
@@ -70,8 +81,8 @@ wdir = home + '/Dropbox/Grism_S1723/'
 file_ESI  = home + '/Dropbox/MagE_atlas/Contrib/ESI_spectra/2016Aug/s1723_wholearc_ESI_JRR_sum.txt'   #  just arc_a, arc_b
 file_MMT  = wdir + 'MMT_BlueChannel/spec_s1723_14b_final_F.txt'  # Updated Jan 23 2017
 file_GNIRS = wdir + 'GNIRS/s1723_gnirs_residual_subtracted_spectrum_jrr.csv'
-file_G102 = wdir + 'WFC3_fit_1Dspec/FULL_G102_coadded.dat'   # These are the old 3D-HST grism redux.  Replace w grizli reductions
-file_G141 = wdir + 'WFC3_fit_1Dspec/FULL_G141_coadded.dat'
+file_G102 = wdir + 'Grizli_redux/1Dsum/Wcont/sgas1723_1Dsum_bothroll_G102_wcontMWdr.txt' # New grisli redux, both rolls
+file_G141 = wdir + 'Grizli_redux/1Dsum/Wcont/sgas1723_1Dsum_bothroll_G141_wcontMWdr.txt' # New grisli redux, both rolls
 
 #### Load the linelists, and set the redshift
 EBV = jrr.grism.get_MWreddening_S1723()         # Get the Milky Way reddening value
@@ -94,15 +105,12 @@ sp_ESI.loc[sp_ESI['wave'].between(5611.,5623.), 'contmask'] = True   # Mask sky 
 sp_ESI.loc[sp_ESI['wave'].between(6308.,6313.), 'contmask'] = True   # Mask sky line
 sp_ESI.loc[sp_ESI['flam'] == 0.00, 'contmask'] = True   # Mask bad column, which Ayan replaced w zero
 
-#### Read WFC3 spectra (w continuua, both grisms)
-names = ('wave', 'flam', 'flam_u', 'cont', 'flam_contsub')  # assumed flam. **Check w Michael
-sp_G102 = pandas.read_table(file_G102, delim_whitespace=True, comment="#", names=names)
-sp_G141 = pandas.read_table(file_G141, delim_whitespace=True, comment="#", names=names)
-# The two lines below should be obsolete.  Now removing MW extinction when fitting continuum, in grism_fitcontinuum.py
-#jrr.spec.deredden_MW_extinction(sp_G102, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub') 
-#jrr.spec.deredden_MW_extinction(sp_G141, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont', colcontu='flam_contsub')
-#sp_G102.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G102_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)  # writing with Milky Way dereddening correction.
-#sp_G141.to_csv(wdir+"WFC3_fit_1Dspec/FULL_G141_coadded_MWdr.dat", sep='\t', na_rep='NaN', index=False)
+#### Read WFC3 spectra (w continuua, both grisms)  # MW dereddening was applied at continuum fitting stage.
+sp_G102 = pandas.read_csv(file_G102, comment="#")
+sp_G141 = pandas.read_csv(file_G141, comment="#")
+grism_info_G102 = jrr.grism.get_grism_info("G102") 
+grism_info_G141 = jrr.grism.get_grism_info("G141") 
+
 
 #### Read MMT Blue Channel spectrum. # wave in vacuum Ang, flam in 1E-17 erg/s/cm^2/A
 names=('oldwave', 'flam', 'flam_u')  
@@ -111,8 +119,7 @@ header_MMT =("# MMT Blue Channel spectrum of SGAS J1723.\n")  # Nothing worth gr
 sp_MMT['flam']   *= 1.0E-17   # flam was in units of 1E-17
 sp_MMT['flam_u'] *= 1.0E-17
 #sp_MMT.replace([np.inf, -np.inf], np.nan, inplace=True)
-#MMT_barycentric_correction(sp_MMT)  ** TEMP COMMENTING THIS blc crappy internet connection on train
-sp_MMT['wave'] = sp_MMT['oldwave']  #  TEMP BC OF CRAPPY INTERNET CONNECTION ON train
+MMT_barycentric_correction(sp_MMT) 
 jrr.spec.deredden_MW_extinction(sp_MMT, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
 sp_MMT['contmask'] = False
 sp_MMT.loc[sp_MMT['wave'].between(4999.,5017.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
@@ -126,22 +133,25 @@ header_GNIRS = jrr.util.read_header_from_file(file_GNIRS, comment="#")  # save t
 # Update the headers
 (header_ESI, header_MMT,header_GNIRS) = annotate_header(header_ESI, header_MMT, header_GNIRS)
 
-# Scale the MMT and ESI spectra to match emission line fluxes in G102
-new_scaling_factors = np.array((0.650728,  0.303815)) # MMT-->ESI,  ESI-->G102
-# [0] make [C~III] summed flux in MMT match same in ESI.
-# [1] make [O~II]~3727 summed flux in ESI match the direct-summed flux in G102.
+# Scale the ESI spectrum to the HST flux scale, using the flux in the [O II] doublet.  Direct summation of flux, linear local continuua
+flux_OII_G102 = (70.991 + 97.251) * 1E-17  # from 1Dsum/sgas1723_1Dsum_bothroll_G102_wcontMWdr_meth2.fitdf
+rawflux_OII_ESI = sum_spectraline_wflatcont(sp_ESI, 8684., 8712., 8500., 8900.)
+
+# Scale the MMT spectrum to the ESI flux, using the flux in the summed [C~III] doublet
+rawflux_CIII_ESI = sum_spectraline_wflatcont(sp_ESI, 4443., 4456., 4400., 4490)
+rawflux_CIII_MMT = sum_spectraline_wflatcont(sp_MMT, 4436., 4450., 4400., 4490)
 # ESI flux in file_ESI should be 2x too high, b/c I summed 2 exposures.
-sp_ESI['flam_cor']   = sp_ESI['flam']   * new_scaling_factors[1]
-sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] * new_scaling_factors[1]
-sp_MMT['flam_cor']   = sp_MMT['flam']   * new_scaling_factors[0]
-sp_MMT['flam_u_cor'] = sp_MMT['flam_u'] * new_scaling_factors[0]
+sp_ESI['flam_cor']   = sp_ESI['flam']   *  flux_OII_G102/rawflux_OII_ESI 
+sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] *  flux_OII_G102/rawflux_OII_ESI
+sp_MMT['flam_cor']   = sp_MMT['flam']   *  flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ESI/rawflux_CIII_MMT
+sp_MMT['flam_u_cor'] = sp_MMT['flam_u'] *  flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ESI/rawflux_CIII_MMT
 
 #### Flux the GNIRS spectrum
+flux_Ha_G141 = 408.8E-17  #  kludge, hardcoded, from sgas1723_1Dsum_bothroll_G141_wcontMWdr_meth2.fitdf.  Updated 6/28/2018
 first_guess_cont = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4, 1.56E4)]['mean'].median()
 guesspars = (100., 6564.61 *(1+zHa), 10.)  # Fix the continuum, don't let curve_fit change it; it's drifting too high
 (popt_GNIRS, fit_GNIRS) = jrr.spec.fit_gaussian_fixedcont(sp_GNIRS.interpolate(), guesspars, contlevel=first_guess_cont, colwave='wave', colf='mean')
 quick_flux_Ha_GNIRS = jrr.spec.sum_of_gaussian(popt_GNIRS) # In counts
-flux_Ha_G141 = 210.47E-17  # from SDSSJ1723+3411_G141.fit  *** kludge, hard-coded ***
 GNIRS_scaleflux = flux_Ha_G141 / quick_flux_Ha_GNIRS
 sp_GNIRS['flam'] = sp_GNIRS['mean']        * GNIRS_scaleflux
 sp_GNIRS['flam_u'] = sp_GNIRS['errinmean'] * GNIRS_scaleflux
@@ -153,7 +163,7 @@ sp_GNIRS['flam_u'] = sp_GNIRS['errinmean'] * GNIRS_scaleflux
 sp_GNIRS_cutout = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4,1.55E4)]
 
 # Report how scaled the fluxes
-howscaled_ESI = "# Scaled flux in ESI so that sum of 3727+3729 in ESI matches direct sum of those lines in G102\n"
+howscaled_ESI = "# Scaled flux in ESI so that sum of [O II] 3727+3729 in ESI matches flux of those lines in G102\n"
 howscaled_MMT = "# Scaled flux in MMT so that sum of CIII in MMT matches sum in ESI\n"
 #howscaled_ESI = "# flam_cor is scaled ESI flambda, to match WFC3 G102, from median flam in range " + str(wavcut[0]) + " to " + str(wavcut[1]) + "\n#    Flux was scaled by factor  " + str(f_G102A / f_ESIA) + "\n"
 #howscaled_MMT = "# Scaled MMT BC spectrum to match scaled ESI, from median flam in range " + str(wavcut[2]) + ' to ' + str(wavcut[3]) + "\n#   Flux was scaled by factor " + str(f_ESIB / f_MMTB) + "\n"
@@ -166,14 +176,14 @@ print "How scaled spectra\n:", howscaled_ESI, "\n", howscaled_MMT, "\n", howscal
 ### Fit MMT continuum.  The boxcar # is arbitrary, seems to match
 fig = plt.figure(2, figsize=figsize)
 plt.title("Fit continuum for MMT bluechannel")
-(smooth1, smooth2) = wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
+(smooth1, smooth2) = jrr.grism.wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
 
 ### Fit ESI continuum
 peak_ind = flag_noise_peaks(sp_ESI, colfu='flam_u_cor', delta=0.05E-17)
 fig = plt.figure(3, figsize=figsize)
 #plt.scatter(sp_ESI['wave'].iloc[peak_ind], sp_ESI['flam_cor'].iloc[peak_ind]) 
 plt.title("Continuum fitting for ESI")
-(smooth1, smooth2) = wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=351, colf='flam_cor',  colcont='flamcor_autocont', label="ESI")
+(smooth1, smooth2) = jrr.grism.wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=351, colf='flam_cor',  colcont='flamcor_autocont', label="ESI")
 header_ESI += ("# Applied smooth continuum \n")
 plt.ylim(0,9E-17)
 
@@ -203,8 +213,8 @@ bin_MMT =  np.arange(3200, 4800,  5)
 bin_ESI =  np.arange(4350, 8900, 10)
 cutout_MMT = jrr.spec.bin_boxcar_better(sp_MMT, bin_MMT, how2comb, bincol='wave')
 cutout_ESI = jrr.spec.bin_boxcar_better(sp_ESI, bin_ESI, how2comb, bincol='wave')
-cutout_G102 = sp_G102.loc[sp_G102['wave'].between(7950,11475)]
-cutout_G141 = sp_G141.loc[sp_G141['wave'].between(1.1E4,1.7E4)]
+cutout_G102 = sp_G102.loc[sp_G102['wave'].between(grism_info_G102['x1'], grism_info_G102['x2'])]
+cutout_G141 = sp_G141.loc[sp_G141['wave'].between(grism_info_G141['x1'], grism_info_G141['x2'])]
 ax = cutout_ESI.plot(    x='wave', y='flam_cor', color='green',  label='Keck ESI', figsize=figsize)
 #sp_GNIRS_cutout.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
 cutout_MMT.plot( x='wave', y='flam_cor',    color='blue',   label='MMT BC',    ax=ax)
@@ -227,8 +237,8 @@ adjust_plot()
 fig = plt.figure(5, figsize=figsize)
 plt.plot(sp_ESI['wave'],  sp_ESI['flamcor_autocont'],    color='green', label='Keck ESI')
 plt.plot(sp_MMT['wave'],  sp_MMT['flamcor_autocont'],    color='blue', Label='MMT Blue Channel')
-plt.plot(sp_G102['wave'], sp_G102['cont'],   color='red', label='WFC3 G102')
-plt.plot(sp_G141['wave'], sp_G141['cont'],   color='purple', label='WFC3 G141')
+plt.plot(cutout_G102['wave'], cutout_G102['cont'],   color='red', label='WFC3 G102')
+plt.plot(cutout_G141['wave'], cutout_G141['cont'],   color='purple', label='WFC3 G141')
 plt.title("Plotting the scaled continuua")
 adjust_plot()
 

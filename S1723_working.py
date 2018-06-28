@@ -140,11 +140,14 @@ rawflux_OII_ESI = sum_spectraline_wflatcont(sp_ESI, 8684., 8712., 8500., 8900.)
 # Scale the MMT spectrum to the ESI flux, using the flux in the summed [C~III] doublet
 rawflux_CIII_ESI = sum_spectraline_wflatcont(sp_ESI, 4443., 4456., 4400., 4490)
 rawflux_CIII_MMT = sum_spectraline_wflatcont(sp_MMT, 4436., 4450., 4400., 4490)
-# ESI flux in file_ESI should be 2x too high, b/c I summed 2 exposures.
+# ESI flux in file_ESI should be 2x too high, b/c I summed 2 exposures. 
 sp_ESI['flam_cor']   = sp_ESI['flam']   *  flux_OII_G102/rawflux_OII_ESI 
 sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] *  flux_OII_G102/rawflux_OII_ESI
 sp_MMT['flam_cor']   = sp_MMT['flam']   *  flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ESI/rawflux_CIII_MMT
 sp_MMT['flam_u_cor'] = sp_MMT['flam_u'] *  flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ESI/rawflux_CIII_MMT
+# The sanity checks pass here.  ESI flux goes down to 57% of its original value, which makes sense ,b/c i summed 2 exposures
+# The MMT fluxing gets nudged up by 34%.  That's sensible given a longslit.
+# Doublecheck when MMT MW dereddening was done...
 
 #### Flux the GNIRS spectrum
 flux_Ha_G141 = 408.8E-17  #  kludge, hardcoded, from sgas1723_1Dsum_bothroll_G141_wcontMWdr_meth2.fitdf.  Updated 6/28/2018

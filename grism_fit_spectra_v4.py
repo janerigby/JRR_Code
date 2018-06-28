@@ -31,13 +31,7 @@ def error_unknown_grism(which_grism) :
     raise Exception('ERROR: Cannot understand which_grism', which_grism)
     return(0)
 
-def get_grism_info(which_grism) :
-    # R is FWHM, for a pt source.  For extended source will be morphologically broadened
-    # wave_unc is relative wavelength uncertainty, in Angstroms, from wfc3 data handbook, S9.4.8
-    if   which_grism == 'G141' :   grism_info = {'R':130., 'x1':11000., 'x2':16600., 'wave_unc':9.}
-    elif which_grism == 'G102' :   grism_info = {'R':210., 'x1': 8000., 'x2':11500., 'wave_unc':6. }
-    else : error_unknown_grism(which_grism)
-    return(grism_info)
+
 
 def get_redshift(which_gal) :
     if which_gal == 'S1723' :
@@ -94,7 +88,7 @@ def fitfunc_G102_waveoff(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, 
 
 def fitfunc_eithergrism(wave, zz, morph_broad, restwaves, fluxes, which_grism, dwaves=()) :  # This part is the same for either grism
     if len(dwaves) == 0 :  dwaves = np.zeros_like(restwaves)
-    grism_info = get_grism_info(which_grism) 
+    grism_info = jrr.grism.get_grism_info(which_grism) 
     sigmas      = restwaves * (1+zz) / ( grism_info['R'] *2.35482/morph_broad)
     y = np.zeros_like(wave)
     for ii, restwave in enumerate(restwaves) :
@@ -139,7 +133,7 @@ def set_params(mymodel, parnames, guesses, zz, morph_broad=1.) :  # Set initial 
     return(mypars)
 
 def lock_params(mypars, which_grism, which_gal, waveoff=False, sigoff=0.0, limit_wave=False) :
-    grism_info = get_grism_info(which_grism)
+    grism_info = jrr.grism.get_grism_info(which_grism)
     if which_grism == 'G141' and waveoff :
         mypars['d0'].set(expr='d2')  # Hbeta, 4959, 5007 all shift in wavelength together
         mypars['d1'].set(expr='d2')  # ditto
@@ -284,7 +278,7 @@ df = pandas.read_table(infile, comment="#", delim_whitespace=True)  # Read the l
 
 # Gather info needed for fitting
 zz = get_redshift(which_gal)
-grism_info = get_grism_info(which_grism) 
+grism_info = jrr.grism.get_grism_info(which_grism) 
 pp = PdfPages("grism_fitspectra_"+which_gal+"_"+which_grism+".pdf")
 
 for row in df.itertuples() :

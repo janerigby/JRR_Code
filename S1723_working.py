@@ -10,25 +10,27 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy import units as u
 from matplotlib import pyplot as plt
+import matplotlib
 from matplotlib.ticker import AutoMinorLocator
+matplotlib.rcParams.update({'font.size': 14})
 
-''' This script processes the spatially-integrated spectra of SGAS J1723, so that we can get emission line
-fluxes.  jrigby, 2017.  Now updating June 2018 to use new grizli-reduced grism spectra.'''
+''' This script processes the spatially-integrated spectra of SGAS J1723, so that we can get 
+emission line fluxes, and make figures for the paper.  jrigby, 2017.  
+Updated June 2018 to use Michael's new grizli redux of grism spectra.'''
 
 
 def annotate_header(header_ESI, header_MMT, header_GNIRS) :
     for header in (header_ESI, header_MMT, header_GNIRS) :
         header += ("#\n# Below is extra processing by S1723_working.py\n")
-        header_ESI +=("# Corrected for MW reddening of E(B-V)=" + str(EBV) + "\n")
+        header += ("# Corrected for MW reddening of E(B-V)=" + str(EBV) + "\n")
     return(header_ESI, header_MMT, header_GNIRS)
 
-
-def MMT_barycentric_correction(sp) :  # Applying barycentric correction to wavelengths
+def MMT_barycentric_correction(sp, header_MMT) :  # Applying barycentric correction to wavelengths
     thistime =  Time('2014-05-05T09:21:00', format='isot', scale='utc')
     thisradec = SkyCoord("17:23:37.23", "+34:11:59.07", unit=(u.hourangle, u.deg), frame='icrs')
     mmt= EarthLocation.of_site('mmt') # Needs internet connection 
     barycor_vel = jrr.barycen.compute_barycentric_correction(thistime, thisradec, location=mmt)
-    print "FYI, the barycentric correction factor for s1723 was", barycor_vel
+    header_MMT += ("# The barycentric correction factor for s1723 was" + str(barycor_vel))
     jrr.barycen.apply_barycentric_correction(sp, barycor_vel, colwav='oldwave', colwavnew='wave') 
     return(0)
 
@@ -36,7 +38,8 @@ def flag_noise_peaks(sp, delta=0.15, neighborpix=2, colfu='flam_u', contmask='co
     maxtab, mintab = jrr.peakdet.peakdet(sp[colfu], delta)  # Find peaks.
     peak_ind =  [np.int(p[0]) for p in maxtab] # The maxima
     for thispeak in peak_ind :
-        sp.iloc[thispeak - neighborpix : thispeak + neighborpix][contmask] = True
+        #sp.iloc[thispeak - neighborpix : thispeak + neighborpix][contmask] = True
+        sp.iloc[thispeak - neighborpix : thispeak + neighborpix, sp.columns.get_loc(contmask)] = True # Longer, avoids SettingWithCopyWarning
     return(peak_ind)
 
 def sum_spectraline_wflatcont(sp, linewave1, linewave2, contwave1, contwave2, colwave='wave', colflam='flam') :
@@ -54,7 +57,7 @@ def sum_spectraline_wflatcont(sp, linewave1, linewave2, contwave1, contwave2, co
 def adjust_plot() :
     plt.legend()
     x1 = 3200. ; x2 = 16900.
-    plt.ylim(0,1E-16)
+    plt.ylim(0,1.25E-16)
     plt.xlim(x1, x2)
     plt.xlabel(r"Vacuum wavelength ($\AA$)")
     plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
@@ -65,7 +68,9 @@ def adjust_plot() :
     ax2.set_xlabel(r"rest-frame vacuum wavelength ($\AA$)")
     ax.xaxis.set_minor_locator(AutoMinorLocator(4))
     ax2.xaxis.set_minor_locator(AutoMinorLocator(4))
-    fig.subplots_adjust(hspace=0)
+    #fig.set_tight_layout(True)
+    fig.subplots_adjust(hspace=0.1)
+    plt.tight_layout(True)
     return(0)
 
 ##########  END OF FUNCTIONS ###############
@@ -73,7 +78,7 @@ def adjust_plot() :
 
 #######  Housekeeping  ##############
 plt.close("all")
-figsize=(16,4)
+figsize=(16,6)
 
 #### Directories and filenames
 home = expanduser("~")
@@ -119,7 +124,7 @@ header_MMT =("# MMT Blue Channel spectrum of SGAS J1723.\n")  # Nothing worth gr
 sp_MMT['flam']   *= 1.0E-17   # flam was in units of 1E-17
 sp_MMT['flam_u'] *= 1.0E-17
 #sp_MMT.replace([np.inf, -np.inf], np.nan, inplace=True)
-MMT_barycentric_correction(sp_MMT) 
+MMT_barycentric_correction(sp_MMT, header_MMT) 
 jrr.spec.deredden_MW_extinction(sp_MMT, EBV, colwave='wave', colf='flam', colfu='flam_u')  # Correct for Milky Way reddening
 sp_MMT['contmask'] = False
 sp_MMT.loc[sp_MMT['wave'].between(4999.,5017.), 'contmask'] = True   # Mask these noisy regions from continuum fitting.
@@ -133,21 +138,23 @@ header_GNIRS = jrr.util.read_header_from_file(file_GNIRS, comment="#")  # save t
 # Update the headers
 (header_ESI, header_MMT,header_GNIRS) = annotate_header(header_ESI, header_MMT, header_GNIRS)
 
-# Scale the ESI spectrum to the HST flux scale, using the flux in the [O II] doublet.  Direct summation of flux, linear local continuua
+# Scale the flux of the ESI spectrum, to match HST G102, using [O II] doublet flux.  Direct summation of flux, linear local continuua.
 flux_OII_G102 = (70.991 + 97.251) * 1E-17  # from 1Dsum/sgas1723_1Dsum_bothroll_G102_wcontMWdr_meth2.fitdf
 rawflux_OII_ESI = sum_spectraline_wflatcont(sp_ESI, 8684., 8712., 8500., 8900.)
+sp_ESI['flam_cor']   = sp_ESI['flam']   *  flux_OII_G102/rawflux_OII_ESI 
+sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] *  flux_OII_G102/rawflux_OII_ESI
+# ESI flux in file_ESI should be 2x too high, b/c I summed 2 exposures.
+howscaled_ESI = "# Scaled ESI flux so that sum of [O II] 3727+3729 fluxes matches flux of those lines in G102.  Factor was "
+howscaled_ESI += (str(np.round((flux_OII_G102/rawflux_OII_ESI), 4)) + "\n")
 
 # Scale the MMT spectrum to the ESI flux, using the flux in the summed [C~III] doublet
 rawflux_CIII_ESI = sum_spectraline_wflatcont(sp_ESI, 4443., 4456., 4400., 4490)
 rawflux_CIII_MMT = sum_spectraline_wflatcont(sp_MMT, 4436., 4450., 4400., 4490)
-# ESI flux in file_ESI should be 2x too high, b/c I summed 2 exposures. 
-sp_ESI['flam_cor']   = sp_ESI['flam']   *  flux_OII_G102/rawflux_OII_ESI 
-sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] *  flux_OII_G102/rawflux_OII_ESI
 sp_MMT['flam_cor']   = sp_MMT['flam']   *  flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ESI/rawflux_CIII_MMT
 sp_MMT['flam_u_cor'] = sp_MMT['flam_u'] *  flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ESI/rawflux_CIII_MMT
-# The sanity checks pass here.  ESI flux goes down to 57% of its original value, which makes sense ,b/c i summed 2 exposures
+howscaled_MMT = "# Scaled MMT flux so that sum of CIII in MMT matches sum of those lines in ESI, after ESI scaled to G102. Factor was "
+howscaled_MMT +=  (str(np.round((flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ESI/rawflux_CIII_MMT), 4)) + "\n")
 # The MMT fluxing gets nudged up by 34%.  That's sensible given a longslit.
-# Doublecheck when MMT MW dereddening was done...
 
 #### Flux the GNIRS spectrum
 flux_Ha_G141 = 408.8E-17  #  kludge, hardcoded, from sgas1723_1Dsum_bothroll_G141_wcontMWdr_meth2.fitdf.  Updated 6/28/2018
@@ -163,18 +170,20 @@ sp_GNIRS['flam_u'] = sp_GNIRS['errinmean'] * GNIRS_scaleflux
 #plt.plot(sp_GNIRS['wave'], sp_GNIRS['flam_u'], color='grey', label="GNIRS uncert")
 #plt.plot(sp_GNIRS['wave'], fit_GNIRS * GNIRS_scaleflux, color='blue', label='Ha fit')
 #plt.legend()
-sp_GNIRS_cutout = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4,1.55E4)]
+cutout_GNIRS = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4,1.55E4)]
 
 # Report how scaled the fluxes
-howscaled_ESI = "# Scaled flux in ESI so that sum of [O II] 3727+3729 in ESI matches flux of those lines in G102\n"
-howscaled_MMT = "# Scaled flux in MMT so that sum of CIII in MMT matches sum in ESI\n"
-#howscaled_ESI = "# flam_cor is scaled ESI flambda, to match WFC3 G102, from median flam in range " + str(wavcut[0]) + " to " + str(wavcut[1]) + "\n#    Flux was scaled by factor  " + str(f_G102A / f_ESIA) + "\n"
-#howscaled_MMT = "# Scaled MMT BC spectrum to match scaled ESI, from median flam in range " + str(wavcut[2]) + ' to ' + str(wavcut[3]) + "\n#   Flux was scaled by factor " + str(f_ESIB / f_MMTB) + "\n"
 howscaled_GNIRS = "# Scaled GNIRS spectrum by ratio of Halpha flux, by factor " + str(GNIRS_scaleflux)
 header_ESI   += howscaled_ESI
 header_MMT   += howscaled_MMT
 header_GNIRS += howscaled_GNIRS 
-print "How scaled spectra\n:", howscaled_ESI, "\n", howscaled_MMT, "\n", howscaled_GNIRS, "\n"
+print "How scaled spectra:\n", howscaled_ESI, howscaled_MMT,  howscaled_GNIRS
+
+# Sanity checks on the MMT, ESI, G102 flux scaling
+cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(8000., 8500.)]['flam_cor'].median() / sp_G102.loc[sp_G102['wave'].between(8000., 8500.)]['flam'].median()
+cont_sanity_check2 = sp_MMT.loc[sp_MMT['wave'].between(4200., 4300.)]['flam_cor'].median()  / sp_ESI.loc[sp_ESI['wave'].between(4200., 4300.)]['flam_cor'].median()
+print "Flux sanity checks:  ESI/G102:", cont_sanity_check1, "and MMT/ESI:", cont_sanity_check2
+
 
 ### Fit MMT continuum.  The boxcar # is arbitrary, seems to match
 fig = plt.figure(2, figsize=figsize)
@@ -198,7 +207,7 @@ jrr.util.put_header_on_file('temp2', header_MMT, "s1723_MMT_wcont.txt")
 
 # Plot the scaled spectra
 ax = sp_ESI.plot(    x='wave', y='flam_cor', color='green',  label='Keck ESI', figsize=figsize)
-sp_GNIRS_cutout.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
+cutout_GNIRS.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
 sp_MMT.plot( x='wave', y='flam_cor',    color='blue',   label='MMT BC',    ax=ax)
 sp_G102.plot(x='wave', y='flam',        color='red',    label='WFC3 G102', ax=ax)
 sp_G141.plot(x='wave', y='flam',        color='purple', label='WFC3 G141', ax=ax)
@@ -206,7 +215,7 @@ sp_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label='_nolegend_', l
 sp_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label='_nolegend_', linewidth=0.2, ax=ax)
 sp_G102.plot(x='wave', y='flam_u',      color='red',label='_nolegend_', linewidth=0.2, ax=ax)
 sp_G141.plot(x='wave', y='flam_u',      color='purple', label='_nolegend_', linewidth=0.2, ax=ax)
-sp_GNIRS_cutout.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
+cutout_GNIRS.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
 plt.title("Flux-scaled spectra")
 adjust_plot()
 
@@ -214,41 +223,25 @@ fig = plt.figure(5, figsize=figsize)   # Prettier plot
 how2comb = {'flam_cor': 'mean', 'flam_u_cor': jrr.util.convenience1, 'wave': 'mean', 'flamcor_autocont' : 'mean'} #how to bin
 bin_MMT =  np.arange(3200, 4800,  5)
 bin_ESI =  np.arange(4350, 8900, 10)
-cutout_MMT = jrr.spec.bin_boxcar_better(sp_MMT, bin_MMT, how2comb, bincol='wave')
-cutout_ESI = jrr.spec.bin_boxcar_better(sp_ESI, bin_ESI, how2comb, bincol='wave')
+binned_MMT = jrr.spec.bin_boxcar_better(sp_MMT, bin_MMT, how2comb, bincol='wave')
+binned_ESI = jrr.spec.bin_boxcar_better(sp_ESI, bin_ESI, how2comb, bincol='wave')
+binned_ESI_clean = binned_ESI.loc[binned_ESI['flam_u_cor'].lt(1E-14)] # Avoid the stuff w big errorbars, for plotting
 cutout_G102 = sp_G102.loc[sp_G102['wave'].between(grism_info_G102['x1'], grism_info_G102['x2'])]
 cutout_G141 = sp_G141.loc[sp_G141['wave'].between(grism_info_G141['x1'], grism_info_G141['x2'])]
-ax = cutout_ESI.plot(    x='wave', y='flam_cor', color='green',  label='Keck ESI', figsize=figsize)
-#sp_GNIRS_cutout.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
-cutout_MMT.plot( x='wave', y='flam_cor',    color='blue',   label='MMT BC',    ax=ax)
-cutout_G102.plot(x='wave', y='flam',        color='red',    label='WFC3 G102', ax=ax)
-cutout_G141.plot(x='wave', y='flam',        color='purple', label='WFC3 G141', ax=ax)
-cutout_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label='_nolegend_', linewidth=0.2, ax=ax)
-cutout_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label='_nolegend_', linewidth=1, ax=ax)
-cutout_G102.plot(x='wave', y='flam_u',      color='red',label='_nolegend_', linewidth=0.2, ax=ax)
-cutout_G141.plot(x='wave', y='flam_u',      color='purple', label='_nolegend_', linewidth=0.2, ax=ax)
-plt.plot(sp_ESI['wave'],  sp_ESI['flamcor_autocont'],    color='black', label='_nolegend_')
-plt.plot(sp_MMT['wave'],  sp_MMT['flamcor_autocont'],    color='black',label='_nolegend_')
-plt.plot(cutout_G102['wave'], cutout_G102['cont'],   color='black', label='_nolegend_')
-plt.plot(cutout_G141['wave'], cutout_G141['cont'],   color='black', label='_nolegend_')
-sp_GNIRS_cutout.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
-plt.title("Prettier plot.  MMT and ESI have been boxcar smoothed")
+ax = binned_MMT.plot(  x='wave', y='flam_cor',         color='blue',   label='MMT BC', figsize=figsize, lw=2)
+binned_ESI_clean.plot( x='wave', y='flam_cor',         color='green',  label='Keck ESI', ax=ax, lw=2)
+cutout_G102.plot(      x='wave', y='flam',             color='red',    label='WFC3 G102',ax=ax, lw=2)
+cutout_G141.plot(      x='wave', y='flam',             color='purple', label='WFC3 G141',ax=ax, lw=2)
+binned_MMT.plot(       x='wave', y='flam_u_cor',       color='blue',   label='_', ax=ax, lw=1)
+binned_ESI_clean.plot( x='wave', y='flam_u_cor',       color='green',  label='_', ax=ax, lw=1)
+cutout_G102.plot(      x='wave', y='flam_u',           color='red',    label='_', ax=ax, lw=1)
+cutout_G141.plot(      x='wave', y='flam_u',           color='purple', label='_', ax=ax, lw=1)
+binned_MMT.plot(       x='wave', y='flamcor_autocont', color='black',  label='_', ax=ax)
+binned_ESI_clean.plot( x='wave', y='flamcor_autocont', color='black',  label='_', ax=ax)
+cutout_G102.plot(      x='wave',  y='cont',            color='black',  label='_', ax=ax)
+cutout_G141.plot(     x ='wave',  y='cont',            color='black',  label='_', ax=ax)
+#plt.annotate("Prettier plot.  MMT and ESI have been boxcar smoothed", (0.3,0.9), xycoords='axes fraction')
 adjust_plot()
-
-
-# Plot just the scaled continuum fits
-fig = plt.figure(5, figsize=figsize)
-plt.plot(sp_ESI['wave'],  sp_ESI['flamcor_autocont'],    color='green', label='Keck ESI')
-plt.plot(sp_MMT['wave'],  sp_MMT['flamcor_autocont'],    color='blue', Label='MMT Blue Channel')
-plt.plot(cutout_G102['wave'], cutout_G102['cont'],   color='red', label='WFC3 G102')
-plt.plot(cutout_G141['wave'], cutout_G141['cont'],   color='purple', label='WFC3 G141')
-plt.title("Plotting the scaled continuua")
-adjust_plot()
-
-# Sanity check how I fluxed the spectra
-cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(8000., 8500.)]['flam_cor'].median() / sp_G102.loc[sp_G102['wave'].between(8000., 8500.)]['flam'].median()
-cont_sanity_check2 = sp_MMT.loc[sp_MMT['wave'].between(4200., 4300.)]['flam_cor'].median()  / sp_ESI.loc[sp_ESI['wave'].between(4200., 4300.)]['flam_cor'].median()
-print "Sanity checks:  ESI/G102:", cont_sanity_check1, "and MMT/ESI:", cont_sanity_check2
 
 
 plt.show()  # Show all plots at once, each in a separate window

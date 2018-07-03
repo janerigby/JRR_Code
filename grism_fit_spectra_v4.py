@@ -44,19 +44,18 @@ def get_redshift(which_gal) :
 def get_line_wavelengths(which_grism) :
     if which_grism == "G141" :
         restwaves   = np.array((4862.683,  4960.295,  5008.240,  5877.59,  6310.,            6549.85,  6564.61,  6585.28, 6725.))
-        yaxcoords   =         [0.2,        -1,       0.96,        0.1,     0.1,               -1,       0.55,      -1,       0.2] 
+        yaxcoords   =         [0.25,       -1,       0.96,        0.1,     0.1,               -1,       0.8,      -1,       0.2] 
         plotnames   =         [r'H$\beta$', '',    '[O III]',    'He I',  '[O I]+[S III]',   '',      r'H$\alpha$', '',       '[S II]']
         linenames   =         ['Hbeta',   '[O~III]', '[O~III]',  'He~I',  '[O~I]+[S~III]',  '[N~II]', 'Halpha', '[N~II]', '[S~II]']
         #                       0             1            2         3          4             5           6           7         8
 
-    # Need to do the same cleanup of plotnames for G102 that I did for G141 above.  Then remake the figures, and move on.
-    # Also, get it to use figsize!! ****** stopped here ***
     elif which_grism == "G102" :
         restwaves = np.array((3727.092,   3729.875,   3869.86,  3890.151,  3968.593,   3971.195,   4025.,        4102.892, 4341.684, 4364.436, 4472.7,  4687.02,   4741.4489, 4862.683))
-        yaxcoords =         [  0.9,       -1,           0.2,       0.2,      0.2,          0.2,      0.2,        0.2,        0.2,      0.2,     0.2,    0.2,         0.2,     0.2]
-        plotnames =         ['[O II]',    '',        '[Ne~III]', 'H8+HeI', '[Ne~III]', 'Heps',     'HeI+HeII',  'Hdelt',  'Hgam',  '[O~III]', 'He~I', 'He~II',    '[Ar~IV]', 'Hbeta']
         linenames =         ['[O~II]',    '[O~II]',  '[Ne~III]', 'H8+HeI', '[Ne~III]', 'Heps',     'HeI+HeII',  'Hdelt',  'Hgam',  '[O~III]', 'He~I', 'He~II',    '[Ar~IV]', 'Hbeta']
         #                       0             1            2         3          4         5           6           7          8        9        10        11         12           13
+        plotnames =         ['[O II]',    '',        '[Ne III],H8,He I', '', r'[Ne III], H$\epsilon$', '',  'HeI+HeII',  r'H$\delta$',  '', r'H$\gamma$, [O III]', 'He I', 'He II',    '[Ar IV]', r'H$\beta$']
+        yaxcoords =         [  0.95,       -1,        0.35,              0.,    0.2,                   0.,   -0.13,       0.2,           0., 0.35,                     0.1,     0.1,      0.2,          0.7]
+
     else : error_unknown_grism(which_grism)
     label_df = pandas.DataFrame({'restwave' : restwaves, 'yaxcoord' : yaxcoords, 'plotname' : plotnames})  # For convenience, make dataframe of labels to plot
     return(restwaves, linenames, label_df)
@@ -201,7 +200,8 @@ def finergrid_result(grism_info, fit_result, outfile) :
 
 def plot_results(df_data, fit_result, func2fit, xfine, title, grism_info, show_initial_fit=False, scalefactor=1.0, units=1.0) :
     print "   Plotting"
-    ax = df_data.plot(x='wave', y='flam_contsub_scaled', color='black', linestyle='steps-mid', lw=1.5, legend=False)
+    fig, ax  = plt.subplots(figsize=figsize)
+    df_data.plot(x='wave', y='flam_contsub_scaled', color='black', linestyle='steps-mid', lw=1.5, legend=False, ax=ax)
     df_data.plot(x='wave', y='flam_u_scaled', color='grey', ax=ax, legend=False)
     if show_initial_fit : plt.plot(df_data['wave'], fit_result.init_fit, color='orange', label='init fit')
     plt.plot(xfine, func2fit(xfine, **fit_result.values), color='blue', label='best fit')
@@ -209,8 +209,7 @@ def plot_results(df_data, fit_result, func2fit, xfine, title, grism_info, show_i
     #plt.ylabel(r"continuum-subtracted  $f_\lambda$ ("+str(1./scalefactor) + " " + units + ")")
     plt.ylabel(r"$f_\lambda$ ("+str(1./scalefactor) + " " + units + ")")
     pretty_title = re.sub("wcontMWdr.txt ", "", re.sub("_", " ", title))
-    plt.title(pretty_title, position=(0.5, 0.9), fontsize=9)# position=(0.7, 0.9),)
-    #plt.suptitle(title, y=0.995, fontsize=10)
+    plt.title(pretty_title, position=(0.5, 1.2), fontsize=12)
     plt.xlim(grism_info['x1'], grism_info['x2'])
     (restwaves, linenames, label_df) = get_line_wavelengths(which_grism)
     if 'd0' in fit_result.params.keys() :
@@ -224,8 +223,9 @@ def plot_results(df_data, fit_result, func2fit, xfine, title, grism_info, show_i
     ax2.xaxis.set_minor_locator(AutoMinorLocator(4))
     label_df['ydata'] = label_df['yaxcoord'] *  ax2.axes.get_ylim()[1]
     print "DEBUGGING\n", label_df.head()
-    jrr.plot.annotate_from_dataframe(label_df, xcol='restwave', ycol='ydata', text='plotname', xytext=(0,0), ha='center')
+    jrr.plot.annotate_from_dataframe(label_df, xcol='restwave', ycol='ydata', text='plotname', xytext=(0,0), ha='center', fontsize=12)
     plt.show()
+    return(fig)
 
 def  convert_lmfitresults_2df(LMresult, parnames, sigoff, grism_info, restwaves, linenames):
     # Reformat LMFIT results as a dataframe
@@ -262,10 +262,10 @@ def supplemental_header(LMresult) :
 
     
 ##  Setup
-infile = 'S1723_G141_grism2process.txt'
+#infile = 'S1723_G141_grism2process.txt'
 #infile = 'S1723_G102_grism2process.txt'
 #infile = 'S2340_G102_grism2process.txt'  # CHANGE THIS.  Keep format
-#infile = 'S2340_G141_grism2process.txt'  
+infile = 'S2340_G141_grism2process.txt'  
 
 figsize = (12,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT
@@ -297,7 +297,7 @@ zz = get_redshift(which_gal)
 grism_info = jrr.grism.get_grism_info(which_grism) 
 pp = PdfPages("grism_fitspectra_"+which_gal+"_"+which_grism+".pdf")
 
-for row in df[0:1].itertuples() :
+for row in df.itertuples() :
     specfile = basename(row.filename)
     print row.filename
     subdir = re.split("/", row.filename)[-3] + "/" # This should be the dir, like 1Dsum
@@ -345,7 +345,7 @@ for row in df[0:1].itertuples() :
     if check4zero_errorbars(result1, parnames) : print "####### WARNING: errorbars were zero! ####### "
     plot_label = subdir + " " + specfile + " fit 1"
     xfine = finergrid_result(grism_info, result1, outfile2)
-    plot_results(subset, result1, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
+    fig = plot_results(subset, result1, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
     pp.savefig(bbox_inches='tight', pad_inches=0.1, figsize=figsize)
        
     if row.tweak_wav :  # If input file requests a second fit, w line centroids allowed to very:
@@ -366,7 +366,7 @@ for row in df[0:1].itertuples() :
         if check4zero_errorbars(result2, parnames) : print "####### WARNING: errorbars were zero! ####### "
         xfine = finergrid_result(grism_info, result2, outfile4)
         plot_label = subdir + " " + specfile + " fit 2"
-        plot_results(subset, result2, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
+        fig = plot_results(subset, result2, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
         pp.savefig(bbox_inches='tight', pad_inches=0.1)
     f.close()
 

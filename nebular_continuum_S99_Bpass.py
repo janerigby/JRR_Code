@@ -244,7 +244,7 @@ if analyze_cloudy :
                         outfile = re.sub('.fits', suffix, thisfile)
                     make_tab_header(hires_tab, style,  style, baseZ, str(ages), logU)
                     write_JC_fitsfile(hires_tab, outnebdir, outfile) 
-                    newtab = read_JC_S99file(modeldir  + "Wnebcont/", outfile)      # Check that I can read the newly-generated file
+                    newtab = read_JC_S99file(outnebdir, outfile)      # Check that I can read the newly-generated file
                     (nwave, nflam, nfnu, nstellar_df) = process_S99_spectrumfile(newtab, baseZ, thisage, age_index)
             elif('BPASS' in style) :   # Input spectrum is BPASS. 
                 for baseZ in absZs :

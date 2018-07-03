@@ -13,7 +13,7 @@ from numpy import log10, round
 import jrr
 
 BPASS_ver = '2.1'  # Ran everything for 2.1. 
-#BPASS_ver = '2.2'  # But, 2.2 now available
+BPASS_ver = '2.2'  # But, 2.2 now available
 
 # Note: run from this dir:  /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum/
 

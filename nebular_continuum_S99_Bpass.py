@@ -75,9 +75,8 @@ def name_that_cloudy_file(Z, age) :
 
 def write_cloudy_infile(Z, age, logU, cloudy_template, style, ver='2.1') :  
     solarZ =  translate_Z_abs2solar(Z)
-    if   style == 'JC_S99'       :   model = name_that_cloudy_file(Z, age)
-    elif style == 'BPASS_binary' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1]
-    elif style == 'BPASS_single' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1]
+    if   style == 'JC_S99'  :   model = name_that_cloudy_file(Z, age)
+    elif 'BPASS' in style   :   model = jrr.bpass.default_filenames(ver=BPASS_ver, style=style)[1]
     else : raise Exception("Unrecognized style")
     prefix = name_that_cloudy_file(Z, age)
     infile = prefix + '.in'  ;  outfile = prefix + '.out'
@@ -258,7 +257,7 @@ if analyze_cloudy :
                         plot_stellar_nebular(style, stellar_df, cloudy_df, baseZ, thisage, logU)
                         outfile = style + "_Z" + baseZ + "_" + str(thisage) + "Myr_logU" + str(logU) + ".fits"
                         tab = Table.from_pandas(stellar_df)
-                        make_tab_header(tab, jrr.bpass.default_filenames(ver=BPASS_ver)[1],  style, baseZ, thisage, logU)  # I think this adds metadata
+                        make_tab_header(tab, jrr.bpass.default_filenames(ver=BPASS_ver, style=style)[1],  style, baseZ, thisage, logU)  # I think this adds metadata
                         write_JC_fitsfile(tab,  outnebdir, outfile)  # Output file as John expects.  Not bothering to concatenate ages.
             pp.close()
             chdir(nebcontdir)

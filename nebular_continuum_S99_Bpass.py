@@ -12,6 +12,9 @@ from astropy.table import Table
 from numpy import log10, round
 import jrr
 
+BPASS_ver = '2.1'  # Ran everything for 2.1. 
+BPASS_ver = '2.2'  # But, 2.2 now available
+
 # Note: run from this dir:  /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum/
 
 ###### I'm gonna make me some functions ################################
@@ -73,8 +76,8 @@ def name_that_cloudy_file(Z, age) :
 def write_cloudy_infile(Z, age, logU, cloudy_template, style) :  
     solarZ =  translate_Z_abs2solar(Z)
     if   style == 'JC_S99'       :   model = name_that_cloudy_file(Z, age)
-    elif style == 'BPASS_binary' :   model = jrr.bpass.default_filenames()[1] + '_binary'
-    elif style == 'BPASS_single' :   model = jrr.bpass.default_filenames()[1] + '_single'
+    elif style == 'BPASS_binary' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1] + '_binary'
+    elif style == 'BPASS_single' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1] + '_single'
     else : raise Exception("Unrecognized style")
     prefix = name_that_cloudy_file(Z, age)
     infile = prefix + '.in'  ;  outfile = prefix + '.out'
@@ -248,12 +251,12 @@ if analyze_cloudy :
                         print "Working on: (Z age logU style cloudydir)", baseZ, thisage, logU, style, cloudydir
                         cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         cloudy_df.head()  # Need more after this; just want to show that I can read the cloudy file.
-                        stellar_df = jrr.bpass.wrap_load_1spectrum(baseZ, thisage*1E6, style)   # Get high-res BPASS stellar continuum. cloudy .con too low res.
+                        stellar_df = jrr.bpass.wrap_load_1spectrum(baseZ, thisage*1E6, style, ver=BPASS_ver)   # Get high-res BPASS stellar continuum. cloudy .con too low res.
                         add_nebular_to_stellar(stellar_df, cloudy_df)
                         plot_stellar_nebular(style, stellar_df, cloudy_df, baseZ, thisage, logU)
                         outfile = style + "_Z" + baseZ + "_" + str(thisage) + "Myr_logU" + str(logU) + ".fits"
                         tab = Table.from_pandas(stellar_df)
-                        make_tab_header(tab, jrr.bpass.default_filenames()[1],  style, baseZ, thisage, logU)  # I think this adds metadata
+                        make_tab_header(tab, jrr.bpass.default_filenames(ver=BPASS_ver)[1],  style, baseZ, thisage, logU)  # I think this adds metadata
                         write_JC_fitsfile(tab,  modeldir + "Wnebcont/", outfile)  # Output file as John expects.  Not bothering to concatenate ages.
             pp.close()
             chdir(nebcontdir)

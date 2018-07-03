@@ -13,7 +13,7 @@ from numpy import log10, round
 import jrr
 
 BPASS_ver = '2.1'  # Ran everything for 2.1. 
-BPASS_ver = '2.2'  # But, 2.2 now available
+#BPASS_ver = '2.2'  # But, 2.2 now available
 
 # Note: run from this dir:  /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum/
 
@@ -153,6 +153,7 @@ def make_label(baseZ, thisage, logU, style='JC_S99'):
 
 homedir   = expanduser("~")
 modeldir  = homedir + '/Dropbox/MagE_atlas/Contrib/S99/models/'
+outnebdir = homedir + '/Dropbox/S99_Bpass2_wnebcont/'
 nebcontdir = '/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum/'  # Where cloudy model results live
 # Here's what I expect in J. Chisholm's packaged S99 files. Getting age, Z from S99 files themselves. Using same ages for BPASS.
 ages = (1, 2, 3, 4, 5, 8, 10, 15, 20, 40) # Myr
@@ -242,7 +243,7 @@ if analyze_cloudy :
                         suffix = "_wnebcont_logU" + str(logU) + ".fits" 
                         outfile = re.sub('.fits', suffix, thisfile)
                     make_tab_header(hires_tab, style,  style, baseZ, str(ages), logU)
-                    write_JC_fitsfile(hires_tab, modeldir + "Wnebcont/", outfile) 
+                    write_JC_fitsfile(hires_tab, outnebdir, outfile) 
                     newtab = read_JC_S99file(modeldir  + "Wnebcont/", outfile)      # Check that I can read the newly-generated file
                     (nwave, nflam, nfnu, nstellar_df) = process_S99_spectrumfile(newtab, baseZ, thisage, age_index)
             elif('BPASS' in style) :   # Input spectrum is BPASS. 
@@ -257,7 +258,7 @@ if analyze_cloudy :
                         outfile = style + "_Z" + baseZ + "_" + str(thisage) + "Myr_logU" + str(logU) + ".fits"
                         tab = Table.from_pandas(stellar_df)
                         make_tab_header(tab, jrr.bpass.default_filenames(ver=BPASS_ver)[1],  style, baseZ, thisage, logU)  # I think this adds metadata
-                        write_JC_fitsfile(tab,  modeldir + "Wnebcont/", outfile)  # Output file as John expects.  Not bothering to concatenate ages.
+                        write_JC_fitsfile(tab,  outnebdir, outfile)  # Output file as John expects.  Not bothering to concatenate ages.
             pp.close()
             chdir(nebcontdir)
 

@@ -13,7 +13,7 @@ from numpy import log10, round
 import jrr
 
 BPASS_ver = '2.1'  # Ran everything for 2.1. 
-BPASS_ver = '2.2'  # But, 2.2 now available
+BPASS_ver = '2.2'  # But, 2.2 now available.  Need to run this to completion....
 
 # Note: run from this dir:  /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum/
 
@@ -163,6 +163,7 @@ styles = ('JC_S99', 'BPASS_binary', 'BPASS_single')
 
 # Formatting for cloudy
 cloudy_exe = "/Volumes/Apps_and_Docs/JRR_Utils/c17.00/source/cloudy.exe"
+#cloudy_exe = "/Volumes/Apps_and_Docs/JRR_Utils/c17.01/source/cloudy.exe"
 cloudy_script = 'run_cloudy.sh'  # Script to run all the Cloudy models
 cloudy_template = { 'JC_S99': '../S99_cloudy_template.in' , 'BPASS_binary': '../bpass_cloudy_template.in', 'BPASS_single': '../bpass_cloudy_template.in'}
 

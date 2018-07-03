@@ -73,11 +73,11 @@ def process_S99_spectrumfile(tab, Z, age, age_index) :  # These are fits files i
 def name_that_cloudy_file(Z, age) :
     return("Z" + Z + "_" + str(age) + "Myr")
 
-def write_cloudy_infile(Z, age, logU, cloudy_template, style) :  
+def write_cloudy_infile(Z, age, logU, cloudy_template, style, ver='2.1') :  
     solarZ =  translate_Z_abs2solar(Z)
     if   style == 'JC_S99'       :   model = name_that_cloudy_file(Z, age)
-    elif style == 'BPASS_binary' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1] + '_binary'
-    elif style == 'BPASS_single' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1] + '_single'
+    elif style == 'BPASS_binary' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1]
+    elif style == 'BPASS_single' :   model = jrr.bpass.default_filenames(ver=BPASS_ver)[1]
     else : raise Exception("Unrecognized style")
     prefix = name_that_cloudy_file(Z, age)
     infile = prefix + '.in'  ;  outfile = prefix + '.out'

@@ -12,9 +12,6 @@ from astropy.table import Table
 from numpy import log10, round
 import jrr
 
-BPASS_ver = '2.1'  # Ran everything for 2.1. 
-BPASS_ver = '2.2'  # But, 2.2 now available.  Need to run this to completion....
-
 # Note: run from this dir:  /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Cloudy_models/Nebular_continuum/
 
 ###### I'm gonna make me some functions ################################
@@ -149,7 +146,8 @@ def make_label(baseZ, thisage, logU, style='JC_S99'):
 
 
 ########################################################################
-
+#BPASS_ver = '2.1'  # Ran everything for 2.1. 
+BPASS_ver = '2.2'  # But, 2.2 now available.  Need to run this to completion....
 homedir   = expanduser("~")
 modeldir  = homedir + '/Dropbox/MagE_atlas/Contrib/S99/models/'
 outnebdir = homedir + '/Dropbox/S99_Bpass2_wnebcont/'
@@ -167,9 +165,9 @@ cloudy_script = 'run_cloudy.sh'  # Script to run all the Cloudy models
 cloudy_template = { 'JC_S99': '../S99_cloudy_template.in' , 'BPASS_binary': '../bpass_cloudy_template.in', 'BPASS_single': '../bpass_cloudy_template.in'}
 
 #  *** SWITCHES ************
-prep_cloudy =    True    # Prepare all the Cloudy input files?
+prep_cloudy =    False   # Prepare all the Cloudy input files?
 analyze_cloudy = False      # Analyze the cloudy outputs, to grab nebular continuua?
-sanity_plots   = False
+sanity_plots   = True
 #  *************************
 
 
@@ -278,7 +276,7 @@ if sanity_plots :  # Part 4: make a bunch of sanity plots
         subset = cloudy_df.loc[cloudy_df['wave_Ang'].between(1200,3000)]
         plt.plot(cloudy_df['wave_Ang'], cloudy_df['flam_nebcont'], label=baseZ)
     plt.xlim(900,1E4)
-    plt.ylim(0, 8E-17)
+    plt.ylim(0, 1E-4)
     plt.legend()
     plt.xlabel("wavelength (Angstrom)")  ; plt.ylabel("flam nebular continuum")
     plt.title("Neb cont intensity should scale w Z.  For age=" + str(thisage) + " Myr, logU=" + str(logU))

@@ -180,7 +180,7 @@ header_GNIRS += howscaled_GNIRS
 print "How scaled spectra:\n", howscaled_ESI, howscaled_MMT,  howscaled_GNIRS
 
 # Sanity checks on the MMT, ESI, G102 flux scaling
-cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(8000., 8500.)]['flam_cor'].median() / sp_G102.loc[sp_G102['wave'].between(8000., 8500.)]['flam'].median()
+cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(8400.,8550)]['flam_cor'].median() / sp_G102.loc[sp_G102['wave'].between(8400.,8550)]['flam'].median()
 cont_sanity_check2 = sp_MMT.loc[sp_MMT['wave'].between(4200., 4300.)]['flam_cor'].median()  / sp_ESI.loc[sp_ESI['wave'].between(4200., 4300.)]['flam_cor'].median()
 print "Flux sanity checks:  ESI/G102:", cont_sanity_check1, "and MMT/ESI:", cont_sanity_check2
 

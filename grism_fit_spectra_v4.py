@@ -185,10 +185,6 @@ def lock_params(mypars, which_grism, which_gal, waveoff=False, sigoff=0.0, limit
             
     return(mypars)
 
-def parse_filename(grism_filename) :
-    m = re.search('(\S+)_(\S+)_(\S+)_(\S+)_(\S+)', grism_filename)
-    mydict = { 'gname': m.group(1), 'descrip': m.group(2), 'roll': m.group(3),  'grating': m.group(4), 'suffix': m.group(5)}
-    return(mydict)
 
 def finergrid_result(grism_info, fit_result, outfile) :
     #The fit result is on the same coarse wavelength array as the data.  Make finer fit for plotting, and save it.
@@ -303,7 +299,7 @@ for row in df.itertuples() :
     subdir = re.split("/", row.filename)[-3] + "/" # This should be the dir, like 1Dsum
     if not exists(subdir):  makedirs(subdir)
     tweak_wav = row.tweak_wav
-    specfile_dict = parse_filename(specfile)
+    specfile_dict = jrr.grism.parse_filename(specfile)
     outfile0 = subdir + re.sub('.txt', '.fitreport',   specfile)
     outfile1 = subdir + re.sub('.txt', '_meth1.fitdf', specfile)
     outfile2 = subdir + re.sub('.txt', '_meth1.model', specfile)

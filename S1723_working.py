@@ -1,4 +1,5 @@
 from os.path import expanduser, basename
+import warnings
 import subprocess 
 import glob
 import jrr  # Moved some functions to jrr.grism
@@ -53,10 +54,9 @@ def sum_spectraline_wflatcont(sp, linewave1, linewave2, contwave1, contwave2, co
     lineflux = part1 - part2
     return(lineflux)
 
-def adjust_plot() :
+def adjust_plot(x1 = 3200., x2 = 16900., y1=0., y2=1.25E-16) :
     plt.legend()
-    x1 = 3200. ; x2 = 16900.
-    plt.ylim(0,1.25E-16)
+    plt.ylim(y1, y2)
     plt.xlim(x1, x2)
     plt.xlabel(r"Vacuum wavelength ($\AA$)")
     plt.ylabel(r'$f_{\lambda}$ ($erg$ $s^{-1}$ $cm^{-2}$ $\AA^{-1}$)')
@@ -78,6 +78,9 @@ def adjust_plot() :
 #######  Housekeeping  ##############
 plt.close("all")
 figsize=(16,6)
+nolegend="_" # Matplotlib versions handle this differently.  Used to be "_nolegend_"
+warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")  # nolegend generates cluttering warnings.
+plot_MMTESIcont=False
 
 #### Directories and filenames
 home = expanduser("~")
@@ -111,6 +114,7 @@ sp_ESI.loc[sp_ESI['flam'] == 0.00, 'contmask'] = True   # Mask bad column, which
 grism_info = {}  # Dict of dicts that store the grism info
 grism_info['G102'] = jrr.grism.get_grism_info("G102") 
 grism_info['G141'] = jrr.grism.get_grism_info("G141")
+grism_info['G102']['x1'] = 8500. # Clipping this harsher
 sp_grism     = {}   # Load grism spectra into a dict of dataframes
 cutout_grism = {}   # The same, for wavelength-trimmed versions
 grismfiles = [x for x in glob.glob(wdir + 'Grizli_redux/1Dsum/Wcont/*wcontMWdr.txt')] 
@@ -118,9 +122,10 @@ for grismfile in grismfiles :
     parts = jrr.grism.parse_filename(grismfile)
     label = str(parts['roll']) + '_' + parts['grating']
     sp_grism[label] = pandas.read_csv(grismfile, comment="#")
+    if 'both' in parts['roll'] :  jrr.grism.half_the_flux( sp_grism[label] )
     sp_grism[label]['flamcontsub'] = sp_grism[label]['flam'] - sp_grism[label]['cont']
     cutout_grism[label] = sp_grism[label].loc[sp_grism[label]['wave'].between(grism_info[parts['grating']]['x1'], grism_info[parts['grating']]['x2'])]
-###*** IS THERE A FACTOR OF 2 THAT HASN'T BEEN REMOVED FROM BOTHROLLS HERE?
+
     
 #### Read MMT Blue Channel spectrum. # wave in vacuum Ang, flam in 1E-17 erg/s/cm^2/A
 names=('oldwave', 'flam', 'flam_u')  
@@ -186,35 +191,35 @@ print "How scaled spectra:\n", howscaled_ESI, howscaled_MMT,  howscaled_GNIRS
 
 
 # Sanity checks on the MMT, ESI, G102 flux scaling
-cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(8400.,8550)]['flam_cor'].median() / sp_grism['bothroll_G102'].loc[sp_grism['bothroll_G102']['wave'].between(8400.,8550)]['flam'].median()
+cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(9100.,1E4)]['flam_cor'].median() / sp_grism['bothroll_G102'].loc[sp_grism['bothroll_G102']['wave'].between(9100.,1E4)]['flam'].median()
 cont_sanity_check2 = sp_MMT.loc[sp_MMT['wave'].between(4200., 4300.)]['flam_cor'].median()  / sp_ESI.loc[sp_ESI['wave'].between(4200., 4300.)]['flam_cor'].median()
 print "Flux sanity checks:  ESI/G102:", cont_sanity_check1, "and MMT/ESI:", cont_sanity_check2
 
-fig = plt.figure(1, figsize=figsize)
+fig, ax = plt.subplots(figsize=figsize)
 order_keys = ['bothroll_G102', 'roll139_G102', 'roll308_G102', 'bothroll_G141', 'roll139_G141', 'roll308_G141']  # plot in this order
-scaling    = [0.5,                 1.,              1.,            0.5,             1.,               1.]
-colors     = ['k', 'green',                     'red', 'k', 'green', 'red']
-#for grismkey in sp_grism.keys() :
+colors     = ['k', 'dimgrey',                     'purple']*2 
+labels     = ['Average of rolls',   r'Roll $139\degree$',   r'Roll $308\degree$', nolegend, nolegend, nolegend]
 for ii, grismkey in enumerate(order_keys) :
-    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flam'] * scaling[ii], label=grismkey, color=colors[ii])
-plt.title("Checking cont shape in grism vs roll.  Contamination?")                 
+    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flam'], label=labels[ii], color=colors[ii], lw=1.5)
+print "Checking continuum shape in grism vs roll.  Contamination?"
+adjust_plot(x1=8000, y2=0.8E-16)
 plt.legend()
-# I THINK I Haven't corrected for Michael's x2 flux issue for bothrolls.  *****  Paused here.
 
 
 ### Fit MMT continuum.  The boxcar # is arbitrary, seems to match
-fig = plt.figure(2, figsize=figsize)
-plt.title("Fit continuum for MMT bluechannel")
-(smooth1, smooth2) = jrr.grism.wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel")
+if plot_MMTESIcont :
+    fig = plt.figure(2, figsize=figsize)
+    plt.title("Fit continuum for MMT bluechannel")
+(smooth1, smooth2) = jrr.grism.wrap_fit_continuum(sp_MMT, LL, zHa, boxcar=151, colf='flam_cor',  colcont='flamcor_autocont', label="MMT Blue Channel", makeplot=plot_MMTESIcont)
 
 ### Fit ESI continuum
 peak_ind = flag_noise_peaks(sp_ESI, colfu='flam_u_cor', delta=0.05E-17)
-fig = plt.figure(3, figsize=figsize)
-#plt.scatter(sp_ESI['wave'].iloc[peak_ind], sp_ESI['flam_cor'].iloc[peak_ind]) 
-plt.title("Continuum fitting for ESI")
-(smooth1, smooth2) = jrr.grism.wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=351, colf='flam_cor',  colcont='flamcor_autocont', label="ESI")
+if plot_MMTESIcont :
+    fig = plt.figure(3, figsize=figsize)
+    plt.title("Fit continuum for Keck ESI")
+(smooth1, smooth2) = jrr.grism.wrap_fit_continuum(sp_ESI, LL, zHa, boxcar=351, colf='flam_cor',  colcont='flamcor_autocont', label="ESI", makeplot=plot_MMTESIcont)
 header_ESI += ("# Applied smooth continuum \n")
-plt.ylim(0,9E-17)
+if plot_MMTESIcont :  plt.ylim(0,9E-17)
 
 print "Writing flux-adjusted, continuum-fitted spectra for MMT and ESI."
 sp_ESI.to_csv('temp1', sep='\t', na_rep='NaN')
@@ -223,38 +228,40 @@ jrr.util.put_header_on_file('temp1', header_ESI, "s1723_ESI_wcont.txt")
 jrr.util.put_header_on_file('temp2', header_MMT, "s1723_MMT_wcont.txt")
 
 # Plot the scaled spectra
-ax = sp_ESI.plot(    x='wave', y='flam_cor', color='green',  label='Keck ESI', figsize=figsize)
+fig, ax  = plt.subplots(figsize=figsize)
+sp_ESI.plot(    x='wave', y='flam_cor', color='green',  label='Keck ESI', ax=ax)
 cutout_GNIRS.plot(x='wave', y='flam',     color='orange', label="GNIRS",     ax=ax)
-sp_MMT.plot( x='wave', y='flam_cor',    color='blue',   label='MMT BC',    ax=ax)
+sp_MMT.plot( x='wave', y='flam_cor',    color='blue',     label='MMT BC',    ax=ax)
 sp_grism['bothroll_G102'].plot(x='wave', y='flam',        color='red',    label='WFC3 G102', ax=ax)
 sp_grism['bothroll_G141'].plot(x='wave', y='flam',        color='purple', label='WFC3 G141', ax=ax)
-sp_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label='_nolegend_', linewidth=0.2, ax=ax)
-sp_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label='_nolegend_', linewidth=0.2, ax=ax)
-sp_grism['bothroll_G102'].plot(x='wave', y='flam_u',      color='red',label='_nolegend_', linewidth=0.2, ax=ax)
-sp_grism['bothroll_G141'].plot(x='wave', y='flam_u',      color='purple', label='_nolegend_', linewidth=0.2, ax=ax)
-cutout_GNIRS.plot(x='wave', y='flam_u', color='lightgrey', label="_nolegend_", ax=ax)
+sp_MMT.plot( x='wave', y='flam_u_cor',  color='lightblue', label=nolegend, linewidth=0.2, ax=ax)
+sp_ESI.plot( x='wave', y='flam_u_cor',  color='lightgreen', label=nolegend, linewidth=0.2, ax=ax)
+sp_grism['bothroll_G102'].plot(x='wave', y='flam_u',      color='red',label=nolegend, linewidth=0.2, ax=ax)
+sp_grism['bothroll_G141'].plot(x='wave', y='flam_u',      color='purple', label=nolegend, linewidth=0.2, ax=ax)
+cutout_GNIRS.plot(x='wave', y='flam_u', color='lightgrey', label=nolegend, ax=ax)
 plt.title("Flux-scaled spectra")
 adjust_plot()
 
-fig = plt.figure(5, figsize=figsize)   # Prettier plot
+fig, ax = plt.subplots(figsize=figsize)   # Prettier plot
 how2comb = {'flam_cor': 'mean', 'flam_u_cor': jrr.util.convenience1, 'wave': 'mean', 'flamcor_autocont' : 'mean'} #how to bin
 bin_MMT =  np.arange(3200, 4800,  5)
-bin_ESI =  np.arange(4350, 8900, 10)
+#bin_ESI =  np.arange(4350, 8900, 10)
+bin_ESI =  np.arange(4350, 10000, 10)
 binned_MMT = jrr.spec.bin_boxcar_better(sp_MMT, bin_MMT, how2comb, bincol='wave')
 binned_ESI = jrr.spec.bin_boxcar_better(sp_ESI, bin_ESI, how2comb, bincol='wave')
 binned_ESI_clean = binned_ESI.loc[binned_ESI['flam_u_cor'].lt(1E-14)] # Avoid the stuff w big errorbars, for plotting
-ax = binned_MMT.plot(  x='wave', y='flam_cor',         color='blue',   label='MMT BC', figsize=figsize, lw=2)
+binned_MMT.plot(  x='wave', y='flam_cor',         color='blue',   label='MMT BC', figsize=figsize, lw=2, ax=ax)
 binned_ESI_clean.plot( x='wave', y='flam_cor',         color='green',  label='Keck ESI', ax=ax, lw=2)
 cutout_grism['bothroll_G102'].plot(x='wave', y='flam',             color='red',    label='WFC3 G102',ax=ax, lw=2)
 cutout_grism['bothroll_G141'].plot(x='wave', y='flam',             color='purple', label='WFC3 G141',ax=ax, lw=2)
-binned_MMT.plot(       x='wave', y='flam_u_cor',       color='blue',   label='_', ax=ax, lw=1)
-binned_ESI_clean.plot( x='wave', y='flam_u_cor',       color='green',  label='_', ax=ax, lw=1)
-cutout_grism['bothroll_G102'].plot(      x='wave', y='flam_u',           color='red',    label='_', ax=ax, lw=1)
-cutout_grism['bothroll_G141'].plot(      x='wave', y='flam_u',           color='purple', label='_', ax=ax, lw=1)
-binned_MMT.plot(       x='wave', y='flamcor_autocont', color='black',  label='_', ax=ax)
-binned_ESI_clean.plot( x='wave', y='flamcor_autocont', color='black',  label='_', ax=ax)
-cutout_grism['bothroll_G102'].plot(      x='wave',  y='cont',            color='black',  label='_', ax=ax)
-cutout_grism['bothroll_G141'].plot(     x ='wave',  y='cont',            color='black',  label='_', ax=ax)
+binned_MMT.plot(       x='wave', y='flam_u_cor',       color='blue',   label=nolegend, ax=ax, lw=1)
+binned_ESI_clean.plot( x='wave', y='flam_u_cor',       color='green',  label=nolegend, ax=ax, lw=1)
+cutout_grism['bothroll_G102'].plot(      x='wave', y='flam_u',           color='red',    label=nolegend, ax=ax, lw=1)
+cutout_grism['bothroll_G141'].plot(      x='wave', y='flam_u',           color='purple', label=nolegend, ax=ax, lw=1)
+binned_MMT.plot(       x='wave', y='flamcor_autocont', color='black',  label=nolegend, ax=ax)
+binned_ESI_clean.plot( x='wave', y='flamcor_autocont', color='black',  label=nolegend, ax=ax)
+cutout_grism['bothroll_G102'].plot(      x='wave',  y='cont',            color='black',  label=nolegend, ax=ax)
+cutout_grism['bothroll_G141'].plot(     x ='wave',  y='cont',            color='black',  label=nolegend, ax=ax)
 plt.annotate("Prettier plot.  MMT and ESI have been boxcar smoothed", (0.3,0.9), xycoords='axes fraction')
 adjust_plot()
 

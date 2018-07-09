@@ -318,10 +318,9 @@ for row in df.itertuples() :
     header += "# rolls were clean.  So the fluxing is super-weird, and should only be used in a relative sense.  Divide by Hbeta and move on.\n#\n"
     f.write(header)
     sp  = pandas.read_csv(row.filename,  comment="#")      ## Read the grism spectrum file
-    if which_gal == 'S1723' and 'both' in specfile : bothrollsfactor = 0.5  # Michael has summed the flux in both rolls.  Compensating here
-    else : bothrollsfactor = 1.0
-    sp['flam_contsub_scaled'] = (sp['flam'] - sp['cont']) * scalefactor * bothrollsfactor
-    sp['flam_u_scaled'] = sp['flam_u'] * scalefactor * bothrollsfactor
+    if which_gal == 'S1723' and 'both' in specfile :  jrr.grism.half_the_flux(sp)   # Michael has summed the flux over both rolls. Compensating
+    sp['flam_contsub_scaled'] = (sp['flam'] - sp['cont']) * scalefactor 
+    sp['flam_u_scaled'] = sp['flam_u'] * scalefactor
     sp['weight'] = 1.0 / (sp['flam_u_scaled'])**2   # inverse variance weights
     subset = sp.loc[sp['wave'].between(grism_info['x1'], grism_info['x2'])] # subset of spectr, clean wavelength range.
             

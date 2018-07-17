@@ -19,6 +19,8 @@ matplotlib.rcParams.update({'font.size': 14})
 emission line fluxes, and make figures for the paper.  jrigby, 2017.  
 Updated June 2018 to use Michael's new grizli redux of grism spectra.'''
 
+# RUN THIS FROM THE FOLLOWING DIR:  /Dropbox/Grism_S1723/JRR_Working2/
+
 def annotate_header(header_ESI, header_MMT, header_GNIRS) :
     for header in (header_ESI, header_MMT, header_GNIRS) :
         header += ("#\n# Below is extra processing by S1723_working.py\n")
@@ -73,7 +75,7 @@ def adjust_plot(x1 = 3200., x2 = 16900., y1=0., y2=1.25E-16) :
     return(0)
 
 ##########  END OF FUNCTIONS ###############
-
+plt.ion()
 
 #######  Housekeeping  ##############
 plt.close("all")
@@ -149,7 +151,7 @@ header_GNIRS = jrr.util.read_header_from_file(file_GNIRS, comment="#")  # save t
 (header_ESI, header_MMT,header_GNIRS) = annotate_header(header_ESI, header_MMT, header_GNIRS)
 
 # Scale the flux of the ESI spectrum, to match HST G102, using [O II] doublet flux.  Direct summation of flux, linear local continuua.
-flux_OII_G102 = (70.991 + 97.251) * 1E-17  # from 1Dsum/sgas1723_1Dsum_bothroll_G102_wcontMWdr_meth2.fitdf
+flux_OII_G102 = (70.991 + 97.251) * 1E-17  # from 1Dsum/sgas1723_1Dsum_bothroll_G102_wcontMWdr_meth2.fitdf.  Updated 17July2018
 rawflux_OII_ESI = sum_spectraline_wflatcont(sp_ESI, 8684., 8712., 8500., 8900.)
 sp_ESI['flam_cor']   = sp_ESI['flam']   *  flux_OII_G102/rawflux_OII_ESI 
 sp_ESI['flam_u_cor'] = sp_ESI['flam_u'] *  flux_OII_G102/rawflux_OII_ESI
@@ -167,7 +169,7 @@ howscaled_MMT +=  (str(np.round((flux_OII_G102/rawflux_OII_ESI * rawflux_CIII_ES
 # The MMT fluxing gets nudged up by 34%.  That's sensible given a longslit.
 
 #### Flux the GNIRS spectrum
-flux_Ha_G141 = 408.8E-17  #  kludge, hardcoded, from sgas1723_1Dsum_bothroll_G141_wcontMWdr_meth2.fitdf.  Updated 6/28/2018
+flux_Ha_G141 = 408.79E-17  #  kludge, hardcoded, from sgas1723_1Dsum_bothroll_G141_wcontMWdr_meth2.fitdf.  Updated 17July2018
 first_guess_cont = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4, 1.56E4)]['mean'].median()
 guesspars = (100., 6564.61 *(1+zHa), 10.)  # Fix the continuum, don't let curve_fit change it; it's drifting too high
 (popt_GNIRS, fit_GNIRS) = jrr.spec.fit_gaussian_fixedcont(sp_GNIRS.interpolate(), guesspars, contlevel=first_guess_cont, colwave='wave', colf='mean')
@@ -262,11 +264,30 @@ binned_MMT.plot(       x='wave', y='flamcor_autocont', color='black',  label=nol
 binned_ESI_clean.plot( x='wave', y='flamcor_autocont', color='black',  label=nolegend, ax=ax)
 cutout_grism['bothroll_G102'].plot(      x='wave',  y='cont',            color='black',  label=nolegend, ax=ax)
 cutout_grism['bothroll_G141'].plot(     x ='wave',  y='cont',            color='black',  label=nolegend, ax=ax)
-plt.annotate("Prettier plot.  MMT and ESI have been boxcar smoothed", (0.3,0.9), xycoords='axes fraction')
+#plt.annotate("Prettier plot.  MMT and ESI have been boxcar smoothed", (0.3,0.9), xycoords='axes fraction')
 adjust_plot()
 
 
 plt.show()  # Show all plots at once, each in a separate window
+
+print("\n\nMeasure some basic line ratios.")
+fitdir = home + '/Dropbox/Grism_S1723/WFC3_fit_1Dspec/1Dsum/'
+allfits  = [basename(x) for x in glob.glob(fitdir + '*2.fitdf')]
+G102fits = [basename(x) for x in glob.glob(fitdir + '*G102*2.fitdf')]
+G141fits = [basename(x) for x in glob.glob(fitdir + '*G141*2.fitdf')]
+G102fits_method1 = [basename(x) for x in glob.glob(fitdir + '*G102*1.fitdf')]
+
+print "Ha/Hbeta ratios"
+jrr.grism.measure_linerats(G141fits, fitdir, 'Halpha', 'Hbeta')
+
+print "4363/Hbeta ratios"
+jrr.grism.measure_linerats(G102fits, fitdir, '[O~III]', 'Hbeta', verbose=True)
+print "4363/HBeta again, this time using method 1 fits"
+jrr.grism.measure_linerats(G102fits_method1, fitdir, '[O~III]', 'Hbeta', verbose=True)
+
+# Need to grab both a G102 and G141 2.fitdf, merge them (w linenames + -G102, G141 to be unique), and then
+# do the same measure_linerats() query across the 2 grisms.  Doublecheck Ayan's flux ratios, and then try to
+# reconcile with the PDFs of the line fits.  What's going on with Ha/Hbeta?
 
 
 

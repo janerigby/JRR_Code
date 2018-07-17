@@ -218,7 +218,7 @@ def plot_results(df_data, fit_result, func2fit, xfine, title, grism_info, show_i
     ax.xaxis.set_minor_locator(AutoMinorLocator(4))
     ax2.xaxis.set_minor_locator(AutoMinorLocator(4))
     label_df['ydata'] = label_df['yaxcoord'] *  ax2.axes.get_ylim()[1]
-    print "DEBUGGING\n", label_df.head()
+    #print "DEBUGGING\n", label_df.head()
     jrr.plot.annotate_from_dataframe(label_df, xcol='restwave', ycol='ydata', text='plotname', xytext=(0,0), ha='center', fontsize=12)
     plt.show()
     return(fig)
@@ -258,10 +258,10 @@ def supplemental_header(LMresult) :
 
     
 ##  Setup
-#infile = 'S1723_G141_grism2process.txt'
+infile = 'S1723_G141_grism2process.txt'
 #infile = 'S1723_G102_grism2process.txt'
 #infile = 'S2340_G102_grism2process.txt'  # CHANGE THIS.  Keep format
-infile = 'S2340_G141_grism2process.txt'  
+#infile = 'S2340_G141_grism2process.txt'  
 
 figsize = (12,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT

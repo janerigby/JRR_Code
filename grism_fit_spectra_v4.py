@@ -186,12 +186,15 @@ def lock_params(mypars, which_grism, which_gal, waveoff=False, sigoff=0.0, limit
     return(mypars)
 
 
-def finergrid_result(grism_info, fit_result, outfile) :
+def finergrid_result(grism_info, fit_result, x, scalefactor, outfile1, outfile2) :
     #The fit result is on the same coarse wavelength array as the data.  Make finer fit for plotting, and save it.
     xfine = np.linspace(grism_info['x1'], grism_info['x2'], 1000)
-    fit_df = pandas.DataFrame(xfine, columns=('wave',))
-    fit_df['bestfit'] = func2fit(xfine, **fit_result.values)
-    fit_df.to_csv(outfile, float_format='%.5E', index=False)
+    fit_df     = pandas.DataFrame(x, columns=('wave',))
+    finefit_df = pandas.DataFrame(xfine, columns=('wave',))
+    fit_df['bestfit']     = func2fit(x, **fit_result.values) / scalefactor    
+    finefit_df['bestfit'] = func2fit(xfine, **fit_result.values) / scalefactor
+    fit_df.to_csv(    outfile1, float_format='%.5E', index=False)
+    finefit_df.to_csv(outfile2, float_format='%.5E', index=False)
     return(xfine)
 
 def plot_results(df_data, fit_result, func2fit, xfine, title, grism_info, show_initial_fit=False, scalefactor=1.0, units=1.0) :
@@ -256,12 +259,12 @@ def supplemental_header(LMresult) :
 
 ######################################################################
 
-    
+plt.ion()
 ##  Setup
-infile = 'S1723_G141_grism2process.txt'
+#infile = 'S1723_G141_grism2process.txt'
 #infile = 'S1723_G102_grism2process.txt'
 #infile = 'S2340_G102_grism2process.txt'  # CHANGE THIS.  Keep format
-#infile = 'S2340_G141_grism2process.txt'  
+infile = 'S2340_G141_grism2process.txt'  
 
 figsize = (12,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT
@@ -300,11 +303,13 @@ for row in df.itertuples() :
     if not exists(subdir):  makedirs(subdir)
     tweak_wav = row.tweak_wav
     specfile_dict = jrr.grism.parse_filename(specfile)
-    outfile0 = subdir + re.sub('.txt', '.fitreport',   specfile)
-    outfile1 = subdir + re.sub('.txt', '_meth1.fitdf', specfile)
-    outfile2 = subdir + re.sub('.txt', '_meth1.model', specfile)
-    outfile3 = subdir + re.sub('.txt', '_meth2.fitdf', specfile)
-    outfile4 = subdir + re.sub('.txt', '_meth2.model', specfile)
+    outfile0  = subdir + re.sub('.txt', '.fitreport',   specfile)
+    outfile1  = subdir + re.sub('.txt', '_meth1.fitdf', specfile)
+    outfile2a = subdir + re.sub('.txt', '_meth1.model', specfile)
+    outfile2b = subdir + re.sub('.txt', '_meth1.modelfine', specfile)
+    outfile3  = subdir + re.sub('.txt', '_meth2.fitdf', specfile)
+    outfile4a = subdir + re.sub('.txt', '_meth2.model', specfile)
+    outfile4b = subdir + re.sub('.txt', '_meth2.modelfine', specfile)
     f = open(outfile0, 'w')  
     header = "# Fitting HST grism spectra with grism_fit_spectra_v4.py\n# FILENAME "+ specfile
     header += "\n# FILENAME_WPATH " + row.filename + "\n# WHICH_GAL " + which_gal
@@ -339,7 +344,7 @@ for row in df.itertuples() :
     jrr.util.put_header_on_file('/tmp/foo', header + supplemental_header(result1), outfile1)
     if check4zero_errorbars(result1, parnames) : print "####### WARNING: errorbars were zero! ####### "
     plot_label = subdir + " " + specfile + " fit 1"
-    xfine = finergrid_result(grism_info, result1, outfile2)
+    xfine = finergrid_result(grism_info, result1, subset['wave'], scalefactor, outfile2a, outfile2b)
     fig = plot_results(subset, result1, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
     pp.savefig(bbox_inches='tight', pad_inches=0.1, figsize=figsize)
        
@@ -359,7 +364,7 @@ for row in df.itertuples() :
         df2.to_csv('/tmp/foo', float_format='%.3f', index=False)
         jrr.util.put_header_on_file('/tmp/foo', header + supplemental_header(result2), outfile3)
         if check4zero_errorbars(result2, parnames) : print "####### WARNING: errorbars were zero! ####### "
-        xfine = finergrid_result(grism_info, result2, outfile4)
+        xfine = finergrid_result(grism_info, result2, subset['wave'], scalefactor, outfile4a, outfile4b)
         plot_label = subdir + " " + specfile + " fit 2"
         fig = plot_results(subset, result2, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
         pp.savefig(bbox_inches='tight', pad_inches=0.1)

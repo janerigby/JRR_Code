@@ -209,8 +209,8 @@ order_keys = ['bothroll_G102', 'roll139_G102', 'roll308_G102', 'bothroll_G141', 
 colors     = ['k', 'dimgrey',                     'purple']*2 
 labels     = ['Average of rolls',   r'Roll $139\degree$',   r'Roll $308\degree$', nolegend, nolegend, nolegend]
 for ii, grismkey in enumerate(order_keys) :
-    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5)
-    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['bestfit'],     '--', label=labels[ii], color=colors[ii], lw=1.)
+    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5) #, linestyle='steps-mid')
+    #plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['bestfit'],     '--', label=labels[ii], color=colors[ii], lw=1.)
 print "Checking continuum shape in grism vs roll.  Contamination?"
 adjust_plot(x1=8000, y2=0.8E-16)
 plt.legend()
@@ -278,21 +278,18 @@ adjust_plot()
 
 outfilename1 = 'hahb_rats_G102G141.txt'
 outfilename2 = 'hahb_rats_G141only.txt'
-remove(outfilename1) ;   remove(outfilename2)  # delete before appending 
 
 plt.show()  # Show all plots at once, each in a separate window
 print("\n\nMeasure some basic line ratios.")
 subdirs = ('1D_complete_images_A2_A3/', '1Dbyclumps/', '1Dsum/')
+G102fits = []
 for subdir in subdirs:
     fitdir = home + '/Dropbox/Grism_S1723/WFC3_fit_1Dspec/' + subdir
-    allfits  = [basename(x) for x in glob.glob(fitdir + '*2.fitdf')]
-    G102fits = [basename(x) for x in glob.glob(fitdir + '*G102*2.fitdf')]
-    G141fits = [basename(x) for x in glob.glob(fitdir + '*G141*2.fitdf')]
-    G102fits_method1 = [basename(x) for x in glob.glob(fitdir + '*G102*1.fitdf')]
-    print "Ha/Hbeta from G141, G102", subdir
-    jrr.grism.measure_linerats_usebothgrisms(G102fits, fitdir, outfilename1, line1='Halpha_G141', line2='Hbeta_G102', verbose=True)
-    print "Ha/Hbeta from G141 only", subdir
-    jrr.grism.measure_linerats_usebothgrisms(G102fits, fitdir, outfilename2, line1='Halpha_G141', line2='Hbeta_G141', verbose=True)
+    G102fits += [ x for x in glob.glob(fitdir + '*G102*2.fitdf')]
+print "Ha/Hbeta from G141, G102", subdir
+jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename1, line1='Halpha_G141', line2='Hbeta_G102', verbose=True)
+print "Ha/Hbeta from G141 only", subdir
+jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename2, line1='Halpha_G141', line2='Hbeta_G141', verbose=True)
     
     #print "4363/Hbeta ratios"
     #jrr.grism.measure_linerats_fromfiles(G102fits, fitdir, '[O~III]', 'Hbeta', verbose=True)

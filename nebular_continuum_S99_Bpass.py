@@ -166,9 +166,9 @@ cloudy_script = 'run_cloudy.sh'  # Script to run all the Cloudy models
 cloudy_template = { 'JC_S99': '../S99_cloudy_template.in' , 'BPASS_binary': '../bpass_cloudy_template.in', 'BPASS_single': '../bpass_cloudy_template.in'}
 
 #  *** SWITCHES ************
-prep_cloudy =    False   # Prepare all the Cloudy input files?
+prep_cloudy =    True   # Prepare all the Cloudy input files?
 analyze_cloudy = False      # Analyze the cloudy outputs, to grab nebular continuua?
-sanity_plots   = True
+sanity_plots   = False
 #  *************************
 
 

@@ -123,7 +123,7 @@ sp_grism     = {}   # Load grism spectra into a dict of dataframes
 cutout_grism = {}   # The same, for wavelength-trimmed versions
 grismfiles = [x for x in glob.glob(wdir + 'Grizli_redux/1Dsum/Wcont/*wcontMWdr.txt')] 
 for grismfile in grismfiles :
-    parts = jrr.grism.parse_filename(grismfile)
+    parts = jrr.grism.parse_filename(basename(grismfile))
     label = str(parts['roll']) + '_' + parts['grating']
     sp_grism[label] = pandas.read_csv(grismfile, comment="#")
     sp_grism[label].set_index('wave', inplace=True, drop=False)
@@ -210,6 +210,7 @@ colors     = ['k', 'dimgrey',                     'purple']*2
 labels     = ['Average of rolls',   r'Roll $139\degree$',   r'Roll $308\degree$', nolegend, nolegend, nolegend]
 for ii, grismkey in enumerate(order_keys) :
     plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5) #, linestyle='steps-mid')
+    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5, marker='o')
     #plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['bestfit'],     '--', label=labels[ii], color=colors[ii], lw=1.)
 print "Checking continuum shape in grism vs roll.  Contamination?"
 adjust_plot(x1=8000, y2=0.8E-16)

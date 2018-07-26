@@ -147,7 +147,8 @@ def make_label(baseZ, thisage, logU, style='JC_S99'):
 
 ########################################################################
 #BPASS_ver = '2.1'  # Ran everything for 2.1. 
-BPASS_ver = '2.2'  # But, 2.2 now available.  Need to run this to completion....
+#BPASS_ver = '2.2'  # But, 2.2 now available. 
+BPASS_ver = '2.2.1' # Patch on 2.2, to solve negative fluxes
 homedir   = expanduser("~")
 modeldir  = homedir + '/Dropbox/MagE_atlas/Contrib/S99/models/'
 outnebdir = homedir + '/Dropbox/S99_Bpass2_wnebcont/'

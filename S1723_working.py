@@ -205,12 +205,12 @@ cont_sanity_check2 = sp_MMT.loc[sp_MMT['wave'].between(4200., 4300.)]['flam_cor'
 print "Flux sanity checks:  ESI/G102:", cont_sanity_check1, "and MMT/ESI:", cont_sanity_check2
 
 fig, ax = plt.subplots(figsize=figsize)
-order_keys = ['bothroll_G102', 'roll139_G102', 'roll308_G102', 'bothroll_G141', 'roll139_G141', 'roll308_G141']  # plot in this order
+#order_keys = ['bothroll_G102', 'roll139_G102', 'roll308_G102', 'bothroll_G141', 'roll139_G141', 'roll308_G141']  # plot in this order
+order_keys = ['bothroll_G102', 'roll139_G102', 'roll308_G102']
 colors     = ['k', 'dimgrey',                     'purple']*2 
 labels     = ['Average of rolls',   r'Roll $139\degree$',   r'Roll $308\degree$', nolegend, nolegend, nolegend]
 for ii, grismkey in enumerate(order_keys) :
-    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5) #, linestyle='steps-mid')
-    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5, marker='o')
+    plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5, linestyle='steps-mid')
     #plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['bestfit'],     '--', label=labels[ii], color=colors[ii], lw=1.)
 print "Checking continuum shape in grism vs roll.  Contamination?"
 adjust_plot(x1=8000, y2=0.8E-16)
@@ -291,7 +291,10 @@ print "Ha/Hbeta from G141, G102", subdir
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename1, line1='Halpha_G141', line2='Hbeta_G102', verbose=True)
 print "Ha/Hbeta from G141 only", subdir
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename2, line1='Halpha_G141', line2='Hbeta_G141', verbose=True)
-    
+
+
+# Need to directly sum the Hb fluxes as well
+
     #print "4363/Hbeta ratios"
     #jrr.grism.measure_linerats_fromfiles(G102fits, fitdir, '[O~III]', 'Hbeta', verbose=True)
     #print "4363/HBeta again, this time using method 1 fits"

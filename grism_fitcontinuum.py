@@ -30,8 +30,8 @@ home = os.path.expanduser("~")
 wdir1 = home + '/Dropbox/Grism_S1723/Grizli_redux/'
 wdir2 = home + '/Dropbox/Grism_S2340/Grizli_redux/'
 #              0X                      1                       2                                 3X                 4
-#alldirs = (wdir1 + '1Dsum/', wdir1 + '1Dbyclumps/', wdir1 + '1D_complete_images_A2_A3/', wdir2 + '1Dsum/', wdir2 + '1Dbyclumps/')  first r
-alldirs = (wdir2 + '1Dbyclumps_individuals/', wdir2 + '1Dbyclumps_stacks/') # catch-up for Michael's new S2340 extractions
+alldirs = (wdir1 + '1Dsum/', wdir1 + '1Dbyclumps/', wdir1 + '1D_complete_images_A2_A3/', wdir2 + '1Dsum/', wdir2 + '1Dbyclumps/') # first run
+#alldirs = (wdir2 + '1Dbyclumps_individuals/', wdir2 + '1Dbyclumps_stacks/') # catch-up for Michael's new S2340 extractions
 grismdir = alldirs[which_dirnum]  # Step through
 contdir  = grismdir + "Wcont/"
 

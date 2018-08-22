@@ -253,6 +253,22 @@ cutout_GNIRS.plot(x='wave', y='flam_u', color='lightgrey', label=nolegend, ax=ax
 plt.title("Flux-scaled spectra")
 adjust_plot()
 
+# Roll this up into one composite spectrum.  For every wavelength, pick the best spectrum.
+n1 = sp_MMT[['wave', 'flam_cor', 'flam_u_cor']].loc[sp_MMT['wave'].between(3200., 4750.)]
+n1.set_index('wave', inplace=True, drop=False)
+n2 = sp_ESI[['wave', 'flam_cor', 'flam_u_cor']].loc[sp_ESI['wave'].between(4750., 8500.)]
+n2.set_index('wave', inplace=True, drop=False)
+n3 = sp_grism['bothroll_G102'].loc[sp_grism['bothroll_G102']['wave'].between(8500., 11000)][['wave', 'flam', 'flam_u']]
+n3.rename(columns={'flam' : 'flam_cor',  'flam_u' : 'flam_u_cor'}, inplace=True)
+n4 = sp_grism['bothroll_G141'].loc[sp_grism['bothroll_G141']['wave'].between(11000., 16250.)][['wave', 'flam', 'flam_u']]
+n4.rename(columns={'flam' : 'flam_cor',  'flam_u' : 'flam_u_cor'}, inplace=True)
+composite = pandas.concat((n1, n2, n3, n4))
+composite.to_csv("temp3", na_rep='NaN', index=False)
+comphead = "# Composite convenience spectrum for SGAS 1723.  Ignores overlap, picks one spectrum for each wavelength, as follows:\n"
+comphead +="# MMT Blue Channel 3200--4750A; Keck ESI 4750--8500A; HST WFC3-IR G102 grism 8500--11000A; HST WFC3-IR G141 grism 11000--16250A\n"
+comphead +="# units:  wave is wavelength in vacuum angstroms; f_lambda is erg/s/cm^2/s\n";
+jrr.util.put_header_on_file('temp3', comphead, "S1723_composite_spectrum.csv")
+
 fig, ax = plt.subplots(figsize=figsize)   # Prettier plot
 how2comb = {'flam_cor': 'mean', 'flam_u_cor': jrr.util.convenience1, 'wave': 'mean', 'flamcor_autocont' : 'mean'} #how to bin
 bin_MMT =  np.arange(3200, 4800,  5)
@@ -277,9 +293,11 @@ cutout_grism['bothroll_G141'].plot(     x ='wave',  y='cont',            color='
 adjust_plot()
 
 
+
+
+
 outfilename1 = 'hahb_rats_G102G141.txt'
 outfilename2 = 'hahb_rats_G141only.txt'
-
 plt.show()  # Show all plots at once, each in a separate window
 print("\n\nMeasure some basic line ratios.")
 subdirs = ('1D_complete_images_A2_A3/', '1Dbyclumps/', '1Dsum/')
@@ -291,9 +309,6 @@ print "Ha/Hbeta from G141, G102", subdir
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename1, line1='Halpha_G141', line2='Hbeta_G102', verbose=True)
 print "Ha/Hbeta from G141 only", subdir
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename2, line1='Halpha_G141', line2='Hbeta_G141', verbose=True)
-
-
-# Need to directly sum the Hb fluxes as well
 
     #print "4363/Hbeta ratios"
     #jrr.grism.measure_linerats_fromfiles(G102fits, fitdir, '[O~III]', 'Hbeta', verbose=True)

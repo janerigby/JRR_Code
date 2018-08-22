@@ -166,9 +166,9 @@ cloudy_script = 'run_cloudy.sh'  # Script to run all the Cloudy models
 cloudy_template = { 'JC_S99': '../S99_cloudy_template.in' , 'BPASS_binary': '../bpass_cloudy_template.in', 'BPASS_single': '../bpass_cloudy_template.in'}
 
 #  *** SWITCHES ************
-prep_cloudy =    True   # Prepare all the Cloudy input files?
-analyze_cloudy = False      # Analyze the cloudy outputs, to grab nebular continuua?
-sanity_plots   = False
+prep_cloudy =    False   # Prepare all the Cloudy input files?
+analyze_cloudy = True      # Analyze the cloudy outputs, to grab nebular continuua?
+sanity_plots   = True
 #  *************************
 
 
@@ -253,7 +253,7 @@ if analyze_cloudy :
                         cloudy_df.head()  # Need more after this; just want to show that I can read the cloudy file.
                         stellar_df = jrr.bpass.wrap_load_1spectrum(baseZ, thisage*1E6, style, ver=BPASS_ver)   # Get high-res BPASS stellar continuum. cloudy .con too low res.
                         add_nebular_to_stellar(stellar_df, cloudy_df)
-                        plot_stellar_nebular(style, stellar_df, cloudy_df, baseZ, thisage, logU)
+                        plot_stellar_nebular(style+BPASS_ver, stellar_df, cloudy_df, baseZ, thisage, logU)  #added BPASS version for sanity-checking
                         outfile = style + "_Z" + baseZ + "_" + str(thisage) + "Myr_logU" + str(logU) + ".fits"
                         tab = Table.from_pandas(stellar_df)
                         make_tab_header(tab, jrr.bpass.default_filenames(ver=BPASS_ver, style=style)[1],  style, baseZ, thisage, logU)  # I think this adds metadata

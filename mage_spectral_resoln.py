@@ -35,9 +35,8 @@ def MyGaussian(x, *params):   # Define a Gaussian with a linear continuum under 
         y = y + (aa * np.exp((x - bb)**2/(-2*cc**2))  + cont)
     return y
 
-batch2 = ('planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc', 'planckarc', 'PSZ0441_slitA', 'PSZ0441_slitB', 'PSZ0441', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT0310', 'SPT2325')  # Friends of Megasuara, batch2
-batch3 = ('planckarc_h1',  'planckarc_h1a', 'planckarc_h2', 'planckarc_h3', 'planckarc_h4', 'planckarc_h5',  'planckarc_f',  'planckarc_h9',  'SPT0356',  'SPT0142')   
-
+batch2 = jrr.mage.organize_labels('batch2')   # Adding "Friends of Megasaura" sample  (batch 2)
+batch3 = jrr.mage.organize_labels('batch3')   # Adding Apr2018 and Aug2018 runs
 
 #temp_filename =  "RCS0327/KnotB/rcs0327-knotB-comb1.txt"  # Prototyped on this file.  Now, run for all.
 #temp_filename = "RCS0327/KnotE/rcs0327-knotE-allres-comb1.txt"

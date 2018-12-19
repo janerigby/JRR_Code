@@ -8,7 +8,8 @@ mage_mode = "reduction"
 #mage_mode = "released"
 methods = ('bystars', 'byneb')  # method of determining systemic redshift
 
-specs = jrr.mage.wrap_getlist(mage_mode, which_list="all", drop_s2243=True, MWdr=True)
+#specs = jrr.mage.wrap_getlist(mage_mode, which_list="all", drop_s2243=True, MWdr=True)
+specs = jrr.mage.wrap_getlist(mage_mode, which_list="batch3", drop_s2243=True, MWdr=True)
 short_labels = specs['short_label'].unique()
 for label in short_labels :
     (sp, resoln, dresoln, LL, z_systemic) = jrr.mage.wrap_open_spectrum(label, mage_mode,  MWdr=True) 

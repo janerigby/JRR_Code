@@ -35,13 +35,17 @@ def MyGaussian(x, *params):   # Define a Gaussian with a linear continuum under 
         y = y + (aa * np.exp((x - bb)**2/(-2*cc**2))  + cont)
     return y
 
+batch2 = jrr.mage.organize_labels('batch2')   # Adding "Friends of Megasaura" sample  (batch 2)
+batch3 = jrr.mage.organize_labels('batch3')   # Adding Apr2018 and Aug2018 runs
+
 #temp_filename =  "RCS0327/KnotB/rcs0327-knotB-comb1.txt"  # Prototyped on this file.  Now, run for all.
 #temp_filename = "RCS0327/KnotE/rcs0327-knotE-allres-comb1.txt"
 
 run_just_some = True
 if run_just_some:     # A useful way to run just one spectrum, instead of a bunch
-    labels = ('planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc', 'planckarc', 'PSZ0441_slitA', 'PSZ0441_slitB', 'PSZ0441', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT0310', 'SPT2325')
 # Adding "Friends of Megasaura" sample
+    labels = batch2
+    labels = batch3  # now doing April 2018 and Aug 2018 runs
     specs = jrr.mage.wrap_getlist(mage_mode, which_list='labels', labels=labels, MWdr=False)
     
 else :    # Normal mode

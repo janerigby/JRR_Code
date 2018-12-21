@@ -7,7 +7,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 mage_mode = "released"
 
 # Make a boxplot for each isolated Intervening system in the MagE Megasaura spectra
-doublet_file = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Intervening/found_doublets_SNR5.txt"
+doublet_file = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Intervening/Doublet_search/found_doublets_SNR4.txt"
 
 trans_file = "/Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Linelists/MINE/interven.lst"
 trans_list = pandas.read_table(trans_file, delim_whitespace=True, comment="#", names=("wave", "lab1", "lab2", "f", "d", "type"))

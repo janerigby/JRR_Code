@@ -19,7 +19,8 @@ mage_mode = 'reduction'
 matplotlib.rcParams.update({'font.size': 14})
 smooth_window = 201 #301
 figsize = (8,4)
-pp = PdfPages("snr_1Feb2018_all.pdf")
+#pp = PdfPages("snr_1Feb2018_all.pdf")
+pp = PdfPages("snr_Feb2019_all.pdf")
 
 plot_indy_SNR = True
 if plot_indy_SNR :
@@ -29,10 +30,9 @@ if plot_indy_SNR :
     lab4 = [ 'Cosmic~Eye', 'S0108+0624',  'S1429+1202']
     lab5 = [ 'S0033+0242', 'S2111-0114', 'S2243-0935' , 'S0957+0509']
     lab6 = ['S1458-0023',  'Horseshoe',  'S1050+0017']
-    lab7 = ['planckarc_pos1', 'planckarc_slit4a', 'planckarc_slit4bc', 'planckarc', 'PSZ0441_slitA', 'PSZ0441_slitB', 'PSZ0441', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT0310', 'SPT2325']
-    #lab7 = ['planckarc', 'PSZ0441', 'SPT0310', 'SPT2325']
-    
-    labs = (lab1, lab2, lab3, lab4, lab5, lab6, lab7)
+    lab7 = [ 'planckarc_h9', 'planckarc_pos1', 'planckarc_f', 'planckarc_h4', 'planckarc_h1a',  'planckarc_h3', 'planckarc_h5', 'planckarc_h1', 'planckarc_h2', 'planckarc_slit4a', 'planckarc_slit4bc']
+    lab8 = ['SPT2325', 'SPT0310_slitA', 'SPT0310_slitB', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0142', 'SPT0356']
+    labs = (lab1, lab2, lab3, lab4, lab5, lab6, lab7, lab8)
     for labels in labs:
         (df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels, verbose=True, zchoice='stars', addS99=False, MWdr=True)
         #fig = plt.figure(figsize=figsize)
@@ -86,12 +86,14 @@ plt.close("all")
 
 figsize = (20,3)
 labels_RAorder = ['rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-counterarc', 'S1527+0652', 'S1527+0652-fnt', 'S0004-0103',  'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe',   'S1226+2152', 'S1429+1202', 'S1458-0023', 'S2111-0114',  'Cosmic~Eye', 'S2243-0935']
-(df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels_RAorder+lab7, verbose=True, zchoice='neb', addS99=False, MWdr=True)
+labels_to_plot = labels_RAorder+lab7+lab8
+(df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels_to_plot, verbose=True, zchoice='neb', addS99=False, MWdr=True)
 
 scalefactor = 1E28
-pp = PdfPages("spectra-snapshots-Feb2018_all.pdf")
+#pp = PdfPages("spectra-snapshots-Feb2018_all.pdf")
+pp = PdfPages("spectra-snapshots-Feb2019_all.pdf")
 #for label in labels_RAorder :
-for label in (labels_RAorder + lab7) :
+for label in (labels_to_plot) :
     sp = df[label].loc[~df[label]['badmask']]   # one galaxy, dont plot bad points
     #sp = df[label]
     fig, ax  = plt.subplots(figsize=figsize)

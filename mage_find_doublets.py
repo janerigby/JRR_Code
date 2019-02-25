@@ -5,14 +5,14 @@ import pandas
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import astropy
-mage_mode = "released"
+mage_mode = "reduction"
 
 ''' Code to find intervening doublets within the Megasaura MagE spectra.
 1st, conducts a blind search of the spectra for significant absorption lines,
 following methodology of Schneider et al. 1993 (HST QAL key project).
 2nd, for each peak, tests whether there is a partner line at the expected position
-were it a doublet.  Writes to a data frame.
-jrigby Jan 2017
+were it a doublet.  Writes to a data frame.  Use backend: TkAgg so that term window stays focused, otherwise too many clicks.
+jrigby Jan 2017, updated Feb 2019
 '''
 
 A_c_kms = astropy.constants.c.to('km/s').value
@@ -60,25 +60,24 @@ def plot_peakfinding(sp) :
     plt.title(thisgal)
     plt.ylim(-3,3)
     plt.legend()
-    plt.show()
+    #plt.show()   # Trying to comment this out to keep plot window in the background, focus on the python term
     return(0)
 
 
-def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)) :
+def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2), find_systemic=True, voffsys=500.) :
     '''For a given doublet, step through each peak, check whether there is a second peak
-    at the expected doublet separation.  Outputs a dataframe of candidates that user marked yes or possible.'''
+    at the expected doublet separation.  Outputs a dataframe of candidates that user marked yes or possible.
+    if find_systemic then find the systemic doublets too, else ignore them.  voffsys is how far (km/s) to ignore systemic doublets.'''
     plotwin = 20.  #plotting width, A
     df = make_empty_doublet_dataframe()
     counter = 0
     subset = sp[sp['peak']]   # subset of sp where find_lines_Schneider() found a peak
     for candidate in subset.index :   # For each peak, test whether there is a 2nd transition
         testz = sp.ix[candidate]['wave'] / doublet[0] - 1.0
-        if testz <= zz_syst :
-            #print "DEBUG", candidate, testz, doublet[0]
-            # dwave = doublet[1]*(1.+testz) / 2. / resoln  # Search +- 1 HWHM. OLD, what was used before
-            #dwave = doublet[1]*(1.+testz)   * 1.5 / resoln  # Search +- 2 HWHM  experimenting
-            dvel_search = 100.  # (km/s) Search +- this much from expected position of 2nd line in doublet
-            
+        if find_systemic :  zz_max = zz_syst
+        else             :  zz_max = zz_syst - voffsys * (1.0 + zz_syst) / A_c_kms
+        if testz <= zz_max :  #
+            dvel_search = 100.  # (km/s) Search +- this much from expected position of 2nd line in doublet            
             dwave = doublet[1]*(1.+testz) * (dvel_search / A_c_kms)
             searchreg = sp['wave'].between((doublet[1]*(1.0+testz)-dwave), (doublet[1]*(1.0+testz)+dwave)) & sp['peak']
             if sp[searchreg]['peak'].sum() :
@@ -99,7 +98,7 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                 jrr.mage.plot_linelist(LL, zz_syst)
                 plt.draw()
                 plt.pause(1)
-                EW1  = sp.ix[candidate].W_interp  # Using Schneider method to estimate EW
+                EW1  = sp.ix[candidate].W_interp  # Using Schneider method to estimate EW  # These should be observed frame
                 EW2 = float(np.min(sp[searchreg]['W_interp']))
                 snr1 = sp.ix[candidate].W_interp / sp.ix[candidate].W_u_interp *-1.
                 snr2 = float(np.max(sp[searchreg]['W_interp'] / sp[searchreg]['W_u_interp'] * -1.))
@@ -113,15 +112,17 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
 #Missed a MgII at z<1.2 in S1226?  go check...
 
 # Actually run things
-alllabels = [ 'rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
-#these_labels = alllabels  
-these_labels = ['S1226+2152',] #'S1527+0652']
+these_labels = jrr.mage.organize_labels("batch3")  # Have already run batch1, batch2 in 16Feb2018 results
+#these_labels = ('planckarc', 'planckarc_slit4a', 'planckarc_pos1') ##'planckarc_slit4a',  'planckarc_slit4bc',
+#alllabels = [ 'rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
 
 (MgII, CIV, SiIV) = get_doublet_waves() 
-siglim=4 # 5, 10, 20
+siglim=4 # 4 # 5, 10, 20  #  FOR PRODUCTION MODE, VALUE SHOULD BE 4!
+#siglim=10 # 5, 10, 20
 ylims = (-2,2)
-the_pdf = "found_doublets_SNR" + str(siglim) + ".pdf"
-outfile = "found_doublets_SNR" + str(siglim) + ".txt"
+prefix = "found_doublets_batch3" 
+the_pdf = prefix + "_SNR" + str(siglim) + ".pdf"
+outfile = prefix + "_SNR" + str(siglim) + ".txt"
 pp = PdfPages(the_pdf)
 plt.clf()
 df = make_empty_doublet_dataframe()
@@ -134,11 +135,11 @@ for thisgal in speclist.short_label :
     (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(thisgal, mage_mode, addS99=True)  # load spectrum
     find_lines_Schneider(sp, resoln, siglim=siglim, abs=True)  #identify all the >N sigma peaks in spectrum
     #plot_peakfinding(sp)  # for debugging
-    df1 = test_candidate_doublets(sp, zz_syst, resoln, CIV,  "CIV",  ylims=ylims)
-    df2 = test_candidate_doublets(sp, zz_syst, resoln, MgII, "MgII", ylims=ylims)
-    df3 = test_candidate_doublets(sp, zz_syst, resoln, SiIV, "SiIV", ylims=ylims)
+    df1 = test_candidate_doublets(sp, zz_syst, resoln, CIV,  "CIV",  ylims=ylims, find_systemic=False)
+    df3 = test_candidate_doublets(sp, zz_syst, resoln, SiIV, "SiIV", ylims=ylims, find_systemic=False)
+    df2 = test_candidate_doublets(sp, zz_syst, resoln, MgII, "MgII", ylims=ylims, find_systemic=False)
     df  = pandas.concat([df, df1, df2, df3]).reset_index(drop=True)
-print df.head(20)
+print df.head(40)
 with open(outfile, 'a+') as f:
     df.to_csv(f, sep='\t')
 f.close()

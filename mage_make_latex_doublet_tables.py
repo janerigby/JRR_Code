@@ -28,10 +28,10 @@ infile2 = homedir + doublet_dir + "Results_21Feb2019/found_doublets_batch3_SNR4_
 
 dfa = pandas.read_table(infile1, comment="#", delim_whitespace=True)
 dfb = pandas.read_table(infile2, comment="#", delim_whitespace=True)
-df = pandas.concat([dfa, dfb])
+df = pandas.concat([dfa, dfb], sort=False)
 
-df['EWr1'] = df['EWobs1'] / (1. + df['zz'])
-df['EWr2'] = df['EWobs2'] / (1. + df['zz'])
+df['EWr1'] = df['EWobs1'] / (1. + df['zz']) * -1.  # Convert to rest-frame EW, and change sign so that pos EW is absorption
+df['EWr2'] = df['EWobs2'] / (1. + df['zz']) * -1.
 
 decimal_places = {'zz' : 5, 'wave1' : 1 , 'wave2' : 1, 'EWr1' : 2, 'EWr2' : 2, 'snr1' : 1, 'snr2' : 1}
 

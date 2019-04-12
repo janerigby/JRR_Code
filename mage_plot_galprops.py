@@ -1,3 +1,4 @@
+from __future__ import print_function
 import pandas
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +14,7 @@ def add_other_Zneb_CosmicEye(df):
     altZnebsig = 10**(starkZ + starkZu - 8.69) - 10**(starkZ  - 8.69)
     plt.scatter(altZneb, df.loc['Cosmic~Eye']['Z_S99'], color='b')
     plt.errorbar(altZneb, df.loc['Cosmic~Eye']['Z_S99'], xerr=altZnebsig, ls='none', color='k')
-    print "DEBUGGING", altZneb, altZnebsig
+    print("DEBUGGING", altZneb, altZnebsig)
     return(0)
 
 # Get results from mage_calc_galprops.py

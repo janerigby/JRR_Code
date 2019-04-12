@@ -1,3 +1,4 @@
+from __future__ import print_function
 import pandas
 import numpy as np
 import jrr
@@ -13,16 +14,16 @@ df = table.to_pandas()
 df['DEC (J2000)']  = df['DEC (J2000)'].str.replace('$', '')
 df['Source name']  = df['Source name'].str.replace('$', '')
 df.fillna(value=0.0, inplace=True)  # drop the nans
-print df.head()
+print(df.head())
 
 c = SkyCoord(ra=df['RA (J2000)'] , dec=df['DEC (J2000)'], unit=(u.hourangle, u.deg))  # Convert from segidecimal to decimal
 result = jrr.query_argonaut.query(c.ra.value.tolist(), c.dec.value.tolist(), coordsys='equ', mode='sfd')  # query only takes lists as input
 df['EBV_Green2015'] = (np.array(list(result.values()))).flatten()
-print df[['Source name', 'EBV_Green2015']]
+print(df[['Source name', 'EBV_Green2015']])
 
 planckarc = SkyCoord(ra="15:50:04.57", dec="-78:10:59.5", unit=(u.hourangle, u.deg))   # Coords for S1 in Table 1 of Dahle et al. 2016
 result_planck = jrr.query_argonaut.query(planckarc.ra.value, planckarc.dec.value, coordsys='equ', mode='sfd')  # query only takes lists as input
-print "E(B-V) for the Planck arc is", result_planck
+print("E(B-V) for the Planck arc is", result_planck)
 # Then by-hand emacs-ing to get these EBV values in to spectra-filenames-redshifts.txt
 
 
@@ -34,7 +35,7 @@ df =  pandas.read_table(coords_file, delim_whitespace=True, comment="#", names=c
 c = SkyCoord(ra=df['RA'] , dec=df['DEC'], unit=(u.hourangle, u.deg))  # Convert from segidecimal to decimal
 result = jrr.query_argonaut.query(c.ra.value.tolist(), c.dec.value.tolist(), coordsys='equ', mode='sfd')  # query only takes lists as input
 df['EBV_Green2015'] = (np.array(list(result.values()))).flatten()
-print df[['filename', 'EBV_Green2015']]
+print(df[['filename', 'EBV_Green2015']])
 
 
 # Repeat for batch 3
@@ -43,7 +44,7 @@ for thisone in batch3:
     c = SkyCoord(ra=thisone[1] , dec=thisone[2], unit=(u.hourangle, u.deg))  # Convert from segidecimal to decimal
     result = jrr.query_argonaut.query(c.ra.value, c.dec.value, coordsys='equ', mode='sfd')  # query only takes lists as input
     EBV_Green2015 = (np.array(list(result.values()))).flatten()
-    print thisone[0], EBV_Green2015
+    print(thisone[0], EBV_Green2015)
 
     
 

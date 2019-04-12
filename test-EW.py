@@ -1,4 +1,5 @@
 # plot a figure with multiple panels
+from builtins import range
 import matplotlib
 #matplotlib.use('MacOSX')
 import pylab

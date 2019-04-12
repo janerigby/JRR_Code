@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import zip
 import jrr
 import numpy as np
 import pandas
@@ -15,14 +18,14 @@ batch23 = jrr.mage.organize_labels('batch23')   # Adding Apr2018 and Aug2018 run
 labels = ('PSZ0441', 'SPT0310', 'SPT2325', 'SPT0356', 'SPT0142')  # Just the 5 targets of this proposal
 Z      = (0.10,       0.23,       0.27,     0.22,       0.23 )  # John didnt fit these, ro at least, they're not in hot stars table 3
 age    = (19.3,      15.7,        9.2,      8.6,        10.1)
-age_dict = dict(zip(labels, age))
-Z_dict =   dict(zip(labels, Z))
+age_dict = dict(list(zip(labels, age)))
+Z_dict =   dict(list(zip(labels, Z)))
 
 
 from_meg = ('rcs0327-E', 'S1226+2152')
 (sp, resoln, dresoln, LL, zz_sys, speclist)  = jrr.mage.open_many_spectra(mage_mode, which_list='labels', labels=from_meg, addS99=True)
-for ii, key in enumerate(sp.keys()) :
-    print "redshift, object", zz_sys[key], key
+for ii, key in enumerate(list(sp.keys())) :
+    print("redshift, object", zz_sys[key], key)
 
 
 #jrr.mage.plot_linelist(LL[key], z_systemic=zz_sys[key],  restframe=True)

@@ -1,6 +1,9 @@
 ''' quick test to get a bpass model loaded and fit
 jrigby oct 2015 '''
+from __future__ import print_function
 
+from builtins import str
+from builtins import range
 import numpy as np
 from  astropy.io import ascii
 import matplotlib.pyplot as plt
@@ -29,7 +32,7 @@ def measure_the_EWs(rest_wave, rest_flam, rest_flam_u, rest_cont, rest_cont_u, s
 def measure_EWs_for_a_Bpass_model(infile, outfile) :
     out = open(outfile, 'w')
     out.write("#t(yr)    EW(CIV,A)   dEW     EW(HeII,A),  dEW\n")
-    print "Reading bigass bpass model", infile
+    print("Reading bigass bpass model", infile)
     s = ascii.read(infile, comment="#")   # input has units of **flam**
     wave = s['col1']  # wave for all times
 

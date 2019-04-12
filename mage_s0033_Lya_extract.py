@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 import jrr
 import numpy as np
 import pandas
@@ -62,7 +65,7 @@ popt = {}  # best fit continuum shapes
 ftweak     = {}
 
 for jj, thisfile in enumerate(infiles): 
-    print imdir + thisfile
+    print(imdir + thisfile)
     data_in, header = fits.getdata(imdir + thisfile, header=True)
     im = data_in.astype(np.float64)
     d.set("frame "+ str(jj+1))
@@ -97,7 +100,7 @@ for jj, thisfile in enumerate(infiles):
     ax4.scatter(thisx, df[jj]['contscaled']/ftweak[jj], color=stupid_colors[jj], label="frame "+ str(frame_names[jj]))
 
     dslice = 3
-    lyarange = range(lyareg[2] +2, lyareg[3] -2 -dslice, dslice)
+    lyarange = list(range(lyareg[2] +2, lyareg[3] -2 -dslice, dslice))
     slices = [ np.nansum(im[ii : ii+dslice, lyareg[0] : lyareg[1]], axis=0) for ii in lyarange]  # wizard FDR list comprehension
     for ii, thisslice in enumerate(slices) :
         label = "slice pixs"+ str(lyarange[ii]) + " to " + str(lyarange[ii] + dslice)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import shutil
 import jrr
 import glob
@@ -27,16 +28,16 @@ mmt = EarthLocation.of_site('mmt')
 obslog = get_observation_datetimes()
 prefix = "Before_Barycencor_ascii"
 filenames = [ basename(x) for x in glob.glob(prefix+"*txt") ]
-print "DEBUGGING", filenames
+print("DEBUGGING", filenames)
 for thisfile in filenames :
-    print "Working on", thisfile
+    print("Working on", thisfile)
     approx_rootname =  re.sub('s', 'sgas', re.split('_', thisfile)[1]) + "_arc"
     # Above willl get UTtime slightly off for redgals, but does not matter for barycentric cor
     thisobs = obslog.loc[approx_rootname]
     my_target = SkyCoord(thisobs['RA'], thisobs['DEC'], unit=(units.hourangle, units.deg), frame='icrs')
     my_time = Time( thisobs['UTDate'] + "T" + thisobs['UTTime_midpt'] , format='isot', scale='utc')
     barycor_vel = jrr.barycen.compute_barycentric_correction(my_time, my_target, location=mmt)
-    print "barycor:", barycor_vel
+    print("barycor:", barycor_vel)
     df = pandas.read_table(thisfile, delim_whitespace=True, comment="#", columns=('obswave','flam', 'dflam'))
     
 # Actually run things:

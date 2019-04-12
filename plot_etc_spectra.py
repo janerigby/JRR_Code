@@ -1,5 +1,6 @@
 ''' JWST reports the per-pixel SNR.  What we often want is the SNR of the integrated line flux.  This script 
 measures the latter quantity.  jrigby, day before the ERS deadline'''
+from __future__ import print_function
 
 from astropy.io.fits import getdata
 from astropy.io.fits import getdata
@@ -33,11 +34,11 @@ p2  = "ETC_SGASnew/calc35/lineplot/lineplot_sn.fits"
 p3  = "ETC_SGASnew/calc34/lineplot/lineplot_sn.fits"
 p4  = "ETC_SGASnew/calc19/lineplot/lineplot_sn.fits"
 
-print "Comparing SPT targets, medium versus high resolution grating"
+print("Comparing SPT targets, medium versus high resolution grating")
 p5 = 'ETC_SPT/s2147_calc1/lineplot/lineplot_sn.fits'
 p6 = 'ETC_SPT/s2134_calc1/lineplot/lineplot_sn.fits'
 
-print "Calculating for Travis"
+print("Calculating for Travis")
 p7 =  'ETC_Travis/Travis1/lineplot/lineplot_sn.fits'
 p8 =  'ETC_Travis/Travis25/lineplot/lineplot_sn.fits'
 p9 =  'ETC_Travis/Travis27/lineplot/lineplot_sn.fits'

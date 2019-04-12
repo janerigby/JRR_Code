@@ -1,5 +1,6 @@
 ''' Looking at 2D spatial profile of interveing absorber.  This is a test case, can generalize later
 if this works.  jrigby, apr 2016.'''
+from builtins import str
 import os
 import jrr
 import numpy as np

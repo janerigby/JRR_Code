@@ -6,6 +6,8 @@ the spatial resolution (but not the noise level) of CANDELS.  Written to
 answer the question, 'What would RCS0327 look like to HST were it not lensed?'
 jrigby, late 2015.  Improved 2/2016 to run on s1110.  Now uses real HST PSFs.
 '''
+from __future__ import print_function
+from builtins import str
 from astropy.io import fits
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian2DKernel
@@ -32,35 +34,35 @@ def candelize_srcplane(thisdir, outdir, waves, in_pixscale, out_pixscale, tel_di
 
     np.set_printoptions(precision=3)
     diff_lim = waves * 1E-6 / tel_diam * 206265.  # Diffraction limit FWHM (")
-    print "Waves (um)\t\t", waves
-    print "Diff lim (\")\t\t", diff_lim
+    print("Waves (um)\t\t", waves)
+    print("Diff lim (\")\t\t", diff_lim)
     dif_in_pix = diff_lim / in_pixscale    # still a fwhm
-    print "Diff limit (pix)\t", dif_in_pix 
+    print("Diff limit (pix)\t", dif_in_pix) 
 
     ksize  = np.sqrt( (dif_in_pix)**2 - 2**2)  # kernel is quad diff of final & initial resolns.
-    print "Gaussian fwhm (pix):\t", ksize
+    print("Gaussian fwhm (pix):\t", ksize)
     ksize *=  gaussian_fwhm_to_sigma           # convert from fwhm to stdev needed by Gaussian2DKernel
     # assumes 2 pixels per resoln element in reconstucted image, to be vaguely nyquist
-    print "Gaussian sigma (pix):\t", ksize
+    print("Gaussian sigma (pix):\t", ksize)
 
     # set up final pixel scale
-    print "Input scale (\"/pix)\t", in_pixscale
-    print "Output scale (\"/pix)\t", out_pixscale
+    print("Input scale (\"/pix)\t", in_pixscale)
+    print("Output scale (\"/pix)\t", out_pixscale)
     binby = int(out_pixscale / in_pixscale)  # this is the bin factor needed by rebinned, for each wave
-    print "Binning by\t\t", binby 
+    print("Binning by\t\t", binby) 
 
     # Grab the files.
     dothis = "ls " + thisdir + "*out*fits"
-    print "DEBUG, Want to ", dothis
+    print("DEBUG, Want to ", dothis)
     files = subprocess.check_output(dothis, shell=True).split()
 
     if not os.path.exists(outdir):  # Make output directory if it doesn't already exist.
         os.makedirs(outdir)
 
-    print "#image  wave (check that wave matches file, since it's kludged!)"
+    print("#image  wave (check that wave matches file, since it's kludged!)")
     for ii, thisfile in enumerate(files) :
         data_in, header = fits.getdata(thisfile, header=True)
-        print thisfile, waves[ii]
+        print(thisfile, waves[ii])
                 
         # convolve with a Gaussian
         kernel = Gaussian2DKernel(ksize[ii], factor=10)  #ksize is a stdev, not fwhm
@@ -98,9 +100,9 @@ def candelize_srcplane(thisdir, outdir, waves, in_pixscale, out_pixscale, tel_di
         fits.writeto(sig_out_name, sig_out, clobber=True)
         #print "DEBUGGING, wrote sigma file ", sig_out_name 
         
-    print "Wrote CANDELIZED images (convolved to normal diffraction limit of HST, binned to normal HST pixel scale)."
-    print "They are the FGrebin*fits images in"
-    print "\t", outdir
+    print("Wrote CANDELIZED images (convolved to normal diffraction limit of HST, binned to normal HST pixel scale).")
+    print("They are the FGrebin*fits images in")
+    print("\t", outdir)
     return(0)  # success
 
 do_s1110   = True
@@ -168,4 +170,4 @@ if do_s1438 :
     outdir  = "/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/s1438p14/HST/Candelized/CI/"
     candelize_srcplane(thisdir, outdir, waves, in_pixscale, out_pixscale, tel_diam)
 
-print "ALL DONE."
+print("ALL DONE.")

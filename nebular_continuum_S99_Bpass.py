@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 from os.path import basename, expanduser, exists
 from os import chdir, makedirs
 from shutil import copyfile
@@ -179,7 +181,7 @@ if prep_cloudy :  # Part 1: THIS SECTION PREPARES THE CLOUDY BATCH MODE SCRIPT
         for logU in logUs:
             cloudydir = get_cloudydir(logU, style=style)
             if not exists(nebcontdir + cloudydir):   makedirs(nebcontdir + cloudydir)
-            print "Working in dir", cloudydir
+            print("Working in dir", cloudydir)
             f = open(nebcontdir + cloudydir + cloudy_script, 'w')
             chdir(nebcontdir + cloudydir)
             if style == 'JC_S99' :  # S99 specific file wrangling
@@ -230,7 +232,7 @@ if analyze_cloudy :
                     for age_index, thisage in enumerate(hires_tab['AGE'][0,].data) : 
                         thisage = "{0:g}".format(np.float(thisage) / 1E6)  # convert to Myr, and drop the trailing .0
                         (wave, flam, fnu, stellar_df) = process_S99_spectrumfile(hires_tab, baseZ, thisage,age_index)
-                        print "Working on: (Z age logU style cloudydir)", baseZ, thisage, logU, style, cloudydir
+                        print("Working on: (Z age logU style cloudydir)", baseZ, thisage, logU, style, cloudydir)
                         cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         lores_df = grab_age_from_lores(lores_dfall, thisage)
                         add_nebular_to_stellar(stellar_df, cloudy_df)
@@ -248,7 +250,7 @@ if analyze_cloudy :
             elif('BPASS' in style) :   # Input spectrum is BPASS. 
                 for baseZ in absZs :
                     for thisage in ages :
-                        print "Working on: (Z age logU style cloudydir)", baseZ, thisage, logU, style, cloudydir
+                        print("Working on: (Z age logU style cloudydir)", baseZ, thisage, logU, style, cloudydir)
                         cloudy_df = retrieve_cloudy_nebcont(baseZ, thisage, nebcontdir + cloudydir)   # Grab the Cloudy output file w nebular continuum
                         cloudy_df.head()  # Need more after this; just want to show that I can read the cloudy file.
                         stellar_df = jrr.bpass.wrap_load_1spectrum(baseZ, thisage*1E6, style, ver=BPASS_ver)   # Get high-res BPASS stellar continuum. cloudy .con too low res.

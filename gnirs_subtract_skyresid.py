@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import jrr
 import re
 import glob
@@ -45,7 +47,7 @@ for extract_file in extracted_spectra_files :
     newdf[extract_file] = jrr.spec.rebin_spec_new(df1['oldwave'], df1.cts - df2.cts, newdf['oldwave'], fill=np.nan)
     
     sum_wave = (df1.oldwave - df2.oldwave).sum()  # this should be zero, if wavelength arrays are identical
-    if sum_wave > 0 : print "WARNING, nonzero sum_wave", sum_wave
+    if sum_wave > 0 : print("WARNING, nonzero sum_wave", sum_wave)
 #    plt.step(df1.wave, df1.cts, color="blue")
 #    plt.step(df2.wave, df2.cts, color="red")
     plt.step(df1.oldwave, df1.cts - df2.cts, linewidth=0.3)
@@ -61,7 +63,7 @@ thistime =  Time('2016-09-07T06:09:00', format='isot', scale='utc')
 thisradec = SkyCoord("17:23:37.23", "+34:11:59.07", unit=(units.hourangle, units.deg), frame='icrs')
 keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck.  Needs internet connection 
 barycor_vel = jrr.barycen.compute_barycentric_correction(thistime, thisradec, location=keck)
-print "FYI, the barycentric correction factor for s1723 was", barycor_vel
+print("FYI, the barycentric correction factor for s1723 was", barycor_vel)
 jrr.barycen.apply_barycentric_correction(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') 
 
 newdf.set_index('wave', inplace=True)  # set wavelength as the axis
@@ -156,7 +158,7 @@ thistime =  Time('2016-09-07T07:45:00', format='isot', scale='utc')
 thisradec = SkyCoord("23:40:29.27", "+29:48:01.16", unit=(units.hourangle, units.deg), frame='icrs')
 keck = EarthLocation.of_site('keck') # Gemini_N not in catalog, so use Keck
 barycor_vel = jrr.barycen.compute_barycentric_correction(thistime, thisradec, location=keck)
-print "FYI, the barycentric correction factor for s2340 was", barycor_vel
+print("FYI, the barycentric correction factor for s2340 was", barycor_vel)
 jrr.barycen.apply_barycentric_correction(newdf, barycor_vel, colwav='oldwave', colwavnew='wave') # testing       
 
 newdf.drop('cts', axis=1, inplace=True)  # remove cts, it's stale

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import jrr
 import numpy as np
 import scipy  
@@ -67,14 +69,14 @@ def plot_the_measurement(df, result, label, zz=0, colwave="rest_wave", colfnu="r
     return(0)
 
 # Measure this for the stack
-print "#Currently printing 90% confidence intervals, bc util.bootstrap_val_confint(alpha=0.05)"
-print "Object,  fnu_Lyc_median,  fLyc_conflo,  fLyc_confhi,  fnu_1500A,  f1500_conflo, f1500_confhi, fLycF1500rat, fLycF1500uncert"
+print("#Currently printing 90% confidence intervals, bc util.bootstrap_val_confint(alpha=0.05)")
+print("Object,  fnu_Lyc_median,  fLyc_conflo,  fLyc_confhi,  fnu_1500A,  f1500_conflo, f1500_confhi, fLycF1500rat, fLycF1500uncert")
 chuck  = jrr.mage.read_chuck_UVspec(addS99=True, autofitcont=True)
 (stack, LL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack="Stack-A", addS99=True)
 wht_stack_result = measure_Lyman_continuum(stack, colfnu="fnu")
 med_stack_result = measure_Lyman_continuum(stack, colfnu="fmedian")
-print "StackA_wtdavg, ", str(wht_stack_result)[1:-1]
-print "StackA_median, ", str(med_stack_result)[1:-1]
+print("StackA_wtdavg, ", str(wht_stack_result)[1:-1])
+print("StackA_median, ", str(med_stack_result)[1:-1])
 plot_the_measurement(stack, wht_stack_result, "Stack-A wtd avg", zz=0)
 plot_the_measurement(stack, med_stack_result, "Stack-A median ", colfnu="fmedian", zz=0)
 
@@ -87,7 +89,7 @@ for label in speclist['short_label'] :
     z_syst = speclist.ix[label]['z_neb']
     (result[label]) = measure_Lyman_continuum(sp[label].interpolate())
     if result[label][5] != -99 :
-        print label, ",", str(result[label])[1:-1]
+        print(label, ",", str(result[label])[1:-1])
         plot_the_measurement(sp[label], result[label], label, zz=z_syst)        
 
 # COPY THE RESULTS INTO DATAFRAMES, TO PLOT AND ANALYZE

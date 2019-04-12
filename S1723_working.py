@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 from os.path import expanduser, basename, exists
 from os import remove
 import warnings
@@ -196,13 +198,13 @@ howscaled_GNIRS = "# Scaled GNIRS spectrum by ratio of Halpha flux, by factor " 
 header_ESI   += howscaled_ESI
 header_MMT   += howscaled_MMT
 header_GNIRS += howscaled_GNIRS 
-print "How scaled spectra:\n", howscaled_ESI, howscaled_MMT,  howscaled_GNIRS
+print("How scaled spectra:\n", howscaled_ESI, howscaled_MMT,  howscaled_GNIRS)
 
 
 # Sanity checks on the MMT, ESI, G102 flux scaling
 cont_sanity_check1 = sp_ESI.loc[sp_ESI['wave'].between(9100.,1E4)]['flam_cor'].median() / sp_grism['bothroll_G102'].loc[sp_grism['bothroll_G102']['wave'].between(9100.,1E4)]['flam'].median()
 cont_sanity_check2 = sp_MMT.loc[sp_MMT['wave'].between(4200., 4300.)]['flam_cor'].median()  / sp_ESI.loc[sp_ESI['wave'].between(4200., 4300.)]['flam_cor'].median()
-print "Flux sanity checks:  ESI/G102:", cont_sanity_check1, "and MMT/ESI:", cont_sanity_check2
+print("Flux sanity checks:  ESI/G102:", cont_sanity_check1, "and MMT/ESI:", cont_sanity_check2)
 
 fig, ax = plt.subplots(figsize=figsize)
 #order_keys = ['bothroll_G102', 'roll139_G102', 'roll308_G102', 'bothroll_G141', 'roll139_G141', 'roll308_G141']  # plot in this order
@@ -212,7 +214,7 @@ labels     = ['Average of rolls',   r'Roll $139\degree$',   r'Roll $308\degree$'
 for ii, grismkey in enumerate(order_keys) :
     plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['flamcontsub'], label=labels[ii], color=colors[ii], lw=1.5, linestyle='steps-mid')
     #plt.plot(cutout_grism[grismkey]['wave'], cutout_grism[grismkey]['bestfit'],     '--', label=labels[ii], color=colors[ii], lw=1.)
-print "Checking continuum shape in grism vs roll.  Contamination?"
+print("Checking continuum shape in grism vs roll.  Contamination?")
 adjust_plot(x1=8000, y2=0.8E-16)
 plt.legend()
 
@@ -232,7 +234,7 @@ if plot_MMTESIcont :
 header_ESI += ("# Applied smooth continuum \n")
 if plot_MMTESIcont :  plt.ylim(0,9E-17)
 
-print "Writing flux-adjusted, continuum-fitted spectra for MMT and ESI."
+print("Writing flux-adjusted, continuum-fitted spectra for MMT and ESI.")
 sp_ESI.to_csv('temp1', sep='\t', na_rep='NaN')
 sp_MMT.to_csv("temp2", sep='\t', na_rep='NaN')
 jrr.util.put_header_on_file('temp1', header_ESI, "s1723_ESI_wcont.txt")
@@ -305,9 +307,9 @@ G102fits = []
 for subdir in subdirs:
     fitdir = home + '/Dropbox/Grism_S1723/WFC3_fit_1Dspec/' + subdir
     G102fits += [ x for x in glob.glob(fitdir + '*G102*2.fitdf')]
-print "Ha/Hbeta from G141, G102", subdir
+print("Ha/Hbeta from G141, G102", subdir)
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename1, line1='Halpha_G141', line2='Hbeta_G102', verbose=True)
-print "Ha/Hbeta from G141 only", subdir
+print("Ha/Hbeta from G141 only", subdir)
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename2, line1='Halpha_G141', line2='Hbeta_G141', verbose=True)
 
     #print "4363/Hbeta ratios"

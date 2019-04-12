@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This is a script to fit the 1D G102 and G141 WFC/HST grism spectra for S1723 and S2340.
 # It used to be in IDL (fit_g141.pro and fit_G102.pro), which was used to fit NIRSPEC
 # spectra of RCS0327 knots, as published in Wuyts et al 2014.
@@ -7,6 +8,7 @@
 # Run twice in each dir, for G102, and G141.  So, a total of 4 infiles to process both galaxies.
 #; jrigby, feb 2012, march 2012, oct 2016, may 2018
 
+from builtins import str
 import numpy as np
 import pandas
 import jrr
@@ -158,7 +160,7 @@ def lock_params(mypars, which_grism, which_gal, waveoff=False, sigoff=0.0, limit
         if which_gal == 'S2340'    : mypars['d13'].set(value=0., vary=False)  # keep this from wandering
             
     if waveoff and limit_wave :   # May be necessary to bound the delta wavelengths, but bounds makes lmfit really slow, so try not to use it. 
-        dwave_keys = [x for x in mypars.keys() if re.match('d', x)]  # find all the d0... dX wavelength offset pars
+        dwave_keys = [x for x in list(mypars.keys()) if re.match('d', x)]  # find all the d0... dX wavelength offset pars
         for dwave in dwave_keys :
             mypars[dwave].set(min= -1. * sigoff * grism_info['wave_unc'])
             mypars[dwave].set(max=       sigoff * grism_info['wave_unc'])
@@ -198,7 +200,7 @@ def finergrid_result(grism_info, fit_result, x, scalefactor, outfile1, outfile2)
     return(xfine)
 
 def plot_results(df_data, fit_result, func2fit, xfine, title, grism_info, show_initial_fit=False, scalefactor=1.0, units=1.0) :
-    print "   Plotting"
+    print("   Plotting")
     fig, ax  = plt.subplots(figsize=figsize)
     df_data.plot(x='wave', y='flam_contsub_scaled', color='black', linestyle='steps-mid', lw=1.5, legend=False, ax=ax)
     df_data.plot(x='wave', y='flam_u_scaled', color='grey', ax=ax, legend=False)
@@ -211,8 +213,8 @@ def plot_results(df_data, fit_result, func2fit, xfine, title, grism_info, show_i
     plt.title(pretty_title, position=(0.5, 1.2), fontsize=12)
     plt.xlim(grism_info['x1'], grism_info['x2'])
     (restwaves, linenames, label_df) = get_line_wavelengths(which_grism)
-    if 'd0' in fit_result.params.keys() :
-        offsets = np.array([fit_result.params[x].value for x in fit_result.params.keys() if re.match('d', x)])
+    if 'd0' in list(fit_result.params.keys()) :
+        offsets = np.array([fit_result.params[x].value for x in list(fit_result.params.keys()) if re.match('d', x)])
         plt.scatter(restwaves*(1. + fit_result.best_values['zz']) + offsets, np.zeros_like(restwaves)-0.1, marker='+', color='k')
     else :    plt.scatter(restwaves*(1. + fit_result.best_values['zz']), np.zeros_like(restwaves)-0.1, marker='+', color='k')
     ax2 = ax.twiny()
@@ -298,7 +300,7 @@ pp = PdfPages("grism_fitspectra_"+which_gal+"_"+which_grism+".pdf")
 
 for row in df.itertuples() :
     specfile = basename(row.filename)
-    print row.filename
+    print(row.filename)
     subdir = re.split("/", row.filename)[-3] + "/" # This should be the dir, like 1Dsum
     if not exists(subdir):  makedirs(subdir)
     tweak_wav = row.tweak_wav
@@ -329,7 +331,7 @@ for row in df.itertuples() :
     sp['weight'] = 1.0 / (sp['flam_u_scaled'])**2   # inverse variance weights
     subset = sp.loc[sp['wave'].between(grism_info['x1'], grism_info['x2'])] # subset of spectr, clean wavelength range.
             
-    print "   METHOD 1 fit, to determine the best-fit redshift. Wavelengths fixed."
+    print("   METHOD 1 fit, to determine the best-fit redshift. Wavelengths fixed.")
     (guesses, parnames) = prep_params(which_grism=which_grism, scale=row.scale_guess)   # Make container to hold the parameters
     func2fit = pick_fitting_function(which_grism, waveoff=False)
     mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
@@ -337,12 +339,12 @@ for row in df.itertuples() :
     locked_params = lock_params(mypars, which_grism=which_grism, which_gal=which_gal, limit_wave=False)
     result1  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'])  # fitting is done here
     zz_fit = result1.best_values['zz']
-    if print_fitreports : print result1.fit_report()
+    if print_fitreports : print(result1.fit_report())
     f.write(result1.fit_report())
     df1 = convert_lmfitresults_2df(result1, parnames, sigoff, grism_info, restwaves, linenames)
     df1.to_csv('/tmp/foo', float_format='%.3f', index=False)    
     jrr.util.put_header_on_file('/tmp/foo', header + supplemental_header(result1), outfile1)
-    if check4zero_errorbars(result1, parnames) : print "####### WARNING: errorbars were zero! ####### "
+    if check4zero_errorbars(result1, parnames) : print("####### WARNING: errorbars were zero! ####### ")
     plot_label = subdir + " " + specfile + " fit 1"
     xfine = finergrid_result(grism_info, result1, subset['wave'], scalefactor, outfile2a, outfile2b)
     fig = plot_results(subset, result1, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)
@@ -350,7 +352,7 @@ for row in df.itertuples() :
        
     if row.tweak_wav :  # If input file requests a second fit, w line centroids allowed to very:
         #print "   ******************************************************"
-        print "   METHOD 2 fit: Redshift fixed, allowing individual line centroids to move, to compensate for relative wavelength uncertanty in grism."
+        print("   METHOD 2 fit: Redshift fixed, allowing individual line centroids to move, to compensate for relative wavelength uncertanty in grism.")
         (guesses, parnames) = prep_params(which_grism=which_grism, waveoff=True, scale=row.scale_guess)   # Make container to hold the parameters
         func2fit = pick_fitting_function(which_grism, waveoff=True)
         mymodel = lmfit.Model(func2fit, independent_vars=('wave',), param_names=parnames,  which_grism=which_grism)  # Set up a model
@@ -358,12 +360,12 @@ for row in df.itertuples() :
         locked_params = lock_params(mypars, which_grism=which_grism, which_gal=which_gal, waveoff=True, sigoff=sigoff)
         locked_params['zz'].vary=False  # FIX THE REDSHIFT
         result2  = mymodel.fit(subset['flam_contsub_scaled'], locked_params, wave=subset['wave'], verbose=True)  # fitting is done here
-        if print_fitreports : print result2.fit_report()
+        if print_fitreports : print(result2.fit_report())
         f.write(result2.fit_report())
         df2 = convert_lmfitresults_2df(result2, parnames, sigoff, grism_info, restwaves, linenames)
         df2.to_csv('/tmp/foo', float_format='%.3f', index=False)
         jrr.util.put_header_on_file('/tmp/foo', header + supplemental_header(result2), outfile3)
-        if check4zero_errorbars(result2, parnames) : print "####### WARNING: errorbars were zero! ####### "
+        if check4zero_errorbars(result2, parnames) : print("####### WARNING: errorbars were zero! ####### ")
         xfine = finergrid_result(grism_info, result2, subset['wave'], scalefactor, outfile4a, outfile4b)
         plot_label = subdir + " " + specfile + " fit 2"
         fig = plot_results(subset, result2, func2fit, xfine, plot_label, grism_info, show_initial_fit=show_initial_fit, scalefactor=scalefactor, units=units)

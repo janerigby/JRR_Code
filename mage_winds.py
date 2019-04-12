@@ -1,7 +1,9 @@
 ''' Make a bunch of plots to show winds in MagE spectra.
 run in /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Wind_plots
 jrigby, 2016'''
+from __future__ import print_function
 
+from builtins import range
 from numpy import array, concatenate
 import jrr
 import sys
@@ -86,7 +88,7 @@ def plot_wind_stack() :
     linelist = line_path + "stacked.linelist"
     (LL, zz) = jrr.mage.get_linelist(linelist)
     for ii, which_stack in enumerate(stack_choices) :
-        print "STATUS:  Plotting wind lines for MagE stack ", outdir[ii]
+        print("STATUS:  Plotting wind lines for MagE stack ", outdir[ii])
         (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack=which_stack, addS99=True)
         plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-wtdavg-", (sp.wave,), (sp.fweightavg,), (sp.fweightavg_u,), (zz,), "wtdavg "+newlabel[ii], LL, zz, drawunity=unity[ii])
         plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-median-", (sp.wave,), (sp.fmedian,), (sp.fjack_std,), (zz,), "median "+ newlabel[ii], LL, zz, drawunity=unity[ii])
@@ -99,7 +101,7 @@ def plot_wind_stack() :
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-medianwS99-", (sp.wave,sp.wave), (sp.fmedian, sp.fnu_s99model), (sp.fjack_std, sp.wave*0), (zz,zz), "median "+newlabel[1], LL, zz)
             plot_winds_neutral_stellar(outdir[ii]+"/"+outdir[ii]+"-mediandivbyS99-", (sp.wave,), (sp.fmedian/sp.fnu_s99model,), (sp.fjack_std/sp.fnu_s99model,), (zz,), "mediandivbyS99 "+newlabel[1], LL, zz, drawunity=True)
             plot_photospheric_lines(pdir+"/"+outdir[ii]+"-medianwS99-",          (sp.wave,sp.wave), (sp.fmedian, sp.fnu_s99model), (sp.fjack_std, sp.wave*0), (zz,zz), "", LL, zz)
-            print "STATUS:  Making plot.echelle_spectrum multipage plots for Stack-A, w S99 fits"
+            print("STATUS:  Making plot.echelle_spectrum multipage plots for Stack-A, w S99 fits")
             sp2 = sp.copy(deep=True)
             sp['temp_fnu']   = sp['fweightavg']           # Plot echelle spectrum w the S99 fit  
             sp['temp_fnu_u'] = sp['fweightavg_u']
@@ -107,14 +109,14 @@ def plot_wind_stack() :
             sp2['temp_fnu']   = sp2['fnu_s99model']
             sp2['temp_fnu_u'] = sp2['fnu_s99model']*0
             sp2['temp_cont']  = sp2['fnu_autocont']
-            print "STATUS:  Plotting echelle format spectra, w S99 fits"
+            print("STATUS:  Plotting echelle format spectra, w S99 fits")
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_wtdavg_stack_wS99_norm.pdf",   title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_wtdavg_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
             sp['temp_fnu']  = sp['fmedian']  
             sp['temp_fnu_u'] = sp['fjack_std']
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_norm.pdf", title="", norm_by_cont=True, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
             jrr.plot.echelle_spectrum((sp[~sp['badmask']],sp2[~sp2['badmask']]), (0.0,0.0), outfile=outdir[ii]+"/"+outdir[ii]+"-multipanel_median_stack_wS99_nonorm.pdf", title="", norm_by_cont=False, plot_cont=True, colwave='rest_wave', colfnu='temp_fnu', colfnu_u='temp_fnu_u', colcont='temp_cont', verbose=False)
-        print "STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample"
+        print("STATUS:  Making same figure as Heckman et al. Figure 1 but for our sample")
         jrr.plot.velocity_overplot(sp.wave, sp.fweightavg, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol2)
         plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1.pdf", bbox_inches='tight', pad_inches=0.1)
         plt.clf()
@@ -122,7 +124,7 @@ def plot_wind_stack() :
             jrr.plot.velocity_overplot(sp.wave, sp.fnu_s99model, line_label_Heck, line_center_Heck, zz, -1600, 500, (8,5), colortab=mycol2)
             plt.savefig(outdir[ii]+"/"+outdir[ii]+"-likeheckman2015fig1_S99.pdf", bbox_inches='tight', pad_inches=0.1)
             plt.clf()
-        print "STATUS: again, but removing the transitions blueward of Lya."
+        print("STATUS: again, but removing the transitions blueward of Lya.")
         line_label_Heck3  = ('Si II 1260', 'C II 1334',  'Si IV 1393')  
         line_center_Heck3 = array((1260.4221, 1334.5323, 1393.76))  
         jrr.plot.velocity_overplot(sp.wave, sp.fweightavg, line_label_Heck3, line_center_Heck3, zz, -1600, 500, (8,5), colortab=mycol)
@@ -167,14 +169,14 @@ def plot_Heckman_like() :
 
 def plot_wind_indy() :
     outdir_ech = "../Plot-all/PDF_Out2_S99/"
-    print "STATUS:  Making velocity plots of wind lines  for all the MagE spectra.  May see something in those w high SNR"
+    print("STATUS:  Making velocity plots of wind lines  for all the MagE spectra.  May see something in those w high SNR")
     (big_sp, resoln, dresoln, big_LL, big_zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont', MWdr=True)  # open honking
     for label in specs['short_label'] :
         sp = big_sp[label] ;  z_sys = big_zz_sys[label]  ;    LL = big_LL[label]
         sp['fnu_norm']   = sp.fnu / sp.fnu_cont
         sp['fnu_norm_u'] = jrr.util.sigma_adivb(sp.fnu, sp.fnu_u, sp.fnu_cont, sp.fnu_cont_u)    
         prefix = "All_Mage/" + label
-        print "   plotting ", prefix
+        print("   plotting ", prefix)
         plot_winds_neutral_stellar(prefix, (sp.wave,), (sp.fnu_norm,), (sp.fnu_norm_u,), (z_sys,), label, LL, z_sys)
         plot_photospheric_lines(pdir+"/"+label+"-", (sp.wave,), (sp.fnu_norm,), (sp.fnu_norm_u,), (z_sys,), "", LL, z_sys)
         plt.clf()
@@ -196,10 +198,10 @@ def plot_wind_indy() :
 
             
 def plot_onepagers() : # This step is SLOW.  Turn off while debugging rest of script
-    print "STATUS: Making velocity plots of all the MagE spectra on one page, for a bunch of lines"
+    print("STATUS: Making velocity plots of all the MagE spectra on one page, for a bunch of lines")
     for ii in range(0, len(line_label_all)) :
 #    for ii in range(0, 1) :  # For Lya only
-        print "   Plotting ", line_label_all[ii]
+        print("   Plotting ", line_label_all[ii])
         jrr.mage.plot_1line_manyspectra(line_center_all[ii], line_label_all[ii], 4000., True, mage_mode, fontsize=10) 
         foo = line_label_all[ii]
         outfile = "Each_line_all_spectra/" + foo.replace(" ", "") + ".pdf"
@@ -210,7 +212,7 @@ def plot_onepagers() : # This step is SLOW.  Turn off while debugging rest of sc
     return(0)
 
 def plot_some_CIV() :        
-    print "STATUS: Just plot CIV for a few spectra"
+    print("STATUS: Just plot CIV for a few spectra")
     labels = ['rcs0327-E', 'S0900+2234', 'S1527+0652', 'S1429+1202', 'S1226+2152', 'Cosmic~Eye', 'S1458-0023']
     specs = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=labels, MWdr=True)
     #specs = jrr.mage.getlist_labels(mage_mode, labels, MWdr=True)
@@ -218,7 +220,7 @@ def plot_some_CIV() :
     line_center  = array((1548.19))
     jrr.mage.plot_1line_manyspectra(line_center, line_label, 4000., True, mage_mode, specs)
     plt.savefig("CIV_excerpts.pdf", orientation='portrait', bbox_inches='tight', pad_inches=0.1) 
-    print "STATUS:  Plotting C III] for Cycle 24 HST proposal"
+    print("STATUS:  Plotting C III] for Cycle 24 HST proposal")
     line_label = ("C III] 1907")
     line_center  = array((1906.68))
     jrr.mage.plot_1line_manyspectra(line_center, line_label, 10., False, mage_mode, specs)

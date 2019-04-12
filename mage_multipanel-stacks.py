@@ -2,6 +2,7 @@
 jrigby, Sept 2016.
 Run from /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Plot-all'''
 
+from builtins import range
 import jrr
 import matplotlib.pyplot as plt
 import numpy as np

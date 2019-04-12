@@ -1,3 +1,4 @@
+from __future__ import print_function
 import operator
 import jrr
 import numpy as np
@@ -113,11 +114,11 @@ plt.ioff()
 #vcos_loR_whtavg
 #vcos_hiR_median
 
-print "COMPUTING vmax vmean for the MagE stacked spectrum"
+print("COMPUTING vmax vmean for the MagE stacked spectrum")
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 (sp, dumLL) = jrr.mage.open_stacked_spectrum(mage_mode, which_stack='standard', addS99=True)
 sp['unity' ] = 1.0  # continuum
-print "#  (velocities are in systemic rest frame, in km/s)"
+print("#  (velocities are in systemic rest frame, in km/s)")
 #vmage_df is the shape-normalized MagE stack, weighted avg
 vmage_whtavg = wrap_measure_vmaxvmean(sp, 'wave', 'fweightavg',  'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_whtavg.pdf')
 vmage_median = wrap_measure_vmaxvmean(sp, 'wave', 'fmedian',     'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'mage_vmaxvmean_median.pdf')
@@ -126,7 +127,7 @@ vmage_whtavg.drop('linecen', axis=1).to_latex('mage_vmaxvmean_whtavg.tex')
 vmage_median.drop('linecen', axis=1).to_latex('mage_vmaxvmean_median.tex')
 plt.close("all")
 
-print "COMPUTING vmax vmean for the R=1.4E4 COS stacked spectrum"
+print("COMPUTING vmax vmean for the R=1.4E4 COS stacked spectrum")
 cos_hiR = jrr.mage.read_our_COS_stack(resoln="full")
 cos_loR = jrr.mage.read_our_COS_stack(resoln="matched_mage")
 vcos_hiR_whtavg = wrap_measure_vmaxvmean(cos_hiR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R1.4E4_whtavg.pdf')
@@ -136,7 +137,7 @@ vcos_hiR_whtavg.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R1.4E4_whtavg.te
 vcos_hiR_median.drop('linecen', axis=1).to_latex('cos_vmaxvmean_R1.4E4_median.tex')
 plt.close("all")
 
-print "COMPUTING vmax vmean for the R=3300 COS stacked spectrum"
+print("COMPUTING vmax vmean for the R=3300 COS stacked spectrum")
 vcos_loR_whtavg = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fweightavg', 'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3300_whtavg.pdf')
 vcos_loR_median = wrap_measure_vmaxvmean(cos_loR, 'rest_wave', 'fmedian',    'unity', Nover_blue, Nover_red, thecenters, thelabels, IP, 'cos_vmaxvmean_R3300_median.pdf')
 cos_mark_blends(vcos_loR_whtavg)  ;  cos_mark_blends(vcos_loR_median) # Manually enter lower limits for blends
@@ -185,7 +186,7 @@ if False :
     df[colf] = jrr.spec.onegaus(df[colrwave], -0.7,  linecen, 4., 1.0) + jrr.spec.onegaus(df[colrwave], -0.3,  linecen - 15., 9., 0.0) + np.random.normal(0.0, 0.03, size=len(df[colrwave]))  # the flux
     # Measure vmean, vmax 
     (vmean, vmax_blue, vmax_red) = jrr.spec.calc_vmean_vmax(df, colrwave, colf, colcont, Nover_blue, Nover_red, linecen, isabs=True, plotit=True)
-    print "Vmean, vmax_blue, vmax_red:", vmean, vmax_blue, vmax_red
+    print("Vmean, vmax_blue, vmax_red:", vmean, vmax_blue, vmax_red)
 
 
 

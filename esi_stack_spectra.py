@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import shutil
 import jrr
 import glob
@@ -19,7 +21,7 @@ from astropy.coordinates import SkyCoord, EarthLocation
 def get_the_spectra(filenames, obslog, colwave='obswave') :
     df = {}
     for thisfile in filenames :
-        print "loading file ", thisfile
+        print("loading file ", thisfile)
         df[thisfile] = pandas.read_table(thisfile, delim_whitespace=True, comment="#")
         # Apply the Barycentric correction
         thisobs = obslog.loc[thisfile]
@@ -30,7 +32,7 @@ def get_the_spectra(filenames, obslog, colwave='obswave') :
         my_time = my_start_time + midpt  # time at middle of observation
         barycor_vel = jrr.barycen.compute_barycentric_correction(my_time, my_target, location=keck)
         #print "DEBUGGING", my_target, thisobs, my_target, my_start_time
-        print "FYI, the barycentric correction factor for", thisfile,  "was", barycor_vel
+        print("FYI, the barycentric correction factor for", thisfile,  "was", barycor_vel)
         jrr.barycen.apply_barycentric_correction(df[thisfile], barycor_vel, colwav='obswave', colwavnew='wave') #   
         df[thisfile]['Nfiles'] = 1 # N of exposures that went into this spectrum
     return(df)  # return a dictionary of dataframes of spectra
@@ -48,7 +50,7 @@ def jrr_filter(out, thresh=2.5, mintoreplace=1E-16) :
     
 def plot_the_results(filenames, df, out2, groupby=False) :
     plt.clf()
-    print "Plotting...."
+    print("Plotting....")
     xlim = (4000, 9000)
     fig1 = plt.figure(1, figsize=(24,6))
     for thisfile in filenames :
@@ -78,7 +80,7 @@ def plot_the_results(filenames, df, out2, groupby=False) :
             
 def write_spectrum_to_file(out2, outfile, prefix, filenames, header, thresh) :
     '''Make a simplifed outfile '''
-    print "Writing to file"
+    print("Writing to file")
     cols = ['wave', 'fsum_jrr', 'fsum_u', 'fmedianxN', 'fjack_std', 'Ngal', 'replaced']
     simple_df = out2[cols] 
     shutil.copy(header, outfile)

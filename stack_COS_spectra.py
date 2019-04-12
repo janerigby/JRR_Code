@@ -3,6 +3,7 @@
     and esi_stack_spectra.py, which is more general but did a straight stack rather than weighted avg.
     jane.rigby@nasa.gov, 4/2017
 '''
+from __future__ import print_function
 
 indir = "/Volumes/Apps_and_Docs/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/"  # Running in this dir  Satchmo
 #indir = "/Users/jrrigby1/Dropbox/MagE_atlas/Contrib/Chisholm16/raw/" # on milk
@@ -50,7 +51,7 @@ def get_spectra(filenames) :
     return(df)  # return a dictionary of dataframes of spectra
 
 def prepare_spectra(df) :   # Process the spectra dataframes for use later
-    for this in df.keys() :
+    for this in list(df.keys()) :
         df[this]['Nfiles'] = 1 # N of exposures that went into this spectrum
         if not 'badmask'   in df[this].columns :  df[this]['badmask']   = False
         if not 'linemask'  in df[this].columns :  df[this]['linemask']  = False
@@ -64,7 +65,7 @@ def prepare_spectra(df) :   # Process the spectra dataframes for use later
     
 def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convolve and rebin the COS spectra to simulate MagE data.
     idf = {}  ; ndf = {}  # intermediate and new data frames
-    for this in df.keys() : #for each spectrum dataframe
+    for this in list(df.keys()) : #for each spectrum dataframe
         # Input is oversampled spectrum with high spectral resolution R1.
         # This function rebins to critically sampled, then convolves w Gaussian, then rebins again to R=R2.
         # Start by rebinning to an intermediate wavelength array. R=2E4 nyquist=2.2.
@@ -91,7 +92,7 @@ def blur_the_spectra(df, intermed_wave, new_wave, R1=2.0E4, R2=3500.) :  # Convo
 def flag_geoMW_lines(df, geoMW_linelist, vmask, Lyamask) :
     geoMW_linelist['vmask'] = vmask
     geoMW_linelist.loc[geoMW_linelist['linelabel'] == 'HI', 'vmask'] = Lyamask
-    for this in df.keys() :  # For each spectrum dataframe
+    for this in list(df.keys()) :  # For each spectrum dataframe
         jrr.spec.flag_near_lines(df[this], geoMW_linelist, colv2mask='vmask', colwave='obswave', colmask='geoMWlinemask')
     return(0)
 
@@ -107,17 +108,17 @@ def from_filename_get_props(this, zzlist) :
     return(galname, grating, redshift)
 
 def deredshift_all_spectra(df, zzlist) :
-    for this in df.keys() :
+    for this in list(df.keys()) :
         (galname, grating, redshift) =  from_filename_get_props(this, zzlist)
         jrr.spec.convert2restframe_df(df[this], redshift, units='flam', colwave='obswave', colf='flam', colf_u='flam_u')
         jrr.spec.calc_dispersion(df[this], colwave='rest_wave', coldisp='rest_disp')
     return()
 
 def wrapper_fit_continuua(df, smooth_length, debug=False) : 
-    print "Fitting Continuua (target  grating redshift)"
-    for this in df.keys() : 
+    print("Fitting Continuua (target  grating redshift)")
+    for this in list(df.keys()) : 
         (galname, grating, redshift) =  from_filename_get_props(this, zzlist)
-        print "      ", galname, grating, redshift
+        print("      ", galname, grating, redshift)
         df[this].loc[df[this]['badmask'],        'contmask'] = True   # Prepare mask for continuum fitting
         df[this].loc[df[this]['geoMWlinemask'],  'contmask'] = True
         df[this].loc[df[this]['badmask'],        'stackmask'] = True  # Prepare mask for stacking
@@ -138,7 +139,7 @@ def wrapper_fit_continuua(df, smooth_length, debug=False) :
             #plt.plot(df[this]['rest_wave'], df[this]['contmask'], color='red', linewidth=1)
             plt.xlabel("rest wavelength")
             plt.xlim(1200,1300)
-            print "Plotting", this, galname, grating, redshift
+            print("Plotting", this, galname, grating, redshift)
             plt.show()
     return(0)
 
@@ -157,7 +158,7 @@ R3500_wavear = jrr.spec.make_wavearray_constant_resoln(1145, 1790, 3500, 2.2) # 
 # NOW DO THINGS
 zzlist = get_redshifts()
 filenames =  [ basename(x) for x in glob.glob(indir + "*G*M") ]    # Find the files. 
-print "Loading spectra"
+print("Loading spectra")
 df = get_spectra(filenames)                 # load spectra into dict of dataframes
 #df = get_spectra(filenames[0:10])  # DEBUGGING, subset is faster *****
 geoMW_linelist =  get_MW_geocoronal_linelist()  # Line list, prepartory to masking geocoronal & MW lines
@@ -218,13 +219,13 @@ plt.show()
 
 # For debugging, plot a bunch of the spectra, to see if MW, Geocoronal features were masked out
 if False :    
-    for this in df.keys() :
+    for this in list(df.keys()) :
         (galname, grating, redshift) =  from_filename_get_props(this, zzlist)
         fig = plt.figure(figsize=(20,4))
         ax1 = fig.add_subplot(111)
         masked = df[this][df[this]['geoMWlinemask']]
         unmasked = df[this][~df[this]['geoMWlinemask']]
-        print "Plotting", this
+        print("Plotting", this)
         plt.plot(unmasked.obswave, unmasked.flam, color='black', linewidth=0.5)
         plt.plot(unmasked.obswave, unmasked.flam_u, color='orange', linewidth=0.5)
         plt.scatter(masked.obswave, masked.flam, color='red', s=1)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import jrr
 import pandas
 import numpy as np
@@ -28,7 +29,7 @@ for thisline in bylines.index :
     Ndet = ((df['line_lab'].eq(thisline) & df[Trust])).sum()
     bylines['Ndet'][thisline] = Ndet
 bylines.sort_values(by='Ndet', ascending=False, inplace=True)
-print bylines.head(60)
+print(bylines.head(60))
 
 # How many 3 sigma detections of each galaxy?
 bygals = pandas.DataFrame(data=None, index=df['label'].unique()) # unique gal name
@@ -37,12 +38,12 @@ for thisgal in bygals.index :
     Ndet = (df['label'].eq(thisgal) & df[Trust]).sum()
     bygals['Ndet'][thisgal] = Ndet
 bygals.sort_values(by='Ndet', ascending=False, inplace=True)
-print bygals.head(20)
+print(bygals.head(20))
 
 # Below seems super-dodgy, need to update this
 lines_to_check = ('CIII1908', "OIII1666", "OIII1660", 'OIII2320')
 for checkline in lines_to_check :
     gooddet = df[df['line_lab'].eq(checkline) & df['EW_signi'].gt(sig2)]
     gooddet.sort_values(by='EW_signi', ascending=False, inplace=True)
-    print gooddet.head(30)
+    print(gooddet.head(30))
 

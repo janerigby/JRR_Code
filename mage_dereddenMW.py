@@ -2,7 +2,9 @@
 referee of Stacked paper.  jrigby, July 2017
 Want to walk through every comb1.txt or combwC1.txt file, run it through MW dereddening, and spit out the same file
 but corrected for MW reddening.'''
+from __future__ import print_function
 
+from builtins import str
 import jrr
 import pandas
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ speclist = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=labels, 
 for label in speclist.index:  # For each file in spectra-filenames-redshifts.txt
     infile = speclist.filename[label]
     EBV = speclist['EBV_MW'][label]
-    print "Looking at ", label, infile, EBV, 
+    print("Looking at ", label, infile, EBV, end=' ') 
     header = jrr.util.read_header_from_file(infile, comment="#")  # save the header
     header += ("# MW reddening correction of E(B-V)="+str(EBV)+" , Rv=3.1, CCM has been applied\n")
     sp = pandas.read_table(spec_path + infile, delim_whitespace=True, comment="#", header=0, dtype=np.float64)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import jrr
 import numpy as np
 import pandas
@@ -39,7 +40,7 @@ if plot_indy_SNR :
         fig, ax  = plt.subplots(figsize=figsize)
         for label in labels:
             sp = df[label]
-            print label, resoln[label]
+            print(label, resoln[label])
             calc_smoothSNR(sp, resoln[label], smooth_window)
             labelnew = jrr.mage.prettylabel_from_shortlabel(label)
             plt.plot(sp['wave'], sp['smoothSNRperres'], label=labelnew)
@@ -64,7 +65,7 @@ if plot_stack_SNR :
     #plt.xlim(1400,1500)
     lo = np.array((1440., 1460., 1680., 1760.))
     hi = np.array((1450., 1470., 1700., 1800.))
-    print "SNR_method1, SNR_method2, wavelo, wavehi"
+    print("SNR_method1, SNR_method2, wavelo, wavehi")
     for ii, low in enumerate(lo) :
         subset =  sp.loc[sp['rest_wave'].between(lo[ii],hi[ii])]
         over_resolved = subset['pixperfwhm'].median()
@@ -73,7 +74,7 @@ if plot_stack_SNR :
         sp['temp'] = (sp['fnu']/sp['fnu_u']).rolling(window=int(np.floor(over_resolved)), center=True).apply(jrr.util.add_in_quad)
         SNR_method1 = np.round(SNR_med_pp * np.sqrt( over_resolved ), 0)
         SNR_method2 = np.round((sp['temp'].loc[sp['rest_wave'].between(lo[ii],hi[ii])]).median(), 0)
-        print "", SNR_method1, SNR_method2, lo[ii], hi[ii]
+        print("", SNR_method1, SNR_method2, lo[ii], hi[ii])
     plt.title("stacked spectrum")
     plt.xlabel(r'rest-frame wavelength ($\mathrm{\AA}$)')
     plt.ylabel('SNR per resoln. element')
@@ -116,7 +117,7 @@ for label in (labels_to_plot) :
     up_x1 = x1/(1. + zz_sys[label]);    up_x2 =  x2/(1. +  zz_sys[label])
     # try this? ax2.set_xlim([ax.min(), ax.max())
     ax2.set_xlim( up_x1, up_x2)
-    print "DEBUGGING", label, zz_sys[label], " : ",  x1, x2, up_x1, up_x2 
+    print("DEBUGGING", label, zz_sys[label], " : ",  x1, x2, up_x1, up_x2) 
     ax2.set_xlabel(r"rest-frame wavelength ($\mathrm{\AA}$)")
     ax2.xaxis.set_major_locator(MultipleLocator(200))
     ax2.xaxis.set_minor_locator(AutoMinorLocator(10))

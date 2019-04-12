@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 import jrr
 import numpy as np
 import pandas
@@ -9,7 +12,7 @@ import astropy.convolution
 labels = ['rcs0327-E'] #['S1226+2152'] #'rcs0327-B', 'S0957+0509', 'S2111-0114']
 (specs) = jrr.mage.getlist_labels(mage_mode, labels)
 #(specs) = jrr.mage.getlist_wcont(mage_mode)
-print "Grabbed this many spectra:", len(specs)
+print("Grabbed this many spectra:", len(specs))
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 
 for ii in range(0, len(specs)) :                  #nfnu_stack[ii] will be ii spectrum

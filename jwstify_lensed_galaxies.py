@@ -4,6 +4,7 @@ the normal diffraction limit of a telescope without lensing, then bins it to a m
 normal pixel scale.  Now running with JWST PSFs from Webbpsf.
 jrigby, 7/2016, based on candelized_lensed_galaxies.py
 '''
+from __future__ import print_function
 from astropy.io import fits
 from astropy.convolution import convolve, convolve_fft
 from astropy.stats import gaussian_fwhm_to_sigma   # a useful constant
@@ -38,10 +39,10 @@ def srcplane_to_jwst(indir, in_images, JWST_inst, JWST_filters, in_pixscale, out
     if not os.path.exists(outdir):  # Make output directory if it doesn't already exist.
         os.makedirs(outdir)
 
-    print "Pixel scales:  [PSF, subsampled] [src plane input]  [output_desired]   [output_got].  All arcsec\pix"
+    print("Pixel scales:  [PSF, subsampled] [src plane input]  [output_desired]   [output_got].  All arcsec\pix")
                 
     for ii, thisfile in enumerate(input_images) :#
-        print thisfile, JWST_inst, JWST_filters[ii],
+        print(thisfile, JWST_inst, JWST_filters[ii], end=' ')
         data_in, header_in = fits.getdata(indir + thisfile, header=True)
         psf_file = psf_dir + "PSF_" + JWST_inst + "_" + JWST_filters[ii] + "_revV-1.fits"
         #print "DEBUGGING, psf file is", psf_file
@@ -69,12 +70,12 @@ def srcplane_to_jwst(indir, in_images, JWST_inst, JWST_filters, in_pixscale, out
         newname = outdir + JWST_inst + JWST_filters[ii]  + "_conv_rebin.fits"   # output is convolved by PSF and rebinned
         header_in['pix_scale'] = in_pixscale * binby
         fits.writeto(newname, rebinned, header_in, clobber=True)
-        print "Pixel scales:  ", psf_pixscale, in_pixscale, out_pixscale,  in_pixscale * binby
+        print("Pixel scales:  ", psf_pixscale, in_pixscale, out_pixscale,  in_pixscale * binby)
 
         
-    print "Wrote JWST-ified images (convolved to JWST PSF, binned to normal JWST pixel scale.)"
-    print "They are the _conv_rebin.fits images in "
-    print "\t", outdir
+    print("Wrote JWST-ified images (convolved to JWST PSF, binned to normal JWST pixel scale.)")
+    print("They are the _conv_rebin.fits images in ")
+    print("\t", outdir)
     return(0)  # success
 
 
@@ -93,4 +94,4 @@ if do_s1110 :
     # From Keren: pixel scale = 0.1 of image plane pixel scale (0.03") = 0.003"/pix
     srcplane_to_jwst(indir, input_images, "NIRCam", JWST_filters, in_pixscale, outdir)
 #
-print "ALL DONE."
+print("ALL DONE.")

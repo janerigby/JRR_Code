@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import range
 import numpy as np
 from matplotlib import pyplot as plt
 import glob
@@ -15,14 +17,14 @@ for filename in filenames :
     pan[rootname] = np.load(pandir + filename)
 
     uglyintermed = []
-    for ii in range(0, len(pan[rootname].items())) :
-        uglyintermed.append( pan[rootname].items()[ii][1].flatten())  #oh god it burns
+    for ii in range(0, len(list(pan[rootname].items()))) :
+        uglyintermed.append( list(pan[rootname].items())[ii][1].flatten())  #oh god it burns
     tempdf = pandas.DataFrame(data=uglyintermed)
     #tempdf = pandas.DataFrame(data=[pan[rootname].items()[0][1].flatten(), pan[rootname].items()[1][1].flatten(), pan[rootname].items()[2][1].flatten(), pan[rootname].items()[3][1].flatten(), pan[rootname].items()[4][1].flatten()])
     df[rootname] = tempdf.transpose()
-    df[rootname].columns = pan[rootname].keys()
+    df[rootname].columns = list(pan[rootname].keys())
 
-print "I think I imported all of Klaus's files:", df.keys()
+print("I think I imported all of Klaus's files:", list(df.keys()))
 
 # Plot the photometry 
 modes = ['nircam_sw', 'nircam_lw', 'miri_imaging']  # replace reptition below with loop

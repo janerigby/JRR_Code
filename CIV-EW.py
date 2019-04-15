@@ -2,6 +2,9 @@
     of Heckman et al. 1998, same used by Crowther et al 2006 and Eldridge & Stanway 2012.
     jrigby, july, oct 2015
 '''
+from __future__ import print_function
+from builtins import str
+from builtins import range
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,7 +61,7 @@ def plot_one_spec(rest_wave, rest_flam, rest_flam_u, rest_cont, rest_cont_u, sho
     for indx, thisrange in enumerate(ranges) :
         ind = np.where(  (rest_wave > thisrange[0])  & (rest_wave < thisrange[1])  )   # indices
         plot_number = (Ncol * counter) + (indx + 1)
-        print "Plotting subplot", plot_number
+        print("Plotting subplot", plot_number)
         plt.subplot(Nspectra, Ncol, plot_number)   # Plot a panel, for example civ
         plot_a_subpanel( ind, rest_wave, rest_flam, rest_cont, short_label)
         if (counter == Nspectra - 1) :   # last subplot gets labels
@@ -116,7 +119,7 @@ def measure_EWs_for_a_Bpass_model(infile, outfile) :
     out = open(outfile, 'w')
     header_EW_outfile(out)
     out.write( ("#filename is actually time for model " + infile + "\n"))
-    print "Measuring CIV and HeII EWs from bigass bpass model", infile
+    print("Measuring CIV and HeII EWs from bigass bpass model", infile)
     s = ascii.read(infile, comment="#")   # input has units of **flam**
     wave = s['col1']  # wave for all times
     plt.close()
@@ -148,7 +151,7 @@ f.subplots_adjust(left=0.12, bottom=0.06, right=0.91, top=0.96, wspace=0.2, hspa
 out = open(outfile, 'w')
 header_EW_outfile(out)
 out.write("#First set of EWs uses continuum fits.  Second set uses automated slope continuum.\n")
-print "Measuring CIV and HeII EWs for the MagE spectra"
+print("Measuring CIV and HeII EWs for the MagE spectra")
 for ii in range(0, Nspectra - 1) :  # Measure EW for each MagE spectrum
     infile      = specs['filename'][ii]
     short_label = specs['short_label'][ii]
@@ -173,7 +176,7 @@ for ii in range(0, Nspectra - 1) :  # Measure EW for each MagE spectrum
 # Want to add the Shapley composite, but can't until I write a continuum for it.
 
 # Measure the MagE composite spectrum.
-print "Measuring CIV and HeII EWs for the MagE composite spectrum"
+print("Measuring CIV and HeII EWs for the MagE composite spectrum")
 short_label = "MagE-stack"
 (restwave, X_avg, X_clipavg, X_median, X_sigma, X_jack_std, Ngal)=  jrr.Mage_open_stacked_spectrum(mage_mode)  # in fnu
 restflam = jrr.fnu2flam(restwave, X_avg)

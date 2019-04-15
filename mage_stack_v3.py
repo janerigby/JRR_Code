@@ -17,8 +17,10 @@ Methodology:
 - Normalize the spectra by the preferred method
 - Feed to jrr.spec.stack_spectra() a dataframe of rest-frame spectra.  Stack them.
 - Write output.'''
+from __future__ import print_function
 
 
+from builtins import str
 import jrr
 from   astropy.stats import sigma_clip
 import pandas
@@ -47,7 +49,7 @@ def mask_intervening(sp, LL, colint='interve') :
     LL['vmask'] = vmask
     jrr.spec.flag_near_lines(sp, LL, linetype=('INTERVE',), colmask=colint)
     sp.loc[sp[colint], 'fnu_u'] = 1. # Set huge uncertainties at positions of known intervening absorbers
-    print "DEBUGGING, I masked N pixels for intervening absorbers", sp[colint].sum() 
+    print("DEBUGGING, I masked N pixels for intervening absorbers", sp[colint].sum()) 
     return(0)
 
 def make_header_for_stack(rootname, zchoice, norm_method_text) :
@@ -60,7 +62,7 @@ def make_header_for_stack(rootname, zchoice, norm_method_text) :
     return(head)
 
 def prep_spectra_for_stacking(df, zchoice, EBV=[], deredden=False, dereddenMW=False, colcont="fnu_cont") : #Do this once per zchoice
-    for short_label in df.keys() :  # step through each spectrum in labels
+    for short_label in list(df.keys()) :  # step through each spectrum in labels
         #print "DEBUGGING, working on", short_label
         df[short_label]['zeros'] = 0.0
         mask_skylines(df[short_label])

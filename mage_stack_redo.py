@@ -2,7 +2,10 @@
     jrigby, oct 2015.  Revised 3/2016, 7/2016, 8/2016, 9/2016
     Run this from /Volumes/Apps_and_Docs/SCIENCE/Lensed-LBGs/Mage/Analysis/Stacked_spectra
 '''
+from __future__ import print_function
 
+from builtins import str
+from builtins import range
 import jrr
 from   astropy.stats import sigma_clip
 import extinction
@@ -34,7 +37,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
 #    specs = jrr.mage.getlist_labels(mage_mode, labels)
     specs = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=labels)
     Nspectra = len(specs)
-    print "DEBUG, Nspectra is", Nspectra
+    print("DEBUG, Nspectra is", Nspectra)
     stacklo =  800. #A      # Create a rest-frame wavelength array to stack into
     stackhi = 3000. #A
     disp = 0.1 # Angstroms  # observed-frame wavelength binning is ~0.3A pper pix for RCS0327.  So, want ~0.1A in rest-frame
@@ -43,7 +46,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     nfnu_stack    = np.ma.zeros(shape=(Nspectra, nbins))   # create array that will hold all the spectra
     nfnu_u_stack  = np.ma.zeros(shape=(Nspectra, nbins))
 
-    print "Filename    label      N_pixels     rest-frame wavelength range (A)"
+    print("Filename    label      N_pixels     rest-frame wavelength range (A)")
     for ii in range(0, Nspectra) :                  #nfnu_stack[ii] will be ii spectrum
         label     = specs['short_label'][ii]
         filename  = specs['filename'][ii]
@@ -69,7 +72,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         jrr.spec.flag_near_lines(sp, LL, linetype=('INTERVE',))
         sp.fnu_u[sp['linemask']] = 1. # Set huge uncertainties at positions of known intervening absorbers
         if deredden_MW :
-            print "DEBUGGING, dereddening Milky Way extinction"
+            print("DEBUGGING, dereddening Milky Way extinction")
             Rv = 3.1
             Av = -1 * Rv *  specs['EBV_MW'][ii]  # Want to deredden, so negative sign
             sp.fnu   = pandas.Series(extinction.apply(extinction.ccm89(sp.wave.as_matrix(), Av, Rv), sp.fnu.as_matrix()))
@@ -81,8 +84,8 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
         (junk   , rest_cont, rest_cont_u) = jrr.spec.convert2restframe(sp.wave, sp[colcont], sp.fnu_cont_u, zz, 'fnu')
         # should now have arrays of rest wavelength, fnubda, and continuum, as
         # rest_wave, rest_fnu, rest_fnu_u, rest_cont, rest_cont_u
-        print filename, label, len(rest_wave),
-        print "  %.2f  %.2f" % (  rest_wave[0], rest_wave[-1:])
+        print(filename, label, len(rest_wave), end=' ')
+        print("  %.2f  %.2f" % (  rest_wave[0], rest_wave[-1:]))
 
         if deredden and len(EBV) :
             this_ebv =  S99.loc[label,  'E(B-V)']
@@ -109,7 +112,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     crazy_high = 1000.
     mask3 = np.greater(nfnu_stack, crazy_high) + np.less(nfnu_stack, -1*crazy_high)  # flag crazy flux values.
     mask = mask1 + mask2 + mask3
-    print "DEBUGGING masks", mask1.sum(), mask2.sum(), mask3.sum(), mask.sum(), mask.shape
+    print("DEBUGGING masks", mask1.sum(), mask2.sum(), mask3.sum(), mask.sum(), mask.shape)
     nfnu_clip  = sigma_clip(nfnu_stack, sig=sig2clip, iters=None, axis=0)   ## Sigma clipping
     X_avg,     sumweight1   = np.ma.average(nfnu_stack, axis=0, weights=weight_stack, returned=True) # weighted avg of continuum-normalized spectra
     X_clipavg, sumweight2   = np.ma.average(nfnu_clip,  axis=0, weights=weight_stack, returned=True) # weighted avg of cont-normalized spectra, w sig clip
@@ -131,7 +134,7 @@ def make_a_stack(labels, rootname, norm_region, norm_func, norm_method_text, mag
     jack_var  = np.ma.zeros(shape=nbins)
     for ii in range(0, Nspectra) :
         jnf = nfnu_stack.copy()
-        print "Jackknife, dropping ", specs['short_label'][ii], " from the stack"
+        print("Jackknife, dropping ", specs['short_label'][ii], " from the stack")
         jnf[ii, :].mask = True  # Mask one spectrum
         jackknife[ii], weight = np.ma.average(jnf, axis=0, weights=weight_stack, returned=True)  # all the work is done here.
         jack_var = jack_var +  (jackknife[ii] - X_avg)**2

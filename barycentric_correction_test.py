@@ -1,3 +1,4 @@
+from __future__ import print_function
 # from https://gist.github.com/StuartLittlefair/5aaf476c5d7b52d20aa9544cfaa936a1
 # Barycentric corrections should be implemented in Astropy, but aren't in there yet.
 # THis is a bit of a stopgap solution, probably not accurate at <m/s level but good
@@ -18,4 +19,4 @@ lco = EarthLocation.of_site('Las Campanas Observatory')
 mytime = Time('2017-02-25T08:00:00.00000', format='isot', scale='utc')
 mytime = Time('2017-07-25T01:00:00.00000', format='isot', scale='utc')
 result = barycen.velcorr(mytime, my_target, location=lco)
-print result
+print(result)

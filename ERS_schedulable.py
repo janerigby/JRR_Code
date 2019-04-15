@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -91,7 +92,7 @@ fig = plt.figure(figsize=(12,3))
 ax1 = fig.add_subplot(1, 2, 1)
 for ii, thiswin in enumerate(windows) :
     ax1.plot(thiswin, (offsets[ii], offsets[ii]), label=namesz[ii], color=color[ii], lw=3)
-    print "Primary target", namesz[ii], "window duration:", thiswin[1] - thiswin[0]
+    print("Primary target", namesz[ii], "window duration:", thiswin[1] - thiswin[0])
     if namesz[ii] != noL :
         #ax1.annotate(namesz[ii], xy=(midpoint_date(*thiswin), 0.05+offsets[ii]), xycoords='data', ha='center')
         ax1.annotate(namesz[ii], xy=(annotate_xpos1, 0.05+offsets[ii]), xycoords='data', ha='left')
@@ -109,7 +110,7 @@ adjust_date_axis2(ax1)
 
 ax2 = fig.add_subplot(1, 2, 2)
 for ii, thiswin in enumerate(awindows) :
-    print "Alt target", anamesz[ii], "window duration:", thiswin[1] - thiswin[0]
+    print("Alt target", anamesz[ii], "window duration:", thiswin[1] - thiswin[0])
     ax2.plot(thiswin, (aoffsets[ii], aoffsets[ii]), label=anamesz[ii], color=acolor[ii], lw=3)
     if anamesz[ii] != noL :
         #ax2.annotate(anamesz[ii], xy=(midpoint_date(*thiswin), 0.05+aoffsets[ii]), xycoords='data', ha='center')

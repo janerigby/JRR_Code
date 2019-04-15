@@ -4,6 +4,8 @@ the normal diffraction limit of a telescope without lensing, then bins it to a m
 normal pixel scale.  Now running with hacked PSFs for LUVOIR, taken from HST and then resized.
 jrigby, 7/2016, based on candelized_lensed_galaxies.py
 '''
+from __future__ import print_function
+from builtins import str
 from astropy.io import fits
 from astropy.convolution import convolve, convolve_fft
 from astropy.stats import gaussian_fwhm_to_sigma   # a useful constant
@@ -41,13 +43,13 @@ def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, ou
     ref_PSF = "F390W_psf.fits"
     ref_wave = 0.390 # micron
     D_hst = 2.4003  # HST telescope diameter (m).
-    print "D(m)  wave(um)  difflim(\") Pixel scales: [src plane input]  [output_desired]   [output_got].  All arcsec\pix"
+    print("D(m)  wave(um)  difflim(\") Pixel scales: [src plane input]  [output_desired]   [output_got].  All arcsec\pix")
 
     
     for ii, thisfile in enumerate(input_images) :#
         diff_lim = waves[ii] * 1E-6 / D_luvoir * 206265.  # Diffraction limit FWHM (")
         out_pixscale = diff_lim /2.0  # nyquist sampled
-        print D_luvoir, waves[ii], np.round(diff_lim, decimals=4), 
+        print(D_luvoir, waves[ii], np.round(diff_lim, decimals=4), end=' ') 
         data_in, header_in = fits.getdata(indir + thisfile, header=True)
         psf_file = psf_dir + ref_PSF
         psf_in =  fits.getdata(psf_file)
@@ -68,8 +70,8 @@ def srcplane_to_luvoir(indir, in_images, filts, waves, in_pixscale, D_luvoir, ou
         newname = outdir + filts[ii]  + "_" + str(D_luvoir) + "m_conv_rebin.fits"   # output is convolved by PSF and rebinned
         header_in['pix_scl'] = in_pixscale * binby
         fits.writeto(newname, rebinned, header_in, clobber=True)
-        print in_pixscale, np.round(out_pixscale, decimals=4),  np.round(in_pixscale * binby, decimals=4), 
-        print "   BINBY", binby, ", wanted", np.round(out_pixscale/in_pixscale, decimals=4)
+        print(in_pixscale, np.round(out_pixscale, decimals=4),  np.round(in_pixscale * binby, decimals=4), end=' ') 
+        print("   BINBY", binby, ", wanted", np.round(out_pixscale/in_pixscale, decimals=4))
 
         # Add some noise.
         noise_center = 0.0
@@ -92,8 +94,8 @@ for aperture in apertures:
     in_pixscale = 0.1 * 0.03  #(arcsec/pixel)   The pixel scale of the input source plane reconstructions
     # From Keren: pixel scale = 0.1 of image plane pixel scale (0.03") = 0.003"/pix
     srcplane_to_luvoir(indir, input_images, filts, waves, in_pixscale,  aperture, outdir)
-print "Wrote LUVOIR-ified images (convolved to LUVOIR PSF, binned to pixel scale)"
-print "They are the _conv_rebin.fits images in \t", outdir
+print("Wrote LUVOIR-ified images (convolved to LUVOIR PSF, binned to pixel scale)")
+print("They are the _conv_rebin.fits images in \t", outdir)
 
 
 for aperture in apertures:
@@ -106,6 +108,6 @@ for aperture in apertures:
     # From Keren: pixel scale = 0.1 of image plane pixel scale (0.03") = 0.003"/pix
     out_pixscale = 0.003  # just a guess
     srcplane_to_luvoir(indir, input_images, filts, waves, in_pixscale,  aperture, outdir)
-print "Wrote LUVOIR-ified images (convolved to LUVOIR PSF, binned to pixel scale)"
-print "They are the _conv_rebin.fits images in \t", outdir
-print "ALL DONE."
+print("Wrote LUVOIR-ified images (convolved to LUVOIR PSF, binned to pixel scale)")
+print("They are the _conv_rebin.fits images in \t", outdir)
+print("ALL DONE.")

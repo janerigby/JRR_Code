@@ -27,7 +27,11 @@ for each day in FOR:
   double zodi_bg[SL_NWAVE]
   double stray_light_bg[SL_NWAVE]
 '''
+from __future__ import print_function
 
+from builtins import input
+from builtins import str
+from builtins import range
 import jrr
 import glob
 import struct
@@ -87,7 +91,7 @@ def read_JWST_precompiled_bkg(infile, base_dir, bkg_dir, showplot=False, verbose
     sbet_file = open(bkg_dir + myfile)
     sbet_data = sbet_file.read()
     # Unpack the constant first part
-    if verbose: print "File has", len(sbet_data), "bytes, which is", len(sbet_data)/8., "doubles"
+    if verbose: print("File has", len(sbet_data), "bytes, which is", len(sbet_data)/8., "doubles")
     size_calendar = struct.calcsize("366i") # bytes, not doubles
     partA = struct.unpack(str(5 + SL_NWAVE)+'d', sbet_data[0: (5 + SL_NWAVE)*8])
     RA = partA[0]
@@ -97,13 +101,13 @@ def read_JWST_precompiled_bkg(infile, base_dir, bkg_dir, showplot=False, verbose
 
     # Unpack the calendar dates      # code goes from 0 to 365 days.
     date_map = np.array(struct.unpack('366i', sbet_data[(5 + SL_NWAVE)*8  : (5 + SL_NWAVE)*8 + size_calendar]))
-    if verbose: print "Out of", len(date_map), "days, these many are legal:", np.sum(date_map >=0)
+    if verbose: print("Out of", len(date_map), "days, these many are legal:", np.sum(date_map >=0))
     #print "indices of days:", date_map[date_map>=0]
     calendar = np.where(date_map >=0)[0]
     #print "calendar date:", calendar
     # So, the index dd in zodi_bg[dd, : ]  corresponds to the calendar day lookup[dd]
     Ndays = len(calendar) 
-    if verbose: print len(date_map), Ndays
+    if verbose: print(len(date_map), Ndays)
 
     # Unpack part B, the time-variable part
     zodi_bg        = np.zeros((Ndays,SL_NWAVE))
@@ -165,7 +169,7 @@ def make_bathtub(results, wavelength_desired, thresh, showthresh=True, showplot=
         sns.set_palette("hls", 7)
         if showannotate:
             annotation = str(allgood) + " good days out of " + str(len(calendar)) + " days observable, for thresh " + str(thresh)
-            print str(wavelength_desired) + " " + annotation
+            print(str(wavelength_desired) + " " + annotation)
             plt.annotate(annotation, (0.05,0.05), xycoords="axes fraction", fontsize=12)
         if not label : label="Total " + str(wavelength_desired) + " micron"
         plt.scatter(calendar, total_thiswave, s=20, label=label)
@@ -191,7 +195,7 @@ def read_gooddays(base_dir=base_dir, infile="gooddays.txt", addGalEcl=False) :
     df2 = pandas.read_csv(base_dir + infile, comment="#")
     df2.rename(columns={"file":"healfile", "RA":"RA_deg", "DEC":"DEC_deg"}, inplace=True)
     if addGalEcl :
-        print "Converting from Equatorial Coords to Galactic and Ecliptic.  Takes a minute"
+        print("Converting from Equatorial Coords to Galactic and Ecliptic.  Takes a minute")
         jrr.util.convert_RADEC_GalEclip_df(df2, colra='RA_deg', coldec='DEC_deg')    # Compute Galactic, Eclptic coords
     return(df2)
 
@@ -224,7 +228,7 @@ if Calc_Gooddays :
     ii = 0  # file_index
     for thisdir in dirs_to_run :
         myfiles = [ basename(x) for x in glob.glob(thisdir + "*.bin") ]
-        print len(myfiles), thisdir
+        print(len(myfiles), thisdir)
         for myfile in myfiles:
             results = read_JWST_precompiled_bkg(thisdir + myfile, base_dir, thisdir, showplot=False)
             (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results 
@@ -264,7 +268,7 @@ if Analyze_Bathtubs :
             lab2 = "fraction of days w " + str(wavelength_desired) + " um bkg <" + str(thresh) + " of minimum"
             lab3 = "Ndays w " + str(wavelength_desired) + " um bkg <" + str(thresh) + " of minimum"
             goodcol =  "Good"+str(wavelength_desired)+ "_" + str(thresh)
-            print wavelength_desired, thresh, goodcol
+            print(wavelength_desired, thresh, goodcol)
             df2['good_frac'] = df2[goodcol] / df2['Nday']
             if False :
                 plt.scatter(df2['Nday'], df2['good_frac'], s=1)
@@ -295,20 +299,20 @@ if Example_for_STScI :
     DEC = -73.33222222        # RA, DEC in decimal degrees of 1.2 min zody 
     wavelength_input = 2.15    # Wavelength (in micron) 
     thresh = 1.1              # The background threshol, relative to the minimum.  1.1 would be 10% above the min kg
-    print "Making example background plot for RA, DEC, wave, thresh of:", RA, DEC, wavelength_input, thresh
+    print("Making example background plot for RA, DEC, wave, thresh of:", RA, DEC, wavelength_input, thresh)
     healpix = healpy.pixelfunc.ang2pix(nside, RA, DEC, nest=False, lonlat=True)  # old versions of healpy don't have lonlat
     myfile = myfile_from_healpix(healpix)   # Retrieve the name of the healpix file, including leading zero formatting
-    print "Plotting the background spectrum for an example day.  Turn this off w showplot=False" 
+    print("Plotting the background spectrum for an example day.  Turn this off w showplot=False") 
     results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=True)  # Retrieve the bkg file
     (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results  # parse results
     wavelength_desired = find_nearest(wave_array, wavelength_input)  # Nearest neighbor interpolation of wavelength
     if wavelength_desired != wavelength_input :
-        print "Using wave", wavelength_desired, "as the nearest neighbor to input", wavelength_input, "micron"
+        print("Using wave", wavelength_desired, "as the nearest neighbor to input", wavelength_input, "micron")
     allgood = make_bathtub(results, wavelength_desired, thresh, showplot=True, showsubbkgs=False)  # Compute bathtub, plot it.
-    print "Plotting background versus day fo the year"
+    print("Plotting background versus day fo the year")
     plt.show()
-    print "RESULTS:  The coordinates", RA, DEC, "are observable by JWST", len(calendar), "days per year"
-    print "RESULTS:  For", allgood, "of those days, the background is <", thresh, "of the minimum, at wavelength", wavelength_desired, "micron"
+    print("RESULTS:  The coordinates", RA, DEC, "are observable by JWST", len(calendar), "days per year")
+    print("RESULTS:  For", allgood, "of those days, the background is <", thresh, "of the minimum, at wavelength", wavelength_desired, "micron")
 ### END EXAMPLE FOR STScI
     
     
@@ -326,7 +330,7 @@ if Bathtubs_deepfields :
             myfile = myfile_from_healpix(row.healpix)
             results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
             (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results
-            print "Running for", row.FIELD, row.RA_deg, row.DEC_deg, row.healpix, len(calendar)
+            print("Running for", row.FIELD, row.RA_deg, row.DEC_deg, row.healpix, len(calendar))
             for wavelength_desired in whichwaves :
                 plt.clf()
                 title = re.sub("_", " ", row.FIELD) + " at " + str(wavelength_desired) + " micron"
@@ -353,7 +357,7 @@ if Bathtubs_deepfields :
             title = "Fields at " + str(wavelength_desired) + " micron"
             plt.clf()
             for row in deep_fields.itertuples() :
-                print "Running for", row.FIELD, row.RA_deg, row.DEC_deg, row.healpix
+                print("Running for", row.FIELD, row.RA_deg, row.DEC_deg, row.healpix)
                 myfile = myfile_from_healpix(row.healpix)
                 results = read_JWST_precompiled_bkg(myfile, base_dir, bkg_dir, showplot=False)
                 (calendar, RA, DEC, pos, wave_array, nonzodi_bg, thermal, zodi_bg, stray_light_bg, total)  = results
@@ -384,8 +388,8 @@ if Gooddays_deepfields :
         subset2.drop(['RA_deg', 'DEC_deg'], axis=1, inplace=True)
         subset2.transpose().to_csv(re.sub(".txt", '_gooddays.csv', infile))  # dump to csv
         subset2.drop('Ecl_lon', axis=1, inplace=True)
-        print subset2.transpose().to_clipboard()  # write to clipboard, so I can copy to the memo
-        raw_input("TEMPORARY, press any key to continue")
+        print(subset2.transpose().to_clipboard())  # write to clipboard, so I can copy to the memo
+        input("TEMPORARY, press any key to continue")
 
 # Now, make 2D maps on the sky, and bin by Ecliptic latitude
 Plot_on_sky = False

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 import jrr
 #import ayan
 import numpy as np
@@ -23,7 +25,7 @@ def make_boxplots_of_doublets(batch, pp) :  # which batch, and a figure handle p
             transin.reset_index(inplace=True, drop=True)
             jrr.plot.boxplot_Nspectra( (sp.wave,), (sp.fnu/sp.fnu_autocont,), (sp.fnu_u/sp.fnu_autocont,), (row.zz,), transin.label, transin.wave, win=2000, Ncol=1, LL=LL, vel_plot=True)            
             extra_label = row.gal + " " + row.pointing + ",  intervening absorber z="+ str(np.round(row.zz, decimals=4)) + " (" + row.flag + ")"
-            print "Working on " + extra_label
+            print("Working on " + extra_label)
             plt.suptitle(extra_label, fontsize=20)
             pp.savefig()
     return(0)

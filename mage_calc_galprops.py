@@ -1,3 +1,4 @@
+from __future__ import print_function
 # CALL THIS from command line, as:
 #   ipython ~/Python/JRR_Code/mage_calc_galprops.py > mage_galproperties.txt   #clunky I/O, I know
 
@@ -45,8 +46,8 @@ for label in speclist['short_label'] :
         K98_convert = 1.4E-28  # Eqn 1 of Kennicutt et al. 1998, units are erg/s/Hz
         SFR_raw   =  fnu1500 * flux_to_lum * K98_convert        # ** Magnification should be divided here
         SFR_dered =  fnu1500_dered * flux_to_lum * K98_convert  # ** Magnification should be divided here
-        print label, S99.loc[label]['EBV'],  S99.loc[label]['sigmaEBV'], Zneb.loc[label]['Zneb_solar'],  Zneb.loc[label]['Zneb_sig'],
-        print S99.loc[label]['ZS99'],  S99.loc[label]['tS99'], fnu1500, fnu1500_dered, SFR_raw, SFR_dered
+        print(label, S99.loc[label]['EBV'],  S99.loc[label]['sigmaEBV'], Zneb.loc[label]['Zneb_solar'],  Zneb.loc[label]['Zneb_sig'], end=' ')
+        print(S99.loc[label]['ZS99'],  S99.loc[label]['tS99'], fnu1500, fnu1500_dered, SFR_raw, SFR_dered)
 
 
 # Make a new data frame w results, and dump it to a file.

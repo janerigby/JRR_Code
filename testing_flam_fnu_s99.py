@@ -6,6 +6,7 @@ figures out what normalization was applied, and writes a pandas data frame that 
 columns, but otherwise can be treated like a megasaura spectrum.  
 jrigby, 9Dec2016
 '''
+from __future__ import print_function
 
 import jrr
 import  matplotlib.pyplot  as plt
@@ -75,9 +76,9 @@ pp.savefig()
 
 
 S99files = ("S0004-0103", "S0033+0242", "S0108+0624", "S0900+2234", "S0957+0509", "S1226+2152", "S1429+1202", "S1458-0023", "S1527+0652", "S2111-0114", "Cosmic~Eye", "Horseshoe", "rcs0327-E", "rcs0327-G", "rcs0327-U") 
-print "My spectrum should be in black, thinner overlapping red spectrum to verify normalization, and a green S99 fit"
+print("My spectrum should be in black, thinner overlapping red spectrum to verify normalization, and a green S99 fit")
 for ii, rootname in enumerate(S99files) :
-    print "Testing", rootname
+    print("Testing", rootname)
     plt.clf()
     fig = plt.figure(ii+2, figsize=(8,5))
     check_reading_in_S99_rest(rootname)
@@ -87,7 +88,7 @@ pp.close()
 the_pdf = "test_readinS99_obs.pdf"
 pp = PdfPages(the_pdf)  # output   
 for ii, rootname in enumerate(S99files) :
-    print "Testing", rootname
+    print("Testing", rootname)
     plt.clf()
     fig = plt.figure(ii, figsize=(8,5))
     check_reading_in_S99_obs(rootname)

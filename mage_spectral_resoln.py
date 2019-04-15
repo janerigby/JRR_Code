@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This is a code to empirically measure the spectral resolution, aka
 # the line spread function, for MagE spectra.  It measures this from
 # skylines that were processed in the same way as the science spectra.
@@ -8,6 +9,8 @@
 # RUN THIS FROM IPYTHON WITH %PYLAB, OR YOU HAVE TO CLICK THROUGH EVERY PLOT.
 # jrigby, Feb 2016.  
 
+from builtins import str
+from builtins import range
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import ascii
@@ -63,20 +66,20 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
 
     if re.search("-combw?C?1.txt", filename) :  # Megasaura with continuum
         outfile   =  specdir + re.sub("-combw?C?1.txt", "-specresln.txt", filename)
-        print "DEBUG, preparing to write outfile from original filename ", outfile, filename
+        print("DEBUG, preparing to write outfile from original filename ", outfile, filename)
         # Error checking, don't want to overwrite filename
         if (outfile == filename) or  (re.search("-combw?C?1.txt", filename)<1) :
             exit("DIED, filename not what was expected")  # die if it didn't change the filename
     else :
         outfile   =  specdir + re.sub("-comb.txt", "-specresln.txt", filename)  # new files no fit cont
-        print "DEBUG, preparing to write outfile from original filename ", outfile, filename
+        print("DEBUG, preparing to write outfile from original filename ", outfile, filename)
         # Error checking, don't want to overwrite filename
         if (outfile == filename) or  (re.search("-comb.txt", filename)<1) :
             exit("DIED, filename not what was expected")  # die if it didn't change the filename
             
     outpng    = outfile.replace(".txt", "")
     (sp_temp, resoln, dresoln) = jrr.mage.open_spectrum(filename, zz, mage_mode)
-    print("I opened file ", filename) 
+    print(("I opened file ", filename)) 
 
     sp = sp_temp[sp_temp['wave_sky'].gt(5000)].copy()   # Don't look for skylines in the blue
     #sp['fnu_sky'].fillna(-99, None, inplace=True)  # correct for some infinite values
@@ -133,7 +136,7 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
                 if GOSLOW :
                     sleep(0.5)
             except:
-                print "skipping peak at ", sp.wave_sky.iloc[item], "because bad fit"
+                print("skipping peak at ", sp.wave_sky.iloc[item], "because bad fit")
     plt.clf()
     # Now, plot the measured R vs wavelength, and fit a simple func to it.
     plt.scatter(goodpeaks,  RR)

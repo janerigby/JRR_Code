@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 names = ("SGAS1723", "RCS0327", "PSZ1G311.65-18.48", "SGAS1110+6459", "SGAS1226p2152", "SGAS1050p0017")
@@ -13,17 +14,17 @@ the_gratings  = (G140_F100, G235_F170, G396_F290)
 grating_names = ("G140_F100", "G235_F170", "G396_F290")
 
 for ii, name in enumerate(names) :
-    print name, "at z =",zz[ii]
-    print "HB, Ha:",  (1.0 +zz[ii]) * waves
+    print(name, "at z =",zz[ii])
+    print("HB, Ha:",  (1.0 +zz[ii]) * waves)
     for jj, grating in enumerate(the_gratings) :
-        print "   ", grating / (1.0+zz[ii]) , grating_names[jj]
+        print("   ", grating / (1.0+zz[ii]) , grating_names[jj])
 
-print "Ideal redshifts for each grating:"
+print("Ideal redshifts for each grating:")
 for jj, grating in enumerate(the_gratings) :
-    print grating_names[jj], np.average(grating) / np.average(waves) - 1.0
+    print(grating_names[jj], np.average(grating) / np.average(waves) - 1.0)
     
-print "Put Hbeta and Halpha in the same grating for these zs:"
+print("Put Hbeta and Halpha in the same grating for these zs:")
 for jj, grating in enumerate(the_gratings) :
     line1_zs = grating / waves[0] - 1
     line2_zs = grating / waves[1] - 1
-    print "   ", grating_names[jj], np.round(line1_zs[0], 3), np.round(line2_zs[1], 3)
+    print("   ", grating_names[jj], np.round(line1_zs[0], 3), np.round(line2_zs[1], 3))

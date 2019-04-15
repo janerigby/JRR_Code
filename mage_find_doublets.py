@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import input
+from builtins import str
 import jrr
 import ayan
 import numpy as np
@@ -45,7 +48,7 @@ def find_lines_Schneider(sp, resoln, siglim=3., abs=True, delta=0.15) :
         subset = sp['temp']  &  (sp['W_interp'] > sp['W_u_interp'] * siglim)
     sp['peak'].ix[subset] = True  # Peaks now marked
     sp.loc[sp['wave'].between(4737.6, 4738), 'peak'] = True  # ADD PEAK FOR S1527 at z=2.055, to work around bad skyline
-    print "FINDING PEAKS (this is slow), N peaks: ", sp['temp'].sum(),  "  significant peaks: ", sp['peak'].sum()
+    print("FINDING PEAKS (this is slow), N peaks: ", sp['temp'].sum(),  "  significant peaks: ", sp['peak'].sum())
     return(0)
 
 def plot_peakfinding(sp) :
@@ -85,7 +88,7 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                 in_forest = sp.ix[candidate]['wave'] < (1. + zz_syst) * 1216.  #  In Lya Forest
                 descriptive_string = thisgal + " possible " + doubname + " doublet at z=" + str(np.round(testz, 5))
                 plt.title(descriptive_string)
-                print descriptive_string, "waves", doublet[0]*(1+testz), doublet[1]*(1+testz)
+                print(descriptive_string, "waves", doublet[0]*(1+testz), doublet[1]*(1+testz))
                 plt.step(sp.wave, sp.W_interp, color='blue')
                 plt.step(sp.wave, sp.fnu/sp.fnu_autocont, color='black', label="fnu contnorm")
                 plt.step(sp.wave, sp.fnu_u/sp.fnu_autocont, color='grey', label="fnu_u contnorm")
@@ -102,7 +105,7 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                 EW2 = float(np.min(sp[searchreg]['W_interp']))
                 snr1 = sp.ix[candidate].W_interp / sp.ix[candidate].W_u_interp *-1.
                 snr2 = float(np.max(sp[searchreg]['W_interp'] / sp[searchreg]['W_u_interp'] * -1.))
-                user_flag = (raw_input("    Is this real? y for yes, n for no, p for possibly, b for yes but blended:")) 
+                user_flag = (input("    Is this real? y for yes, n for no, p for possibly, b for yes but blended:")) 
                 if user_flag in ('y', 'p', 'b', 'pb') :
                     df.loc[counter] = (user_flag, thisgal, testz, doubname, doublet[0]*(1+testz), doublet[1]*(1+testz), EW1, EW2, snr1, snr2, in_forest)
                     pp.savefig()
@@ -129,7 +132,7 @@ df = make_empty_doublet_dataframe()
 #speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all")
 speclist = jrr.mage.wrap_getlist(mage_mode, which_list="labels", labels=these_labels, MWdr=True)
 if (speclist.shape[0] == 0) : raise Exception("Failed to retreive spectrum.")
-print "FINDING DOUBLETS IN SUBSET OF SPECTRA, just", these_labels
+print("FINDING DOUBLETS IN SUBSET OF SPECTRA, just", these_labels)
 
 for thisgal in speclist.short_label :
     (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(thisgal, mage_mode, addS99=True)  # load spectrum
@@ -139,7 +142,7 @@ for thisgal in speclist.short_label :
     df3 = test_candidate_doublets(sp, zz_syst, resoln, SiIV, "SiIV", ylims=ylims, find_systemic=False)
     df2 = test_candidate_doublets(sp, zz_syst, resoln, MgII, "MgII", ylims=ylims, find_systemic=False)
     df  = pandas.concat([df, df1, df2, df3]).reset_index(drop=True)
-print df.head(40)
+print(df.head(40))
 with open(outfile, 'a+') as f:
     df.to_csv(f, sep='\t')
 f.close()
@@ -153,7 +156,7 @@ def doublet_ratio_partialcoverage_analyzer(doublet_file) :
     for row in doublet_list.itertuples():
         plt.clf()
         (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(row.gal, mage_mode, addS99=True)  # load spectrum
-        print "debugging, working on this row of doublet list: ", row
+        print("debugging, working on this row of doublet list: ", row)
         plt.step(sp.wave, sp.fnu/sp.fnu_autocont, color='black')
         plt.step(sp.wave, sp.fnu_u/sp.fnu_autocont, color='grey')
         plt.step(sp.wave, sp.fnu/sp.fnu_s99model, color='blue')

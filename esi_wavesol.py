@@ -5,6 +5,8 @@
    Returns approx observed wavelength, and if redshift entered, approx rest wavelength
    Allowable orders are 6--15.
    Written by Jane Rigby, Aug 2016.  '''
+from __future__ import print_function
+from builtins import str
 import numpy as np
 import sys
 
@@ -12,13 +14,13 @@ import sys
 if(len(sys.argv) == 3 or len(sys.argv) == 4):
     order =  str(sys.argv[1])  # input the ESI spectral order
     if order > 15 or order <6 : 
-        print "ERROR!  Order must be between 6 and 15."
+        print("ERROR!  Order must be between 6 and 15.")
         sys.exit(1)
     pixel = np.float64(sys.argv[2])   # input the Y value of a pixel in that order
     if len(sys.argv)== 4 :
         zz = np.float64(sys.argv[3])  # Optional, redshift
 else:
-    print "ERROR!  Two arguments required:  [spectral order]  and [Y pixel value]\nOptional third argument is redshift\n"
+    print("ERROR!  Two arguments required:  [spectral order]  and [Y pixel value]\nOptional third argument is redshift\n")
     sys.exit(1)
 
 #Dictionary of ESI wavelength coefficients, from http://www2.keck.hawaii.edu/inst/esi/QuickRef.html#Wavelengths
@@ -42,9 +44,9 @@ def approx_wave_esi(order, Yval) :
     return(wave)
 
 wave =  approx_wave_esi(order, pixel)
-print "observed wave: ", wave, "  "
+print("observed wave: ", wave, "  ")
 if len(sys.argv)== 4 :
     rest_wave = wave / (1.0+zz)
-    print "rest wave:     ", rest_wave
+    print("rest wave:     ", rest_wave)
 
 

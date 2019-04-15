@@ -1,6 +1,9 @@
 ''' This is a script to read in John Chisholm's Starburst99 models, so that I can
 fit auto continuum and equivalent widths.'''
+from __future__ import print_function
 
+from builtins import str
+from builtins import range
 from os.path import expanduser
 from astropy.table import Table
 from astropy.io import fits
@@ -48,7 +51,7 @@ for thismod in (models[:]) :
     for tt in range(0, Nages) :
         age = convert_age_to_Myr(mytab['AGE'][0,tt])
         label = get_label_from_t_Z(age,metallicity)
-        print thismod, metallicity, age, label
+        print(thismod, metallicity, age, label)
         wave = mytab['WAVE'][0,:]
         flam = mytab['FLUX'][0,tt,:]
         # Make a pandas data frame for this time, this metallicity

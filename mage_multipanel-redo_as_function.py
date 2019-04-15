@@ -1,6 +1,7 @@
 ''' Same as multipanel-spectrum-ids.py, but plot multiple spectra.  Using for individual galaxies
 jrigby, Sept 2016. '''
 
+from builtins import str
 import jrr
 import matplotlib.pyplot as plt
 import numpy as np

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import range
 from astropy.io import fits
 import  matplotlib.pyplot as plt
 import pandas
@@ -79,7 +81,7 @@ for jj, thisline in enumerate(wav_line) :  # Loop over spectral features
 plt.savefig("/Users/jrrigby1/WORK/S2222_QSO_intervening/s2222_intervening.pdf")
 plt.show()
 
-print "#obj   line    cuton  cutoff  EW_r(A)       EW_r_u(A)     redshift"
+print("#obj   line    cuton  cutoff  EW_r(A)       EW_r_u(A)     redshift")
 # Measure EWs for Mg II 2803 and FeII 2600.  Also, get rest wavelength
 cuton  = (2801.6, 2598.5)
 cutoff = (2807.7, 2603.3)
@@ -99,10 +101,10 @@ for jj in range(0, len(cuton)) :
         idmin = df[label[ii]][cutout2].flam.idxmin()
         line_zz = df[label[ii]].iloc[idmin].wave / centers[jj] - 1.0
         zzlist.append(line_zz)
-        print label[ii], names[jj], cuton[jj], cutoff[jj], EWar[ii][jj], EWar_u[ii][jj], line_zz
+        print(label[ii], names[jj], cuton[jj], cutoff[jj], EWar[ii][jj], EWar_u[ii][jj], line_zz)
 
-print "mean and std of lines:", np.mean(EWar, axis=0), np.std(EWar, axis=0)        
-print "Median redshift and mad for fitted lines: ",  np.median(zzlist), jrr.util.mad(zzlist)
+print("mean and std of lines:", np.mean(EWar, axis=0), np.std(EWar, axis=0))        
+print("Median redshift and mad for fitted lines: ",  np.median(zzlist), jrr.util.mad(zzlist))
 
 # Need to concatenate the data frames, so that I can deal with all 3 spectra at once.
 

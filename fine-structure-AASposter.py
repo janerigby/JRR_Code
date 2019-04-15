@@ -1,4 +1,6 @@
+from __future__ import print_function
 # plot a figure with multiple panels
+from builtins import range
 import matplotlib
 import pylab
 import numpy
@@ -43,8 +45,8 @@ if(plotU):
     errcolor = 'c'
 
 def onclick(event):  # Setting up interactive clicking.  Right now, just prints location.  Need to add gaussian
-    print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(
-        event.button, event.x, event.y, event.xdata, event.ydata)
+    print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(
+        event.button, event.x, event.y, event.xdata, event.ydata))
 
 # Need a linelist.  concat-linelist.pl will grab several different linelists and merge, w appropriate redshifts for different components
 call("/Volumes/Apps_and_Docs/WORK/Lensed-LBGs/Mage/RCS0327/Plot-all/concat-linelist.pl")  # Sort the linelists, as plotIDs requires

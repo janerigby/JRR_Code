@@ -1,3 +1,4 @@
+from __future__ import print_function
 import jrr
 import pandas
 import numpy as np
@@ -45,7 +46,7 @@ EBV = jrr.grism.get_MWreddening_S1723()         # Get the Milky Way reddening va
 
 ## PART 1:  Write the IDL script to fit the continuum.
 if Make_IDL_script :
-    print "Keystroke S then DONE -- not q -- when finished, or IDL will go nuts."
+    print("Keystroke S then DONE -- not q -- when finished, or IDL will go nuts.")
     f = open(idlscript, 'w')  # Over-ride the IDL script to fit the continuum
     if not os.path.exists(contdir):  os.makedirs(contdir)  # Make the continuum dir to hold output, if it does not already exist
     for specinfile in thefiles :

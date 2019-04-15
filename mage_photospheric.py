@@ -1,6 +1,8 @@
 ''' Script to make the photospheric absorption plots that I can't eaisly make from within mage_winds.py
 jrigby, dec 2016.  Kinda kludgy.  Run from /Mage/Analysis/Wind_plots/Photospheric'''
+from __future__ import print_function
 
+from builtins import range
 import jrr
 import os
 import sys
@@ -37,7 +39,7 @@ gallist_justhighSNR = ('S0004-0103', 'S0033+0242', 'S0108+0624', 'rcs0327-E', 'r
 
 sortedbyage_justhighSNR = ('rcs0327-E', 'S0004-0103', 'rcs0327-G', 'rcs0327-U', 'S0033+0242', 'S0900+2234', 'S0108+0624', 'S1429+1202', 'S1527+0652', 'S1226+2152', 'Cosmic~Eye', 'chuck', 'Stack-A')
 
-print "STATUS:  Loading all the spectra (and their S99 fits) into big honking dataframes."
+print("STATUS:  Loading all the spectra (and their S99 fits) into big honking dataframes.")
 (df, resoln, dresoln, big_LL, big_zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='wcont')  # open honking
 #(df, resoln, dresoln, big_LL, big_zz_sys, specs) = jrr.mage.open_many_spectra(mage_mode, which_list='labels', labels=('rcs0327-E','rcs0327-B'))  # DEBUGGING TESTING
 df['chuck']  = jrr.mage.read_chuck_UVspec(addS99=True, autofitcont=True)
@@ -47,7 +49,7 @@ big_zz_sys['chuck'] = 0.0  ;  big_zz_sys['Stack-A'] = 0.0
 gallist_to_process = [val for val in specs['short_label']]
 gallist_to_process.append("chuck")
 gallist_to_process.append("Stack-A")
-print "DEBUGGING", gallist_to_process
+print("DEBUGGING", gallist_to_process)
 
 
  
@@ -57,7 +59,7 @@ def local_s99_compare_manyspectra(labels, line_cen, line_label, win, toplabel, N
     fig = plt.figure(figsize=size)
     if print_label:  plt.suptitle(toplabel, fontsize=18)
     for ii, label in enumerate(labels) :
-        print "DEBUG", label, ii
+        print("DEBUG", label, ii)
         sp = df[label]
         ax = fig.add_subplot(Nrow, Ncol, ii+1)
         if(vel_plot) :   # x axis is velocity (km/s)
@@ -101,7 +103,7 @@ Ncol = 2
 def line_per_page(whichgals, the_pdf):
     pp = PdfPages(the_pdf)  # output
     for ii in range(0, len(line_center_p)) :
-        print "\n", line_label_p[ii], line_center_p[ii], "***",
+        print("\n", line_label_p[ii], line_center_p[ii], "***", end=' ')
         local_s99_compare_manyspectra(whichgals, line_center_p[ii], line_label_p[ii], xwin, line_label_p[ii], Ncol, size=(10,12), print_label=True)
         pp.savefig()
     pp.close()
@@ -120,11 +122,11 @@ def plot_all_winds(whichgals, the_pdf, size) :    # These were orignally wind li
     
 ###############################
 # Actually run things
-print "STATUS:  Plotting the photospheric lines, one page per transition."
+print("STATUS:  Plotting the photospheric lines, one page per transition.")
 line_per_page(gallist_to_process,  "S99-photospheric-bylines.pdf")
 line_per_page(gallist_justhighSNR, "S99-photospheric-bylines_highSNR.pdf")
 
-print "STATUS:  Plotting the photospheric lines, one page per transition, now sorting by light-weighted age."
+print("STATUS:  Plotting the photospheric lines, one page per transition, now sorting by light-weighted age.")
 line_per_page(sortedbyage, "S99-photospheric-bylines-sortbyage.pdf")
 line_per_page(sortedbyage_justhighSNR, "S99-photospheric-bylines-sortbyage_highSNR.pdf")
 

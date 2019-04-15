@@ -1,3 +1,4 @@
+from __future__ import print_function
 import glob
 import subprocess
 from os.path import expanduser, basename, normpath, exists
@@ -21,16 +22,16 @@ with open(reduxdir + infile) as f_in:
         if '#' in line : next          # strip comments
         elif 'NAME' in line :
             (first, subdir) = line.split()
-            print "Working on object   ", subdir
+            print("Working on object   ", subdir)
             outdir = atlasdir + subdir + '/'
             if not exists(outdir):  makedirs(outdir)
         else :
-            print line
+            print(line)
             subsubdir = basename(normpath(line))  # grab the last dir in the path
             goeshere = outdir  + subsubdir + '/'
             if not exists( goeshere ) : makedirs( goeshere)
             dothis = '/bin/cp -pr ' + normpath(line) + '/*sum*fits  ' + goeshere
-            print "Planning to ", dothis
+            print("Planning to ", dothis)
             temp = subprocess.check_output(dothis, shell=True).split()
 
 

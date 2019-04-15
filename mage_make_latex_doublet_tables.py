@@ -1,5 +1,6 @@
 ''' This is an unfinished script to make a pretty latex table of doublets found in the Megasaura spectra, 
 for the intervening absorber paper.  jrigby, Feb 2019'''
+from __future__ import print_function
 
 from os.path import expanduser
 import pandas
@@ -50,8 +51,8 @@ iffy         = df3.loc[df3['flag'].str.contains('p')]
 
 # Check sizes of these subsets
 thesizes = np.array((def_detected.shape[0], det_blended.shape[0], iffy.shape[0]))
-if  np.sum(thesizes) == df3.shape[0] : print "Good, the sum of the subsets is as big as the big df."
-else : print "ERROR, sizes do not match! The sum of", thesizes, np.sum(thesizes), "should sum to the total of", df3.shape[0]
+if  np.sum(thesizes) == df3.shape[0] : print("Good, the sum of the subsets is as big as the big df.")
+else : print("ERROR, sizes do not match! The sum of", thesizes, np.sum(thesizes), "should sum to the total of", df3.shape[0])
 
 
 #print df3.head()

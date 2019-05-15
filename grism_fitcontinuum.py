@@ -17,6 +17,8 @@ an equivalent package within Python.  In principle, all 3 steps can be run at on
 was easier to run them one at a time bc it took several tries to get the IDL continuum fits right.  
 It shouldn't matter what dir this script gets run in.
 jrigby, may 2018
+Update, May 2019: the Milky Way dereddening was not applied correctly to S2340; incorrectly used
+the (lower) EBV value for S1723 instead of the actual EBV value for S2340.  Rerunning. 
 '''
 
 #### Setup  #########   By hand RUN THIS FOR EACH DIRECTORY, BOTH GRISMS
@@ -26,13 +28,14 @@ Make_IDL_script = False
 Run_IDL_script  = False
 Paste_spectra_continuua = True
 ################
+EBV = {'S1723' :  jrr.grism.get_MWreddening_S1723(),   'S2340' :  jrr.grism.get_MWreddening_S2340()}  # Forgot to use MW dereddening for S2330!
 
 home = os.path.expanduser("~")
 wdir1 = home + '/Dropbox/Grism_S1723/Grizli_redux/'
 wdir2 = home + '/Dropbox/Grism_S2340/Grizli_redux/'
-#              0X                      1                       2                                 3X                 4
-alldirs = (wdir1 + '1Dsum/', wdir1 + '1Dbyclumps/', wdir1 + '1D_complete_images_A2_A3/', wdir2 + '1Dsum/', wdir2 + '1Dbyclumps/') # first run
-#alldirs = (wdir2 + '1Dbyclumps_individuals/', wdir2 + '1Dbyclumps_stacks/') # catch-up for Michael's new S2340 extractions
+#              0X                      1                       2                                 3X         
+#alldirs = (wdir1 + '1Dsum/', wdir1 + '1Dbyclumps/', wdir1 + '1D_complete_images_A2_A3/', wdir2 + '1Dsum/') # first run
+alldirs = (wdir2 + '1Dbyclumps_individuals/', wdir2 + '1Dbyclumps_stacks/') # Michael's new S2340 extractions
 grismdir = alldirs[which_dirnum]  # Step through
 contdir  = grismdir + "Wcont/"
 
@@ -40,8 +43,6 @@ thefiles =  [ os.path.basename(x) for x in glob.glob(grismdir + "*"+which_grism+
 idlscript = 'fit_continuum_script' + which_grism + '.idl'
 grism_header = "# Wavelength (A)  Flux (ergs/sec/cm2/A)   Flux Uncertainty (1 sigma)  JRR fitted continuum\n" # From Florian's reductions
 extra_header = "# Milky Way dereddening (MWdr) has been applied by grism_fitcontinuum.py\n"
-EBV = jrr.grism.get_MWreddening_S1723()         # Get the Milky Way reddening value
-
 
 
 ## PART 1:  Write the IDL script to fit the continuum.
@@ -64,18 +65,29 @@ if Run_IDL_script :
 
 ## PART 3:  Combine the spectra w their continuum fits into one file.
 if Paste_spectra_continuua :
+    if   'S1723' in grismdir : galname = 'S1723'
+    elif 'S2340' in grismdir : galname = 'S2340'
+    else : raise Exception("Do not recognize galname.  Cannot retrieve MW EBF")
+    print("Debugging, using EBV", EBV[galname])
+
     for specinfile in thefiles :
         root = re.sub('.txt', '', specinfile)
         colnames = ('wave', 'flam', 'flam_u')
         sp_grism = pandas.read_table(grismdir + specinfile, delim_whitespace=True, comment="#", skiprows=1, names=colnames)
         contfile =  re.sub('.txt', '_cont.fits', specinfile)
         wcontfile =  re.sub('.txt', '_wcontMWdr.txt', specinfile)
-        data_in, header = fits.getdata(contdir + contfile, header=True)
-        if data_in.shape[0] != sp_grism.shape[0] : raise Exception("ERROR: continuum file and parent spectrum file have different # of pixels.")
-        #t = Table(np.vstack(data_in))  # Temp step, into Astropy tables to get rid of bigendian littlendian
-        sp_cont = Table(np.vstack(data_in)).to_pandas()
-        if sp_grism.shape[0] != sp_cont.shape[0] : raise Exception("ERROR: continuum file and parent spectrum data frames have different lengths.")
-        sp_grism['cont'] = sp_cont['col0']   #  Insert continuum column into spectrum
-        jrr.spec.deredden_MW_extinction(sp_grism, EBV, colwave='wave', colf='flam', colfu='flam_u', colcont='cont')  # Apply Milky Way dereddening (MWdr)
-        sp_grism.to_csv('temp', index=False, na_rep='NaN')
-        jrr.util.put_header_on_file('temp', grism_header+extra_header,  contdir + wcontfile)
+        if(os.path.exists(contdir + contfile)):
+            print("Proceeding with", contfile)
+            data_in, header = fits.getdata(contdir + contfile, header=True)
+            if data_in.shape[0] != sp_grism.shape[0] : raise Exception("ERROR: continuum file and parent spectrum file have different # of pixels.")
+            #t = Table(np.vstack(data_in))  # Temp step, into Astropy tables to get rid of bigendian littlendian
+            sp_cont = Table(np.vstack(data_in)).to_pandas()
+            if sp_grism.shape[0] != sp_cont.shape[0] : raise Exception("ERROR: continuum file and parent spectrum data frames have different lengths.")
+            sp_grism['cont'] = sp_cont['col0']   #  Insert continuum column into spectrum
+            jrr.spec.deredden_MW_extinction(sp_grism, EBV[galname], colwave='wave', colf='flam', colfu='flam_u', colcont='cont')  # Apply Milky Way dereddening (MWdr)
+            sp_grism.to_csv('temp', index=False, na_rep='NaN')
+            jrr.util.put_header_on_file('temp', grism_header+extra_header,  contdir + wcontfile)
+            print("DEBUGGING, trying to write to", contdir + wcontfile)
+        else : print("Caution, contfile does not exist:", contdir + contfile)
+    print("DEBUGGING, thefiles were", thefiles)
+    print("DEBUGGING, dir was", contdir)

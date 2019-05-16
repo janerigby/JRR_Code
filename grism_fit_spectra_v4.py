@@ -66,7 +66,7 @@ def get_line_wavelengths(which_grism) :
 # Also, probably should have done all this in astropy, which has similar functionality. Moving on.
 
 def fitfunc_G141(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8) : # A custom G141 fitting function
-    # Parameters are the FLUX of each Gaussian, = a*c*sqrt(2pi).  Since sigmas are fixed, its clearer to have params be FLUXES.
+    # Parameters are the FLUX of each Gaussian, = a*c*sqrt(2pi).  Since sigmas are fixed, it is clearer to have params be FLUXES.
     # This version fits a global redshift zz, and allows no wavelength miscalibration between lines.
     fluxes          = np.array((f0,        f1,        f2,        f3,         f4,          f5,          f6,       f7,  f8))
     (restwaves, linenames, label_df) = get_line_wavelengths("G141")
@@ -264,9 +264,9 @@ def supplemental_header(LMresult) :
 plt.ion()
 ##  Setup
 #infile = 'S1723_G141_grism2process.txt'
-infile = 'S1723_G102_grism2process.txt'
+#infile = 'S1723_G102_grism2process.txt'
 #infile = 'S2340_G102_grism2process.txt'  # CHANGE THIS.  Keep format
-#infile = 'S2340_G141_grism2process.txt'  
+infile = 'S2340_G141_grism2process.txt'  
 
 figsize = (12,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT

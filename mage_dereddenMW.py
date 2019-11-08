@@ -22,8 +22,8 @@ metabatch = jrr.mage.organize_labels('metabatch')   # Doing Emil's extra combina
 
 #labels = batch2
 #labels = batch3
-#labels = metabatch  # Usually this is the one to use
-labels = ('planckarc',)
+labels = metabatch  # Usually this is the one to use
+#labels = ('planckarc',)  juke to run on only one spectrum, after I removed slit4 from the Planck arc stack
 
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 #speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all", zchoice=zchoice, MWdr=False)  # MWdr=False to read the files that are not corrected for MWreddening.  ## USED FOR BATCH 1

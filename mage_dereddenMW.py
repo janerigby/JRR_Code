@@ -10,7 +10,7 @@ import pandas
 import matplotlib.pyplot as plt
 import numpy as np
 import re
-import to_precision  
+#import to_precision  
 
 mage_mode = 'reduction'
 zchoice = 'stars'
@@ -19,9 +19,11 @@ batch2    = jrr.mage.organize_labels('batch2')   # Adding "Friends of Megasaura"
 batch3    = jrr.mage.organize_labels('batch3')   # Adding Apr2018 and Aug2018 runs
 metabatch = jrr.mage.organize_labels('metabatch')   # Doing Emil's extra combinations separately
 
+
 #labels = batch2
 #labels = batch3
-labels = metabatch
+#labels = metabatch  # Usually this is the one to use
+labels = ('planckarc',)
 
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)
 #speclist = jrr.mage.wrap_getlist(mage_mode, which_list="all", zchoice=zchoice, MWdr=False)  # MWdr=False to read the files that are not corrected for MWreddening.  ## USED FOR BATCH 1
@@ -41,6 +43,7 @@ for label in speclist.index:  # For each file in spectra-filenames-redshifts.txt
     jrr.util.check_df_for_Object(sp)   # Check if Pandas has erroneously read column as Object instead of float64
     sp.to_csv('temp', sep='\t', index=False, float_format="% 1.8E", na_rep=' NaN          ')
     jrr.util.put_header_on_file('temp', header, outfile)
+    print("DEBUGGING, running " + label)
      
 
 

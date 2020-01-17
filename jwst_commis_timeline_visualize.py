@@ -37,7 +37,7 @@ ax.xaxis.set_tick_params(width=2, length=10)
 for patch in (patch1, patch2, patch3, patch0) :
     ax.add_patch(patch)
 plt.annotate("Deploy", xy=(5, y_label), fontsize=fs4)
-plt.annotate("cooling", xy=(25.5, y_label), fontsize=fs1)
+plt.annotate("cooling", xy=(25.1, y_label), fontsize=fs1)
 plt.annotate("Telescope commissioning", xy=(50, y_label), fontsize=fs4)
 plt.annotate("SI commissioning", xy=(130, y_label), fontsize=fs4)
 

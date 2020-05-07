@@ -64,17 +64,17 @@ for jj in range(0, len(specs)) :                  #flam_stack[jj] will be jj spe
     filename  = specs['filename'][jj]
     zz =  specs['z_neb'][jj]
 
-    if re.search("-combw?C?1.txt", filename) :  # Megasaura with continuum
+    if "-combwC1.txt" in filename :  # Original Megasaura with hand-fit continuum
         outfile   =  specdir + re.sub("-combw?C?1.txt", "-specresln.txt", filename)
         print("DEBUG, preparing to write outfile from original filename ", outfile, filename)
         # Error checking, don't want to overwrite filename
-        if (outfile == filename) or  (re.search("-combw?C?1.txt", filename)<1) :
+        if (outfile == filename) or  ("combwC1" in outfile) :
             exit("DIED, filename not what was expected")  # die if it didn't change the filename
     else :
-        outfile   =  specdir + re.sub("-comb.txt", "-specresln.txt", filename)  # new files no fit cont
+        outfile   =  specdir + re.sub("-comb1?.txt", "-specresln.txt", filename)  # Expanded megaaura lack hand-fit cont
         print("DEBUG, preparing to write outfile from original filename ", outfile, filename)
         # Error checking, don't want to overwrite filename
-        if (outfile == filename) or  (re.search("-comb.txt", filename)<1) :
+        if (outfile == filename) or ("comb" in outfile) :
             exit("DIED, filename not what was expected")  # die if it didn't change the filename
             
     outpng    = outfile.replace(".txt", "")

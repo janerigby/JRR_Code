@@ -40,6 +40,7 @@ def MyGaussian(x, *params):   # Define a Gaussian with a linear continuum under 
 
 batch2 = jrr.mage.organize_labels('batch2')   # Adding "Friends of Megasaura" sample  (batch 2)
 batch3 = jrr.mage.organize_labels('batch3')   # Adding Apr2018 and Aug2018 runs
+batch4 = jrr.mage.organize_labels('batch4')   # 2020 runs
 metabatch = jrr.mage.organize_labels('metabatch')   # Doing Emil's extra combinations separately
 
 #temp_filename =  "RCS0327/KnotB/rcs0327-knotB-comb1.txt"  # Prototyped on this file.  Now, run for all.
@@ -49,8 +50,8 @@ if run_just_some:     # A useful way to run just one spectrum, instead of a bunc
 # Adding "Friends of Megasaura" sample
 #    labels = batch2
 #    labels = batch3  # now doing April 2018 and Aug 2018 runs
-# Doing Emil's metabatch
-    labels = metabatch
+    labels = metabatch  # Doing Emil's metabatch
+    labels = batch4     # doing 2020 observations
     specs = jrr.mage.wrap_getlist(mage_mode, which_list='labels', labels=labels, MWdr=False)
     
 else :    # Normal mode

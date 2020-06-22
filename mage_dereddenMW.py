@@ -17,12 +17,14 @@ zchoice = 'stars'
 
 batch2    = jrr.mage.organize_labels('batch2')   # Adding "Friends of Megasaura" sample  (batch 2)
 batch3    = jrr.mage.organize_labels('batch3')   # Adding Apr2018 and Aug2018 runs
+batch4    = jrr.mage.organize_labels('batch4')   # 2020 runs
 metabatch = jrr.mage.organize_labels('metabatch')   # Doing Emil's extra combinations separately
 
 
 #labels = batch2
 #labels = batch3
-labels = metabatch  # Usually this is the one to use
+#labels = metabatch  # Usually this is the one to use
+labels = batch4
 #labels = ('planckarc',)  juke to run on only one spectrum, after I removed slit4 from the Planck arc stack
 
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)

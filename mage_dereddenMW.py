@@ -23,8 +23,8 @@ metabatch = jrr.mage.organize_labels('metabatch')   # Doing Emil's extra combina
 
 #labels = batch2
 #labels = batch3
-#labels = metabatch  # Usually this is the one to use
-labels = batch4
+labels = metabatch  
+#labels = batch4
 #labels = ('planckarc',)  juke to run on only one spectrum, after I removed slit4 from the Planck arc stack
 
 (spec_path, line_path) = jrr.mage.getpath(mage_mode)

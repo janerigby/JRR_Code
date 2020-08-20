@@ -255,6 +255,11 @@ cutout_GNIRS.plot(x='wave', y='flam_u', color='lightgrey', label=nolegend, ax=ax
 plt.title("Flux-scaled spectra")
 adjust_plot()
 
+# Convert to rest-frame wavelength
+jrr.spec.convert2restframe_df(sp_MMT, zHa, units='flam', colwave='wave', colf='flam_cor', colf_u='flam_u_cor')
+
+
+
 # Roll this up into one composite spectrum.  For every wavelength, pick the best spectrum.
 n1 = sp_MMT[['wave', 'flam_cor', 'flam_u_cor']].loc[sp_MMT['wave'].between(3200., 4750.)]
 n1.set_index('wave', inplace=True, drop=False)
@@ -293,8 +298,6 @@ cutout_grism['bothroll_G102'].plot(      x='wave',  y='cont',            color='
 cutout_grism['bothroll_G141'].plot(     x ='wave',  y='cont',            color='black',  label=nolegend, ax=ax)
 #plt.annotate("Prettier plot.  MMT and ESI have been boxcar smoothed", (0.3,0.9), xycoords='axes fraction')
 adjust_plot()
-
-
 
 
 

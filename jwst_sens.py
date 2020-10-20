@@ -120,7 +120,8 @@ header_text += '# In Python pandas, read this file as:  df = pandas.read_csv(\''
 header_text += '# Jane.Rigby@nasa.gov, 20 Aug. 2020.\n#\n'
 jrr.util.put_header_on_file('/dev/null', header_text, outfile)
 bigspec_df.to_pickle(re.sub('readme', 'pcl', outfile))
-
+# read this as    df_sens = pandas.read_pickle('pandeia_lineflux_sensitivities_v1.5.0.pcl')
+ 
 #nirspec_setttings = [x for x in df_disp.keys() if 'nirspec' in x] 
     
 

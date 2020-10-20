@@ -23,7 +23,7 @@ matplotlib.rcParams.update({'font.size': 14})
 emission line fluxes, and make figures for the paper.  jrigby, 2017.  
 Updated June 2018 to use Michael's new grizli redux of grism spectra.'''
 
-# RUN THIS FROM THE FOLLOWING DIR:  /Dropbox/Grism_S1723/JRR_Working2/
+# RUN THIS FROM THE FOLLOWING DIR:  ~/Dropbox/Grism_S1723/JRR_Working2/
 
 def annotate_header(header_ESI, header_MMT, header_GNIRS) :
     for header in (header_ESI, header_MMT, header_GNIRS) :
@@ -194,7 +194,7 @@ sp_GNIRS['flam_u'] = sp_GNIRS['errinmean'] * GNIRS_scaleflux
 cutout_GNIRS = sp_GNIRS.loc[sp_GNIRS['wave'].between(1.5E4,1.55E4)]
 
 # Report how scaled the fluxes
-howscaled_GNIRS = "# Scaled GNIRS spectrum by ratio of Halpha flux, by factor " + str(GNIRS_scaleflux)
+howscaled_GNIRS = "# Scaled GNIRS spectrum by ratio of Halpha flux, by factor " + str(GNIRS_scaleflux) + '\n'
 header_ESI   += howscaled_ESI
 header_MMT   += howscaled_MMT
 header_GNIRS += howscaled_GNIRS 
@@ -239,6 +239,7 @@ sp_ESI.to_csv('temp1', sep='\t', na_rep='NaN')
 sp_MMT.to_csv("temp2", sep='\t', na_rep='NaN')
 jrr.util.put_header_on_file('temp1', header_ESI, "s1723_ESI_wcont.txt")
 jrr.util.put_header_on_file('temp2', header_MMT, "s1723_MMT_wcont.txt")
+
 
 # Plot the scaled spectra
 fig, ax  = plt.subplots(figsize=figsize)
@@ -316,6 +317,26 @@ print("Ha/Hbeta from G141, G102", subdir)
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename1, line1='Halpha_G141', line2='Hbeta_G102', verbose=True)
 print("Ha/Hbeta from G141 only", subdir)
 jrr.grism.measure_linerats_usebothgrisms(G102fits, outfilename2, line1='Halpha_G141', line2='Hbeta_G141', verbose=True)
+
+
+# Export simpler versions of the spectra for ApJ publication  10/2020
+cols2use = ['wave', 'flam_cor', 'flam_u_cor', 'flamcor_autocont']
+sp_ESI.to_csv('temp1', na_rep='NaN', index=False, columns = cols2use)
+sp_MMT.to_csv("temp2", na_rep='NaN', index=False, columns = cols2use)
+cutout_GNIRS.to_csv('temp3', na_rep='NaN', index=False, columns = ['wave', 'flam', 'flam_u'])
+jrr.util.put_header_on_file('temp1', header_ESI, "s1723_ESI_scaledwcont_forApJ.csv")
+jrr.util.put_header_on_file('temp2', header_MMT, "s1723_MMT_scaledwcont_forApJ.csv")
+jrr.util.put_header_on_file('temp3', header_GNIRS, "s1723_GNIRS_forApJ.csv")
+grism_columns = ['wave', 'flam', 'flam_u', 'cont', 'flamcontsub']
+#
+sp_grism['bothroll_G102'].to_csv('temp4',  na_rep='NaN', index=False, columns = grism_columns)
+sp_grism['bothroll_G141'].to_csv('temp5',  na_rep='NaN', index=False, columns = grism_columns)
+header_grism =  "# WFC3 grism spectrum of S1723, from both roll angles.  Milky Way reddening has been corrected.\n"
+header_grism += "# Includes continuum fit and continuum-subtracted spectrum.\n"
+header_grism += "# Wavelengths units are vacuum Angstroms.  flambda units are ergs/sec/cm2/A\n"
+jrr.util.put_header_on_file('temp4', header_grism, "s1723_WFC3_bothrolls_G102_forApJ.csv")
+jrr.util.put_header_on_file('temp5', header_grism, "s1723_WFC3_bothrolls_G141_forApJ.csv")
+
 
     #print "4363/Hbeta ratios"
     #jrr.grism.measure_linerats_fromfiles(G102fits, fitdir, '[O~III]', 'Hbeta', verbose=True)

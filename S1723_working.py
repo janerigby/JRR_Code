@@ -103,7 +103,7 @@ LL = jrr.grism.load_linelists(wdir+'Linelists/', zHa)   #Need to check, z may be
 
 #### Read ESI spectra
 # Units are:  wave: barycentric corrected vacuum Angstroms;  flambda in erg/cm2/s/angstrom
-sp_ESI = pandas.read_table(file_ESI, delim_whitespace=True, comment="#")
+sp_ESI = pandas.read_csv(file_ESI, delim_whitespace=True, comment="#")
 header_ESI = jrr.util.read_header_from_file(file_ESI, comment="#")  # save the header
 sp_ESI.rename(columns={'fsum_jrr' : 'flam'}, inplace=True)  
 sp_ESI.rename(columns={'fsum_u' : 'flam_u'}, inplace=True) 
@@ -140,7 +140,7 @@ for grismfile in grismfiles :
     
 #### Read MMT Blue Channel spectrum. # wave in vacuum Ang, flam in 1E-17 erg/s/cm^2/A
 names=('oldwave', 'flam', 'flam_u')  
-sp_MMT = pandas.read_table(file_MMT, delim_whitespace=True, comment="#", names=names)
+sp_MMT = pandas.read_csv(file_MMT, delim_whitespace=True, comment="#", names=names)
 header_MMT =("# MMT Blue Channel spectrum of SGAS J1723.\n")  # Nothing worth grabbing from original header
 sp_MMT['flam']   *= 1.0E-17   # flam was in units of 1E-17
 sp_MMT['flam_u'] *= 1.0E-17
@@ -271,10 +271,12 @@ n4 = sp_grism['bothroll_G141'].loc[sp_grism['bothroll_G141']['wave'].between(110
 n4.rename(columns={'flam' : 'flam_cor',  'flam_u' : 'flam_u_cor'}, inplace=True)
 composite = pandas.concat((n1, n2, n3, n4))
 composite.to_csv("temp3", na_rep='NaN', index=False)
-comphead = "# Composite convenience spectrum for SGAS 1723.  Ignores overlap, picks one spectrum for each wavelength, as follows:\n"
-comphead +="# MMT Blue Channel 3200--4750A; Keck ESI 4750--8500A; HST WFC3-IR G102 grism 8500--11000A; HST WFC3-IR G141 grism 11000--16250A\n"
-comphead +="# units:  wave is wavelength in vacuum angstroms; f_lambda is erg/s/cm^2/s\n";
-jrr.util.put_header_on_file('temp3', comphead, "S1723_composite_spectrum.csv")
+comphead = "# Composite convenience spectrum for lensed galaxy SDSS J1723+3411 at redshift z=1.3293 .\n"
+comphead += "# Ignores overlap, picks one spectrum for each wavelength, as follows:\n"
+comphead += "# MMT Blue Channel 3200--4750A; Keck ESI 4750--8500A; HST WFC3-IR G102 grism 8500--11000A; HST WFC3-IR G141 grism 11000--16250A\n"
+comphead += "# Does not include the Gemini spectrum for Halpha and [N II]; keeping that separate given very different spectral resolution.\n"
+comphead += "# units:  wave is wavelength in vacuum Angstroms; f_lambda and uncertainty, both in erg/s/cm^2/s\n";
+jrr.util.put_header_on_file('temp3', comphead, "S1723_composite_spectrum_forApJ.csv")
 
 fig, ax = plt.subplots(figsize=figsize)   # Prettier plot
 how2comb = {'flam_cor': 'mean', 'flam_u_cor': jrr.util.convenience1, 'wave': 'mean', 'flamcor_autocont' : 'mean'} #how to bin

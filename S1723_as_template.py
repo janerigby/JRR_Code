@@ -164,10 +164,10 @@ outfilename = "sim_spectrum_z" + str(np.round(zz_s1110, 2)) + "_v1.1.txt"
 write_simulated_spectrum(outfilename, s1110_sim, zz_s1110, scaleby_s1110)
 
 
-plot_synthetic_spectrum_flam(zz_z5, z5_sim, "z5")
+#plot_synthetic_spectrum_flam(zz_z5, z5_sim, "z5")
 plot_linefluxes_and_sens(zz_z5, z5_detected_lines, 'z5')
 
-plot_synthetic_spectrum_flam(zz_s1110, s1110_sim, 's1110')
+#plot_synthetic_spectrum_flam(zz_s1110, s1110_sim, 's1110')
 plot_linefluxes_and_sens(zz_s1110, s1110_detected_lines, 's1110')
 
 print("Testing flux conservation.  Total lineflux in obs, rest frames should match:")

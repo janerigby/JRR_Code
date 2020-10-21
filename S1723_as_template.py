@@ -141,7 +141,7 @@ z5_sim.to_csv(outfilename, sep=' ', columns=('wave_um', 'fnu_mJy'), index=False)
 # Simulate S1110 at z=2.481.  Simply scale S1110 line fluxes from apparent magnitudes
 s1110_df =  load_s1110_Johnson_Tab4()  # load table 4 of Traci's paper.  Somethings weird about the fluxes.
 zz_s1110 = 2.481                 # redshift from Traci's paper
-mAB_606 = 27.24  # AB magnitude apparent 606, from Mike on Slack
+mAB_606 = 26.6  # AB magnitude apparent 606, from Matt on Slack
 Lnu = jrr.util.mAB_to_Lnu(mAB_606, zz_s1110)
 SFR = jrr.util.Kennicutt_LUV_to_SFR(Lnu)
 fHa  = jrr.util.Kennicutt_SFR_to_LHa(SFR) / (4. * np.pi * jrr.util.luminosity_distance(zz_s1110)**2)

@@ -4,7 +4,7 @@ import pandas
 import numpy as np
 import matplotlib.pyplot as plt
 
-mage_mode = 'released'
+mage_mode = 'reduction'
 label = 'S1527+0652'
 
 restwaves = np.array((1037.6167,  6564.61,   4862.683))

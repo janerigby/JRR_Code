@@ -30,26 +30,6 @@ def make_empty_doublet_dataframe() :
     df = pandas.DataFrame(columns=('flag', 'gal', 'zz', 'doubname', 'wave1', 'wave2', 'EWobs1', 'EWobs2', 'snr1', 'snr2', 'in_forest'))
     return(df)
     
-def find_lines_Schneider(sp, resoln, siglim=3., abs=True, delta=0.15) :
-    # Blind search for absorption lines, following Schneider et al. 1993
-    # Delta seems pretty damned arbitary, may bite me later.
-    # Significant peaks identified as sp['peak']=True
-    ayan.mage.calc_schneider_EW(sp, resoln, plotit=False)  # Calculate EW and EW limits
-    sp['temp'] = False  # 1st pass, found a peak
-    sp['peak'] = False  # 2nd pass, peak is significant
-    maxtab, mintab = jrr.peakdet.peakdet(sp.W_interp,delta)  # Find peaks.
-    if abs:   peak_ind =  [np.int(p[0]) for p in mintab] # The minima
-    else:     peak_ind =  [np.int(p[0]) for p in maxtab] # The maxima
-    sp['temp'].iloc[peak_ind] = True  # Convert back into pandas style
-    # Choose only peaks that are greater than siglim significant
-    if abs :  # If looking for absorption lines 
-        subset = sp['temp']  &  (sp['W_interp'] < sp['W_u_interp'] * siglim * -1)
-    else :    # If looking for emission lines
-        subset = sp['temp']  &  (sp['W_interp'] > sp['W_u_interp'] * siglim)
-    sp['peak'].ix[subset] = True  # Peaks now marked
-    sp.loc[sp['wave'].between(4737.6, 4738), 'peak'] = True  # ADD PEAK FOR S1527 at z=2.055, to work around bad skyline
-    print("FINDING PEAKS (this is slow), N peaks: ", sp['temp'].sum(),  "  significant peaks: ", sp['peak'].sum())
-    return(0)
 
 def plot_peakfinding(sp) :
     # Turned off, used to write/debug find_lines_Schneider
@@ -136,7 +116,7 @@ print("FINDING DOUBLETS IN SUBSET OF SPECTRA, just", these_labels)
 
 for thisgal in speclist.short_label :
     (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(thisgal, mage_mode, addS99=True)  # load spectrum
-    find_lines_Schneider(sp, resoln, siglim=siglim, abs=True)  #identify all the >N sigma peaks in spectrum
+    jrr.spec.find_lines_Schneider(sp, resoln, siglim=siglim, abs=True)  #identify all the >N sigma peaks in spectrum
     #plot_peakfinding(sp)  # for debugging
     df1 = test_candidate_doublets(sp, zz_syst, resoln, CIV,  "CIV",  ylims=ylims, find_systemic=False)
     df3 = test_candidate_doublets(sp, zz_syst, resoln, SiIV, "SiIV", ylims=ylims, find_systemic=False)

@@ -2,7 +2,6 @@ from __future__ import print_function
 from builtins import input
 from builtins import str
 import jrr
-import ayan
 import numpy as np
 import pandas
 import matplotlib.pyplot as plt
@@ -38,7 +37,7 @@ def plot_peakfinding(sp) :
     plt.plot(sp.wave, sp.W_u_interp*siglim, color='green')
     plt.plot(sp.wave, sp.W_u_interp*siglim*-1, color='green')
     subset = sp['peak']
-    plt.plot(sp['wave'].ix[subset], sp['W_interp'].ix[subset], 'o', label="try", color="pink")
+    plt.plot(sp['wave'].iloc[subset], sp['W_interp'].iloc[subset], 'o', label="try", color="pink")
     plt.xlim(4000,7000)
     plt.title(thisgal)
     plt.ylim(-3,3)
@@ -56,7 +55,7 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
     counter = 0
     subset = sp[sp['peak']]   # subset of sp where find_lines_Schneider() found a peak
     for candidate in subset.index :   # For each peak, test whether there is a 2nd transition
-        testz = sp.ix[candidate]['wave'] / doublet[0] - 1.0
+        testz = sp.iloc[candidate]['wave'] / doublet[0] - 1.0
         if find_systemic :  zz_max = zz_syst
         else             :  zz_max = zz_syst - voffsys * (1.0 + zz_syst) / A_c_kms
         if testz <= zz_max :  #
@@ -65,7 +64,7 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
             searchreg = sp['wave'].between((doublet[1]*(1.0+testz)-dwave), (doublet[1]*(1.0+testz)+dwave)) & sp['peak']
             if sp[searchreg]['peak'].sum() :
                 plt.clf()
-                in_forest = sp.ix[candidate]['wave'] < (1. + zz_syst) * 1216.  #  In Lya Forest
+                in_forest = sp.iloc[candidate]['wave'] < (1. + zz_syst) * 1216.  #  In Lya Forest
                 descriptive_string = thisgal + " possible " + doubname + " doublet at z=" + str(np.round(testz, 5))
                 plt.title(descriptive_string)
                 print(descriptive_string, "waves", doublet[0]*(1+testz), doublet[1]*(1+testz))
@@ -81,9 +80,9 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
                 jrr.mage.plot_linelist(LL, zz_syst)
                 plt.draw()
                 plt.pause(1)
-                EW1  = sp.ix[candidate].W_interp  # Using Schneider method to estimate EW  # These should be observed frame
+                EW1  = sp.iloc[candidate].W_interp  # Using Schneider method to estimate EW  # These should be observed frame
                 EW2 = float(np.min(sp[searchreg]['W_interp']))
-                snr1 = sp.ix[candidate].W_interp / sp.ix[candidate].W_u_interp *-1.
+                snr1 = sp.iloc[candidate].W_interp / sp.iloc[candidate].W_u_interp *-1.
                 snr2 = float(np.max(sp[searchreg]['W_interp'] / sp[searchreg]['W_u_interp'] * -1.))
                 user_flag = (input("    Is this real? y for yes, n for no, p for possibly, b for yes but blended:")) 
                 if user_flag in ('y', 'p', 'b', 'pb') :
@@ -95,15 +94,16 @@ def test_candidate_doublets(sp, zz_syst, resoln, doublet, doubname, ylims=(-2,2)
 #Missed a MgII at z<1.2 in S1226?  go check...
 
 # Actually run things
-these_labels = jrr.mage.organize_labels("batch3")  # Have already run batch1, batch2 in 16Feb2018 results
+#these_labels = jrr.mage.organize_labels("batch3")  # Have already run batch1, batch2 in 16Feb2018 results
+these_labels = jrr.mage.organize_labels("batch4")  # 
 #these_labels = ('planckarc', 'planckarc_slit4a', 'planckarc_pos1') ##'planckarc_slit4a',  'planckarc_slit4bc',
 #alllabels = [ 'rcs0327-E', 'rcs0327-U', 'rcs0327-B', 'rcs0327-G', 'rcs0327-BDEFim1', 'rcs0327-counterarc', 'S0004-0103', 'S0004-0103alongslit',  'S0004-0103otherPA', 'S0033+0242', 'S0108+0624', 'S0900+2234', 'S0957+0509', 'S1050+0017', 'Horseshoe', 'S1226+2152', 'S1429+1202', 'S1458-0023', 'S1527+0652', 'S1527+0652-fnt',  'S2111-0114', 'Cosmic~Eye', 'S2243-0935', 'planckarc', 'planckarc_pos1', 'planckarc_slit4a',  'planckarc_slit4bc',  'PSZ0441', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0310', 'SPT0310_slitA', 'SPT0310_slitB', 'SPT2325']
 
 (MgII, CIV, SiIV) = get_doublet_waves() 
-siglim=4 # 4 # 5, 10, 20  #  FOR PRODUCTION MODE, VALUE SHOULD BE 4!
+siglim=3  #4 # 4 # 5, 10, 20  #  FOR PRODUCTION MODE, VALUE SHOULD BE 4!
 #siglim=10 # 5, 10, 20
 ylims = (-2,2)
-prefix = "found_doublets_batch3" 
+prefix = "found_doublets_batch4" 
 the_pdf = prefix + "_SNR" + str(siglim) + ".pdf"
 outfile = prefix + "_SNR" + str(siglim) + ".txt"
 pp = PdfPages(the_pdf)
@@ -115,7 +115,7 @@ if (speclist.shape[0] == 0) : raise Exception("Failed to retreive spectrum.")
 print("FINDING DOUBLETS IN SUBSET OF SPECTRA, just", these_labels)
 
 for thisgal in speclist.short_label :
-    (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(thisgal, mage_mode, addS99=True)  # load spectrum
+    (sp, resoln, dresoln, LL, zz_syst) = jrr.mage.wrap_open_spectrum(thisgal, mage_mode, addS99=False)  # load spectrum
     jrr.spec.find_lines_Schneider(sp, resoln, siglim=siglim, abs=True)  #identify all the >N sigma peaks in spectrum
     #plot_peakfinding(sp)  # for debugging
     df1 = test_candidate_doublets(sp, zz_syst, resoln, CIV,  "CIV",  ylims=ylims, find_systemic=False)

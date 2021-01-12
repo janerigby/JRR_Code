@@ -62,7 +62,7 @@ def get_line_wavelengths(which_grism) :
     label_df = pandas.DataFrame({'restwave' : restwaves, 'yaxcoord' : yaxcoords, 'plotname' : plotnames})  # For convenience, make dataframe of labels to plot
     return(restwaves, linenames, label_df)
 
-# SHould have done the below functions with just a single "params" var that gets unpcked, as in v=params.valuesdict().  See https://lmfit.github.io/lmfit-py/parameters.html
+# SHould have done the below functions with just a single "params" var that gets unpacked, as in v=params.valuesdict().  See https://lmfit.github.io/lmfit-py/parameters.html
 # Also, probably should have done all this in astropy, which has similar functionality. Moving on.
 
 def fitfunc_G141(wave, zz, morph_broad, f0, f1, f2, f3, f4, f5, f6, f7, f8) : # A custom G141 fitting function

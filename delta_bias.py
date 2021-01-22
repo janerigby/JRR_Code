@@ -1,4 +1,4 @@
-#!/usr/bin/env /Users/jrrigby1/anaconda3/envs/astropy_stable3/bin/python
+#!/usr/bin/env /Users/jrrigby1/anaconda3/envs/astropy_stable3/bin/python -W ignore
 from re import sub
 from sys import argv
 from os import remove
@@ -6,7 +6,6 @@ from ccdproc import ImageFileCollection
 from ccdproc import Combiner, combine
 from astropy.nddata import CCDData
 from astropy.stats import sigma_clip
-import pyds9
 
 ''' The purpose of this script is to create the residual bias ("delta dark") frame
     from IRAC Spitzer images, and then subtract if off each frame.  
@@ -20,7 +19,7 @@ ch  = str(argv[2])
 
 use_ds9=False
 
-thisdir = '../../../Downloaded' + '/' + aor + '/' + ch + '/bcd/'
+thisdir = '../../Downloaded' + '/' + aor + '/' + ch + '/bcd/'
 
 ccd = {}  # dictionaries to hold the files
 clipped = {}
@@ -36,10 +35,12 @@ for thisfile in image_collection.files:
 combiner = Combiner(list(clipped_ccd.values()))  
 combiner.sigma_clipping(low_thresh=3, high_thresh=3)
 combined_image = combiner.median_combine()
+outdir = 'Dbias_' + ch + '_' + aor + '/'
 outfile = ch + '_' + aor + '_dbias.fits'
-combined_image.write(outfile, overwrite=True)
+combined_image.write(outdir + outfile, overwrite=True)
 
 if use_ds9 :
+    import pyds9
     d = pyds9.DS9('foo1')
     d.set("file " + thisdir + image_collection.files[0])
     d.set("frame 2")
@@ -51,8 +52,8 @@ if use_ds9 :
 for ccd, fname in image_collection.ccds(return_fname=True) :
     subtracted = ccd.subtract(combined_image)
     newname=sub('_cbcd.fits', '_bcbcd.fits', fname)
-    print("oldname newname", fname, newname)
-    subtracted.write(newname, overwrite=True)
+    #print("oldname newname", fname, newname)
+    subtracted.write(outdir + newname, overwrite=True)
 print("Subtracted delta bias from each cbcd frame, to make bcdbd frames.")
 
 

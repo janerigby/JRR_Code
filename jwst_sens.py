@@ -16,17 +16,25 @@ fs1 = 14 ; fs2 = 18 ; fs3 = 22 # fontsizes
 
 def load_photometry() :
     # Adding the comparison to other observatories. Switching from gnuplot to python
-    phot_codes = {'NIRSpec' : 0, 'NIRCam': 1, 'MIRI' : 2, 'HST' : 4, 'WISE' : 5, 'Spitzer' : 6, 'gemini' :10 , 'herschel' : 11, 'sofia' : 12}
+    phot_codes = {'NIRSpec' : 0, 'NIRCam': 1, 'MIRI' : 2, 'HST' : 4, 'WISE' : 5, 'Spitzer' : 6, 'Gemini' :10 , 'herschel' : 11, 'sofia' : 12}
     #13=alma(cycle0), 14=alma(finished), 15=VLA, 16=EVLA
     names = ('name', 'wave', 'limfnu', 'code')                
     phot_df = pandas.read_csv(pandir + '../jwst-phot.dat', comment="#", delim_whitespace=True, usecols=[0,1,2,3], names=names)
     phot_df['wave'] =  pandas.to_numeric(phot_df['wave'])
     return(phot_df, phot_codes)
 
-def load_spectroscopy() :
-    # Can I grab the continuum sensitivity folder, so it's easy?  Not what users want, though.  Have asked for spectral R
-    # so that I can convert from continuum sensitivity to line sensitivity
-    return(0)
+def load_spectroscopy() :  # input units are W/m^2
+    # Adding the comparison to other observatories. Switching from gnuplot to python
+    spec_codes = { 'nirspec' : 0, 'NIRCAM' : 1, 'MIRI' : 2, 'HST' : 4, 'WISE' : 5, 'Spitzer' : 6, 'Keck' : 9, 'Gemini' : 10, 'VLT' : 11, 'sofia' : 12, 'TMT' : 13, 'ELT' : 14}
+    names = ('name', 'wave', 'limflux_wm2', 'R', 'code', 'comment')
+    spec_df = pandas.read_csv(pandir + '../jwst-spec.dat', comment='#', delim_whitespace=True, names=names)
+    spec_df['limflux_cgs'] = spec_df['limflux_wm2'] * 1E3
+    return(spec_df, spec_codes)
+
+def add_annotations():
+    plt.annotate("MIRI", xy=(8,1.4E-17), color='red', xycoords='data', fontsize=fs2)
+    plt.annotate("NIRSpec", xy=(0.8,1.2E-18), color='red', xycoords='data', fontsize=fs2)
+    plt.annotate("NIRCam", xy=(2,2E-17), color='red', xycoords='data', fontsize=fs2)
 
 def pretty_plot() :
     plt.xlabel("wavelength (micron)", fontsize=fs3)
@@ -60,7 +68,7 @@ for ii, mode in enumerate(modes) :
 # Harvesting Jane's sensitivities
 (phot_df, phot_codes) = load_photometry()
 #instrs = ['NIRCam', 'MIRI', 'HST']
-instrs = ['HST', 'Spitzer', 'gemini']
+instrs = ['HST', 'Spitzer', 'Gemini']
 for instr in instrs:
     subset =  phot_df.loc[phot_df['code'] == phot_codes[instr]]
     print(subset.head())
@@ -79,14 +87,15 @@ jrr.plot.force_axisticks_linear((ax.xaxis,))
 plt.show()
 fig.savefig(pandir + 'phot_plot.pdf')
 
-# Now, plot spectroscopy
-# If we can grab the spectral resolution, can plot limiting sensitivity to an unresolved line (in erg/s/cm^2).  What a spectroscopist wants.
+# MAKE A SPECTROSCOPY PLOT
+# Plot limiting sensitivity to an unresolved line (in erg/s/cm^2).  What a spectroscopist wants.
 fig2, ax2 = plt.subplots()
 modes  = ['nirspec_msa', 'nirspec_ifu', 'miri_mrs'] #, 'miri_lrs'] # 'nircam_wfgrism']
 
 # make a smaller dict of sensitivities for the spectroscopic modes only
 df_specsens = {}
-specmodes = ['nirspec_fs','nirspec_ifu', 'nirspec_msa',  'miri_mrs']# 'nircam_wfgrism', 'miri_lrs',  'niriss_wfss','niriss_soss'
+#specmodes = ['nirspec_fs','nirspec_ifu', 'nirspec_msa',  'miri_mrs']# 'nircam_wfgrism', 'miri_lrs',  'niriss_wfss','niriss_soss'
+specmodes = ['nirspec_fs','nirspec_ifu', 'nirspec_msa',  'miri_mrs', 'nircam_wfgrism']
 for specmode in specmodes:
     df_specsens[specmode + "_sensitivity"] = df_sens[specmode + "_sensitivity"].copy(deep=True)
 for ii, mode in enumerate(specmodes) :
@@ -107,9 +116,23 @@ for ii, mode in enumerate(specmodes) :
         df_specsens[thismode].loc[index, 'PSSL'] = row.lim_fluxes * 3.0E-15 / ( row.R  * row.wavelengths) * 1E3  #The last 1E3 converts to cgs
         plt.plot(row.wavelengths, row.PSSL)
         plt.yscale('log')
-        plt.xlabel("wavelength (micron)")
-        plt.ylabel("limiting unresolved line flux (erg/s/cm^2)")
+        plt.xlabel("wavelength (micron)", fontsize=fs3)
+        plt.ylabel(r"line flux det. at SNR=10 in $10^4$s (erg s$^-1$ cm$^2$)", fontsize=fs2)
 bigspec_df = pandas.concat(df_specsens)
+
+# compare to other observatories
+otherspec_df, spec_codes = load_spectroscopy()
+shortcodes = ('sofia', 'Keck', 'VLT', 'Gemini',  'Spitzer')
+for instr in shortcodes : # spec_codes :
+    subset =  otherspec_df.loc[otherspec_df['code'] == spec_codes[instr]]
+    plt.plot(subset['wave'], subset['limflux_cgs'], label=instr, marker='o', linestyle='dashed')
+plt.legend(loc='upper center')
+plt.xlim(0.5,30)
+plt.ylim(5E-19,2E-15)
+plt.xscale('log')
+ax2.xaxis.set_major_formatter(ScalarFormatter())
+add_annotations()
+plt.tight_layout()
 
 pandeia_ver = "v1.5.0"
 outfile = 'pandeia_lineflux_sensitivities_' + pandeia_ver + '.readme'  

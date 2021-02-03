@@ -49,12 +49,14 @@ if use_ds9 :
     d.set("file " + outfile)
 
 # Now, subtract the dbias.fits file from each individual file, and write to Dbias_ch1_r15102976/ folder
-for ccd, fname in image_collection.ccds(return_fname=True) :
-    subtracted = ccd.subtract(combined_image)
+# Had to fix this so it doesn't toss the header, which will break mopex downstream
+for hdu, fname in image_collection.hdus(return_fname=True) :
+    header = hdu.header
+    data = hdu.data
+    data_ccd = CCDData(hdu.data, unit='MJy/sr', header=header) # clunky.  Needed to iterate all of header, data, filename
+    subtracted = data_ccd.subtract(combined_image, handle_meta='first_found') # This saves the header from data_ccd
     newname=sub('_cbcd.fits', '_bcbcd.fits', fname)
-    #print("oldname newname", fname, newname)
-    subtracted.write(outdir + newname, overwrite=True)
+    subtracted.write(outdir + newname, overwrite=True)   
 print("Subtracted delta bias from each cbcd frame, to make bcdbd frames.")
-
 
 print("All done delta bias python script.")

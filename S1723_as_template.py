@@ -74,7 +74,7 @@ outfilename = "sim_spectrum_z" + str(np.round(zz_z5, 2)) + "_v1.1.txt"
 write_simulated_spectrum(outfilename, z5_sim, zz_z5, scaleby_z5)
 
 # Simulate S1110 at z=2.481.  Simply scale S1110 line fluxes from apparent magnitudes
-traci_tab4 =  load_s1110_Johnson_Tab4()  # load table 4 of Traci's paper.  Somethings weird about the fluxes. Ignore for now.
+traci_tab4 =  jrr.sgas.load_s1110_Johnson_Tab4()  # load table 4 of Traci's paper.  Somethings weird about the fluxes. Ignore for now.
 zz_s1110 = 2.481                 # redshift from Traci's paper
 mAB_606 = 27.5 # 27. 28.  # AB magnitude apparent 606, from Clmp_brightness/notes: mAB(606) stats:  median 27.5, quartiles are 27.0 and 28.0, mode is ~27.25
 

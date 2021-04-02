@@ -270,7 +270,7 @@ infile = 'S2340_G141_grism2process.txt'
 
 figsize = (12,4)
 scalefactor = 1E17 # Scale everything by scalefactor, to avoid numerical weirdness in LMFIT
-units = "erg/s/cm^2"
+units = r'erg/s/cm^2 $\AA$'
 guess_morphbroad = 1.5
 sigoff=3 # Warn if the delta wavelengths exceed this
 show_initial_fit = False

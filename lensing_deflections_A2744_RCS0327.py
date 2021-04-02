@@ -37,7 +37,6 @@ def open_RCS0327_knotfamilies(datadir) :
 
 
 
-
 #### Actually run stuff
 cosmo = FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)  # Keren's favorite cosmology.
 compute_lensing_test()

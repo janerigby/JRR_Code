@@ -39,13 +39,22 @@ def get_lensmodel_info(label) :
         # For RCS0327, the deflection maps are scaled for the giant arc(z_arc = 1.70), per KS email 01/08/2021
         deflection_norm = jrr.lens.scale_lensing_deflection(cosmo, z_lens, 1.701)
 
-    elif label == "SGASJ122651.3+215220" :
-        raise Exception("ERROR: I do not yet have a lens model on rustin for S1226") 
+    elif label == "SGASJ122651.3+215220_for0.77" :
+        datadir = '/Volumes/Lens_models/SDSS1226/'
+        deflection_map = { 'x' : 'dplx_0.77_abs.fits',   'y' : 'dply_0.77_abs.fits'}
+        z_lens = 0.43  # Koester et al. 2010
+        deflection_norm = jrr.lens.scale_lensing_deflection(cosmo, z_lens, 0.77)  #  Should be 0.77, checked w Keren on Slack 
 
-    elif label == "SGASJ152745.1+06521" :
+    elif label == "SGASJ122651.3+215220" :
+        datadir = '/Volumes/Lens_models/SDSS1226/'
+        deflection_map = { 'x' : 'dplx_2.9233.fits',   'y' : 'dply_2.9233.fits'}
+        z_lens = 0.43  # Koester et al. 2010
+        deflection_norm = jrr.lens.scale_lensing_deflection(cosmo, z_lens, 2.9233)
+    
+    elif label == "SGASJ152745.1+065219" :
         datadir = '/Volumes/Lens_models/Sharon_2020/MAST-SGAS-UPLOAD/sdssj1527p0652/'
         deflection_map = { 'x' : 's1527_dplx_2.761.fits',   'y' : 's1527_dply_2.761.fits'}       
-        z_lens = 0.43  # Koester et al. 2010
+        z_lens = 0.39  # Koester et al. 2010
         deflection_norm = 1.0  # most models are scaled to ds/dL=1
 
     elif label == "SunburstArc" :
@@ -62,15 +71,22 @@ def get_lensmodel_info(label) :
 cosmo = FlatLambdaCDM(H0=70 * u.km / u.s / u.Mpc, Tcmb0=2.725 * u.K, Om0=0.3)  # Keren's favorite cosmology.
 coords_df = get_Megasaura_coordinates() 
 abs_df =  get_intervening_absorber_multsightlines()
+unit=(u.hourangle, u.deg)
 
 for index, row in abs_df.iterrows() : # Loop over each intervening absorber
     print(row.cluster, row.redshift)
     (datadir, deflection_map, z_lens, deflection_norm) = get_lensmodel_info(row.cluster)  # Get the lens model info
     coords_df['zabs'] = row.redshift
-    subset_coords = coords_df.loc[coords_df['system'] == row.cluster]                     # get the positions within that arc
-    print(subset_coords)
-    abs_df = jrr.lens.compute_sourceplane_positions(subset_coords, row.cluster, z_lens, datadir, deflection_map, cosmo, deflection_norm=deflection_norm, debug=False)
+    subset_coords = coords_df.loc[coords_df['system'] == row.cluster].copy(deep=True)              # get the positions within that arc
+    subset_coords['zabs'] = row.redshift # bookkeeping    #change below
+    prefix = row.cluster + '_z' + str(row.redshift) + '_intervabs'
+    jrr.lens.compute_sourceplane_positions(subset_coords, prefix, z_lens, datadir, deflection_map, cosmo, deflection_norm=deflection_norm, debug=False, unit=unit)
+    #results get dumped to subset_coords
+    print(subset_coords.head(100))
 
+    # Need to do this relative to the first item in the table, grab it  Import it
+    #jrr.lens.compute_sourceplane_offsets(abs_df, fiducialRA, fidicualDEC)
+    
 '''    
 # RCS0327 as a test case
 arcs_df       = load_RCS0327_pos()
@@ -89,8 +105,6 @@ print(RCS0327_df.head())
 
 
 
-
-
 ''' OK, I think RCS0327 is working above.  Need to repeat for other multiple sight-lines.  Breaking up into small tasks:
 DONE - make file with coordinates for every multiple sightline in each system   megasura_andfriends_coordinates.txt
 DONE - make file of redshifts to check for each system, Absorber_list_multiple_sightline_v2.dat
@@ -104,6 +118,5 @@ DONE - make file of redshifts to check for each system, Absorber_list_multiple_s
 '''
 
 
-#Loop through abs_df
 
 # Should also calculate, for all intervening absorbers, the size of the object in the slit, and how big that is in the intervening absorber frame.

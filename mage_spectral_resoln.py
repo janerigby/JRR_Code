@@ -50,7 +50,7 @@ if run_just_some:     # A useful way to run just one spectrum, instead of a bunc
 # Adding "Friends of Megasaura" sample
 #    labels = batch2
 #    labels = batch3  # now doing April 2018 and Aug 2018 runs
-    labels = metabatch  # Doing Emil and Ramesh's metabatches
+    labels = metabatch  # Doing Emil, Ramesh, and Matt's metabatches
 #    labels = batch4     # doing 2020 observations
     specs = jrr.mage.wrap_getlist(mage_mode, which_list='labels', labels=labels, MWdr=False)
     

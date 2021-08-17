@@ -144,15 +144,17 @@ def lock_params(mypars, which_grism, which_gal, waveoff=False, sigoff=0.0, limit
     grism_info = jrr.grism.get_grism_info(which_grism)
     if which_grism == 'G141' and waveoff :
         mypars['d1'].set(expr='d0')  # 3727, 3729 shift in wavelength together
-        mypars['d3'].set(expr='d2')  #  #Other closely spaced line groups should move together
-        mypars['d4'].set(expr='d2')  #  #Other closely spaced line groups should move together
-        mypars['d5'].set(expr='d2')  #  #Other closely spaced line groups should move together
-        mypars['d6'].set(min=-30, max=30) # Don't let the 4025 line wander too far
+        mypars['d3'].set(expr='d0')  #  #Other closely spaced line groups should move together
+        mypars['d4'].set(expr='d0')  #  #Other closely spaced line groups should move together
+        #mypars['d6'].set(min=-30, max=30) # Don't let the 4025 line wander too far
+        mypars['d5'].set(expr='d0')  #  #Other closely spaced line groups should move together
+        mypars['d6'].set(expr='d0') 
+        mypars['d7'].set(expr='d0') 
         mypars['d8'].set(expr='d9')  # 
-        mypars['d10'].set(expr='d8')  # 
-        mypars['d11'].set(expr='d15')  #
-        mypars['d12'].set(expr='d15')  #
-        mypars['d13'].set(expr='d15')  # Hbeta, 4959, 5007 all shift in wavelength together
+        mypars['d10'].set(expr='d9')  # 
+        mypars['d11'].set(expr='d13')  #
+        mypars['d12'].set(expr='d13')  #  Try tying Tie Hbeta to ArIV instead of O3?
+#        mypars['d13'].set(expr='d15')  # Hbeta, 4959, 5007 all shift in wavelength together
         mypars['d14'].set(expr='d15')  # ditto
 
         if which_gal == 'S2340'    : mypars['d13'].set(value=0., vary=False)  # keep this from wandering
@@ -303,12 +305,6 @@ for row in df.itertuples() :
     header += "\n# FILENAME_WPATH " + row.filename + "\n# WHICH_GAL " + which_gal
     header += "\n# WHICH_GRISM " + which_grism + "\n# ROLL " + specfile_dict['roll'] + "\n# DESCRIP " +  specfile_dict['descrip']
     header += "\n# TIME_FIT " + time.strftime("%c") + "\n# SCALEFACTOR " + str(1./scalefactor) + "\n# UNITS " + units
-    header += "\n# Note: For S1723 NII/Ha ratios are set from GNIRS, and [O II] 3727/3729 ratio set from ESI.\n"
-    header += "# Note: For S2340, NII fluxes were fixed to zero; what is reported as Ha is actually the blend of [N II]+Ha+[N II].\n"
-    header += "# Note on fluxing for S1723/1Dsum: In the bothrolls files, Michael had summed the flux over both rolls.  Here those fluxes\n"
-    header += "#                   have been divided by 2, and therefore should match the fluxes of the spectra extracted from a single roll.\n"
-    header += "# Note on fluxing for S1723/1Dbyclumps, and all S2340: The fluxing is weird, b/c Michael added multiple clumps from whichever\n"
-    header += "# rolls were clean.  So the fluxing is super-weird, and should only be used in a relative sense.  Divide by Hbeta and move on.\n#\n"
     f.write(header)
     sp  = pandas.read_csv(row.filename, comment="#")      ## Read the grism spectrum file
     if which_gal == 'S1723' and 'both' in specfile :  jrr.grism.half_the_flux(sp)   # Michael has summed the flux over both rolls. Compensating

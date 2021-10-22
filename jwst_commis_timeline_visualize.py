@@ -54,4 +54,6 @@ plt.tight_layout()
 # Hide the frame of the plot and the y axis
 ax.set_frame_on(False)
 plt.yticks([])
+
+plt.annotate("Jane.Rigby@nasa.gov, from 9/2021 timeline" , xycoords='figure fraction', xy=(0.7,0.03), fontsize=fs0)
 fig.savefig("jwst_visual_commis_timeline_jrigby.pdf")

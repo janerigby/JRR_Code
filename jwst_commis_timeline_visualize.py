@@ -23,12 +23,17 @@ y_label = 0.2
 day  = np.arange(0,181,1)
 plt.plot(day, np.zeros_like(day), lw=4, color='k')
 
+t_endcool  = 25.8
+t_startOTE = 33.9
+t_endOTE   = 120.0
+t_end_SI   = 180.
+
 # Major stages.  Dates are hardcoded.
 pheight = 0.7  ; lheight=0.1
-patch1 = patches.Rectangle(xy=(0, 0), width=25.3, height=pheight, fill=True, color='C0')  # Deploy
-patch0 = patches.Rectangle(xy=(25.3, 0), width=35-25.3, height=pheight, fill=True, color='grey')  # Cooldown
-patch2 = patches.Rectangle(xy=(35, 0), width=89, height=pheight, fill=True, color='C1')  # OTE commis
-patch3 = patches.Rectangle(xy=(35+89, 0), width=180-35-89, height=pheight, fill=True, color='C2')  # OTE commis
+patch1 = patches.Rectangle(xy=(0, 0), width=t_endcool, height=pheight, fill=True, color='C0')  # Deploy
+patch0 = patches.Rectangle(xy=(t_endcool, 0), width= t_startOTE - t_endcool, height=pheight, fill=True, color='grey')  # Cooldown
+patch2 = patches.Rectangle(xy=(t_startOTE, 0), width=t_endOTE - t_startOTE, height=pheight, fill=True, color='C1')  # OTE commis
+patch3 = patches.Rectangle(xy=(t_endOTE, 0), width=t_end_SI - t_endOTE, height=pheight, fill=True, color='C2')  # SI commis
 
 ax.get_xaxis().set_major_locator(MultipleLocator(20))
 plt.xlabel("Days after launch", fontsize=fs3)
@@ -41,13 +46,16 @@ plt.annotate("cooling", xy=(25.1, y_label), fontsize=fs1)
 plt.annotate("Telescope commissioning", xy=(50, y_label), fontsize=fs4)
 plt.annotate("SI commissioning", xy=(130, y_label), fontsize=fs4)
 
-df = pandas.read_excel("events.xlsx")  # Grab an excel file with a short list of events, time, and label sizes
+df = pandas.read_excel("events_Nov2021.xlsx")  # Grab an excel file with a short list of events, time, and label sizes
 df['fontsize'] = df['labsize']
 stem_and_label(df['day'], df['height'], df['event'], df['labsize'], bottom=pheight)
 
 # hot/cold thermal slews from 132.5d to 153d.  Hatch this region
 plt.rcParams['hatch.linewidth'] = 3
-bar = ax.bar(x=132, height=pheight, width=21, bottom=0, align='edge', fill=False, hatch='//', edgecolor='darkgrey')
+thermalslew_begin = 127.07 # hardcoded
+thermalslew_end   = 147.69 # hardcoded
+thermalslew_width = thermalslew_end - thermalslew_begin
+bar = ax.bar(x=thermalslew_begin, height=pheight, width=thermalslew_width, bottom=0, align='edge', fill=False, hatch='//', edgecolor='darkgrey')
 
 plt.ylim(-0.2, 3.5)
 plt.tight_layout()
@@ -55,5 +63,8 @@ plt.tight_layout()
 ax.set_frame_on(False)
 plt.yticks([])
 
-plt.annotate("Jane.Rigby@nasa.gov, from 9/2021 timeline" , xycoords='figure fraction', xy=(0.7,0.03), fontsize=fs0)
+plt.annotate("Jane.Rigby@nasa.gov, from 11/2021 timeline" , xycoords='figure fraction', xy=(0.7,0.03), fontsize=fs0)
 fig.savefig("jwst_visual_commis_timeline_jrigby.pdf")
+
+#plt.annotate("Jane.Rigby@nasa.gov" , xycoords='figure fraction', xy=(0.7,0.03), fontsize=fs0)
+#fig.savefig("jwst_visual_commis_timeline_jrigby_nodate.pdf")

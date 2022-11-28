@@ -3,6 +3,7 @@ import shutil
 import glob
 from os.path import basename
 import re
+from shutil import copyfile
 
 # Copy over the old Planck Arc (old naming convention) files to the new Sunburst_M-X naming convention.
 new_dir = "Planckarc/M-Xnames/"
@@ -49,6 +50,7 @@ if move_S99_bpass_fits :
             print("Splitting ", thisfile, "into ", splitit[0], splitit[1], "    --> ", new_prefix)
         new_name = new_prefix + '-' + '-'.join(splitit[2:])
         print("renaming to", new_name)
-        new_header_text = "# Renaming on 6/25/2020 by jrigby, from " + thisfile + " to the new naming convention: " + new_name
-        print(new_header_text)
-        jrr.util.put_header_on_file(main_dir + old_dir + thisfile,   new_header_text,   main_dir + new_dir + new_name)
+        # Next line corrupts the fits files, so get rid of it!
+        #new_header_text = "# Renaming on 6/25/2020 by jrigby, from " + thisfile + " to the new naming convention: " + new_name  
+        #jrr.util.put_header_on_file(main_dir + old_dir + thisfile,   new_header_text,   main_dir + new_dir + new_name)
+        copyfile(main_dir + old_dir + thisfile, main_dir + new_dir + new_name)

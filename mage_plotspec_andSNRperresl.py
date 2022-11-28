@@ -31,8 +31,10 @@ if plot_indy_SNR :
     lab4 = [ 'Cosmic~Eye', 'S0108+0624',  'S1429+1202']
     lab5 = [ 'S0033+0242', 'S2111-0114', 'S2243-0935' , 'S0957+0509']
     lab6 = ['S1458-0023',  'Horseshoe',  'S1050+0017']
-    lab7 = [ 'planckarc_h9', 'planckarc_pos1', 'planckarc_f', 'planckarc_h4', 'planckarc_h1a',  'planckarc_h3', 'planckarc_h5', 'planckarc_h1', 'planckarc_h2', 'planckarc_slit4a', 'planckarc_slit4bc']
-    lab8 = ['SPT2325', 'SPT0310_slitA', 'SPT0310_slitB', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0142', 'SPT0356']
+    oldlab7 = [ 'planckarc_h9', 'planckarc_pos1', 'planckarc_f', 'planckarc_h4', 'planckarc_h1a',  'planckarc_h3', 'planckarc_h5', 'planckarc_h1', 'planckarc_h2']#, 'planckarc_slit4a', 'planckarc_slit4bc']
+    lab7 = jrr.mage.replace_all_oldstarburstnames_list(oldlab7) # Upgrade to M-X names
+    
+    lab8 = ['SPT2325', 'SPT0310_slitA', 'SPT0310_slitB', 'PSZ0441_slitA', 'PSZ0441_slitB', 'SPT0142', 'SPT0356', 'S1226+2152image3']
     labs = (lab1, lab2, lab3, lab4, lab5, lab6, lab7, lab8)
     for labels in labs:
         (df, resoln, dresoln, LL, zz_sys, speclist) = jrr.mage.open_many_spectra(mage_mode, which_list="labels", labels=labels, verbose=True, zchoice='stars', addS99=False, MWdr=True)
@@ -45,7 +47,8 @@ if plot_indy_SNR :
             labelnew = jrr.mage.prettylabel_from_shortlabel(label)
             plt.plot(sp['wave'], sp['smoothSNRperres'], label=labelnew)
         plt.legend(fontsize=10, frameon=True, labelspacing=0, loc='upper left')
-        plt.ylim(0,47)
+        #plt.ylim(0,47) Used for Rigby+2018
+        plt.ylim(0,30) 
         plt.xlim(3200, 8250)
         plt.xlabel(r'observed wavelength ($\mathrm{\AA}$)')
         plt.ylabel('SNR per resoln. element')
@@ -102,8 +105,8 @@ for label in (labels_to_plot) :
     labelnew = jrr.mage.prettylabel_from_shortlabel(label)
     plt.plot(sp['wave'], sp['fnu']   * scalefactor,   label=labelnew, color='k', linewidth=0.5)
     plt.plot(sp['wave'], sp['fnu_u'] * scalefactor, label='_nolegend_', color='lightblue', linewidth=1)
-    if re.match("planckarc_pos1", label) or label == "planckarc" :    plt.ylim(-0.5E-28*scalefactor,  5E-27*scalefactor)
-    elif re.match("planckarc_slit", label) :    plt.ylim(-0.5E-28*scalefactor,  1E-27*scalefactor)
+    if re.match("planckarc_pos1", label) or label == "planckarc" or label == 'sunburst_M-0' :    plt.ylim(-0.5E-28*scalefactor,  5E-27*scalefactor)
+    elif re.match("planckarc_slit", label)  :    plt.ylim(-0.5E-28*scalefactor,  1E-27*scalefactor)
     else :   plt.ylim(-0.5E-28*scalefactor,  2.5E-28*scalefactor)
     x1 = max(3200, 912*(1.+zz_sys[label]))  # plot down to 3200, unless its blueward of lyman limit
     x2=8200.

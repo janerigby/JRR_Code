@@ -6,7 +6,7 @@ specials = [1433, 1424]  # odd numbering for a few proposals.
 regular  = list(range(1549,  2722))  # trying to avoid the commissioning proposals
 fullindex = specials.copy()
 fullindex.extend(regular)
-exclude = [1628, 1629, 1630, 1631, 1632]  # These are Commissioning proposals with weird numbers.
+exclude = [1602, 1628, 1629, 1630, 1631, 1632, 2586]  # These are Commissioning proposals with weird numbers.
 newlist = [x for x in fullindex if x not in exclude]
 
 N_gsfc_users = 0

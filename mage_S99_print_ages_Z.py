@@ -10,11 +10,13 @@ import re
 # Before calling this, ran idl> .run .run print_ages_Z.pro, print_ages_Z, and then dumped output to print_ages_Z.out
 # Had to use IDL because I can't figure out how to filter binary fits tables in astropy 
 
-figsize = (8,10)
-the_pdf = "print_ages_Z.pdf"
-pp = PdfPages(the_pdf)  # output
+whichone = 's99' # 'bpass' #  #  #   # run for both. kludge
+onlySunburst = True  # Skip everything but the sunburst arc
 
-infile = "print_ages_Z.out"
+figsize = (8,10)
+the_pdf = whichone + "_print_ages_Z.pdf"
+
+infile = whichone + "_print_ages_Z.out"
 df = pandas.read_table(infile, delim_whitespace=True, comment="#", names=('filename', 'frac_light', 'uncert', 'age', 'metallicity'))
 
 
@@ -23,6 +25,11 @@ df['filename'] = df['filename'].str.replace("-continuum-properties.fits", "")
 df['age'] /= 1E6  # convert from yr to Myr
 files = pandas.Series.unique(df.filename)
 
+if onlySunburst:
+    files = [f for f in files if f.startswith('sunburst')]  # filter to just the sunburst arc ones
+    the_pdf = 'Sunburstonly' + the_pdf
+
+pp = PdfPages(the_pdf)  # output
 # Make a table out of the fits
 aslatex = df.to_latex()
 f = open('print_ages_Z.tex', 'w')
@@ -40,10 +47,12 @@ plotnum = 1 # initialize
 print("DEBUGGING Nrow Ncol Npage", Nrow, Ncol, Npages)
 
 fig = plt.figure(figsize=figsize)
-for file in files :
+for file in files :     
     subset = df[df['filename'].eq(file)]
     #print subset.shape
     pretty_label = re.sub("_", " ", file)
+    pretty_label = re.sub("-SB99", "", pretty_label)
+    pretty_label = re.sub("-BPASS", "", pretty_label)
     if pretty_label == "Stack-A" :  pretty_label = r'$\lambda_{pivot}$-norm. stack'
     if pretty_label == "chuck"   :  pretty_label = "Steidel et al. 2016"
     if pretty_label == "Cosmic~Eye":  pretty_label = "Cosmic Eye"
@@ -147,7 +156,7 @@ print((old_comps['frac_light'] * old_comps['metallicity']).sum() / old_comps['fr
 
 
 # Want a plot that shows relative contribution of both Z and age models.
-groupby_tZ = not_stack.groupby(by=('metallicity', 'age'))
+groupby_tZ = not_stack.groupby(by=['metallicity', 'age'])
 bytZ = groupby_tZ.sum()  # Sum over same age, metallicity
 sum_to_norm = bytZ.frac_light.sum()
 print("sum of frac_light:", sum_to_norm, "should be ~15")

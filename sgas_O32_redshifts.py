@@ -2,9 +2,13 @@
  
 import pandas
 import numpy as np
-
-df = pandas.read_csv('foo.txt', delim_whitespace=True, names=('grating', 'waveon', 'waveoff'))
+infile = 'jwst_grating_wavelengths.txt'
+df = pandas.read_csv(infile, delim_whitespace=True, names=('grating', 'waveon', 'waveoff'), comment='#')
 np.array((0.3727, 0.5008))
-waves = np.array((0.3727, 0.5008))
+#waves = np.array((0.3727, 0.5008))  # O2 and O3
+waves = np.array((0.4861, 0.6563)) # Hbeta to Halha
+waves = np.array((0.375, 0.6750)) # Hbeta to Halha
+waves = np.array((0.3725, 0.9080)) # OII to SII 
+
 df['z1'] = df.waveon/waves[0] - 1
 df['z2'] = df.waveoff/waves[1] - 1

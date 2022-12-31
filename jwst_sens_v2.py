@@ -1,7 +1,5 @@
 '''Making Jane's sensitivity plots comparing JWST to previous observatories.  Now,
 with post-commissioning (for Cycle 2) sensitivities from pandeia 2.0, courtesy Klaus.  
-I think these are the sensitivities they used for the Pocket Guide.  I need to clean
-up the Keck and Spitzer comparisons.
 jrigby, Dec 2022'''
 
 from __future__ import print_function
@@ -18,52 +16,59 @@ import jrr
 from   astropy.io import fits
 from astropy.table import Table
 
-def load_photometry() :
+
+def load_comparison_photometry() :
     # Adding the comparison to other observatories. Switching from gnuplot to python
     phot_codes = {'NIRSpec' : 0, 'NIRCam': 1, 'MIRI' : 2, 'HST' : 4, 'WISE' : 5, 'Spitzer' : 6, 'Gemini' :10 , 'Herschel' : 11, 'SOFIA' : 12}
     #13=alma(cycle0), 14=alma(finished), 15=VLA, 16=EVLA
     names = ('name', 'wave', 'limfnu', 'code')                
-    phot_df = pandas.read_csv(pandir + '../jwst-phot.dat', comment="#", delim_whitespace=True, usecols=[0,1,2,3], names=names)
+    phot_df = pandas.read_csv(pandir + '../jwst-phot_v2.dat', comment="#", delim_whitespace=True, usecols=[0,1,2,3], names=names)
     phot_df['wave'] =  pandas.to_numeric(phot_df['wave'])
     return(phot_df, phot_codes)
 
-def load_spectroscopy() :  # input units are W/m^2
+def load_comparison_spectroscopy() :  # input units are W/m^2
     # Adding the comparison to other observatories. Switching from gnuplot to python
     spec_codes = { 'nirspec' : 0, 'NIRCAM' : 1, 'MIRI' : 2, 'HST' : 4, 'WISE' : 5, 'Spitzer' : 6, 'Keck' : 9, 'Gemini' : 10, 'VLT' : 11, 'SOFIA' : 12, 'TMT' : 13, 'ELT' : 14}
     names = ('name', 'wave', 'limflux_wm2', 'R', 'code', 'comment')
-    spec_df = pandas.read_csv(pandir + '../jwst-spec.dat', comment='#', delim_whitespace=True, names=names)
+    spec_df = pandas.read_csv(pandir + '../jwst-spec_v2.dat', comment='#', delim_whitespace=True, names=names)
     spec_df['limflux_cgs'] = spec_df['limflux_wm2'] * 1E3
     return(spec_df, spec_codes)
 
-def load_lowres_spec() : # input are Jy per spectral resoln element
+def load_comparison_lowres_spec() : # input are Jy per spectral resoln element
     names = ('telescope', 'instrument', 'wave', 'limflux_Jy', 'foo', 'R', 'code', 'comment')
-    df = pandas.read_csv(pandir + '../jwst-lowres-spec.dat', comment='#', delim_whitespace=True, names=names)
+    df = pandas.read_csv(pandir + '../jwst-lowres-spec_v2.dat', comment='#', delim_whitespace=True, names=names)
     df['limflux_mJy'] = df.limflux_Jy *1000
     jrr.spec.pssc_to_pssl_df(df, PSSLcol='PSSL', PSSCcol='limflux_mJy', wavecol='wave', Rcol='R') # should do same as below
     df['PSSL2']   = (df.limflux_mJy) * 3.0E-15 / (df.R  * df.wave) * 1E3  #The last 1E3 converts to cgs    
-    return(df)
-    
+    return(df)    
 def add_annotations():
-    plt.annotate("NIRISS", xy=(1,2E-17), color='red', xycoords='data', fontsize=fs2)
-    plt.annotate("MIRI", xy=(14,5E-17), color='k', xycoords='data', fontsize=fs2)
+    plt.annotate("NIRISS", xy=(1.2,2E-17), color='red', xycoords='data', fontsize=fs2)
+    plt.annotate("MIRI MRS", xy=(14,3.4E-17), color='k', xycoords='data', fontsize=fs2)
+    plt.annotate("MIRI LRS", xy=(6, 0.7E-16), color='grey', xycoords='data', fontsize=fs2)
     plt.annotate("NIRSpec MOS", xy=(0.6,0.6E-18), color='orange', xycoords='data', fontsize=fs2)
     plt.annotate("& IFU", xy=(1.6, 0.6E-18), color='green', xycoords='data', fontsize=fs2)
-    plt.annotate("NIRCam grism", xy=(5,0.3E-17), color='blue', xycoords='data', fontsize=fs2)
+    plt.annotate("NIRCam grism", xy=(2.5, 1.2E-17), color='blue', xycoords='data', fontsize=fs2)
+    plt.annotate('SOFIA FLITECAM', xy=(1, 1.3E-15), color='dodgerblue', xycoords='data', fontsize=fs1)
+    plt.annotate('Keck MOSFIRE', xy=(2.1, 2E-17), color='darkviolet', xycoords='data', fontsize=fs1)
+    plt.annotate('Spitzer IRS H', xy=(5.2, 1E-15), color='purple', xycoords='data', fontsize=fs1)
+    plt.annotate('Spitzer IRS L', xy=(5.2, 2.5E-16), color='hotpink', xycoords='data', fontsize=fs1)
 
+    
 def add_annotations_lowres():
     plt.annotate("NIRISS", xy=(1,2E-7), color='red', xycoords='data', fontsize=fs2)
-    plt.annotate("MIRI", xy=(12,3E-5), color='k', xycoords='data', fontsize=fs2)
+    plt.annotate("MIRI MRS", xy=(10,5E-3), color='k', xycoords='data', fontsize=fs2)
+    plt.annotate("MIRI LRS", xy=(10,2E-6), color='grey', xycoords='data', fontsize=fs2)
     plt.annotate("NIRSpec MOS", xy=(0.6,3E-8), color='orange', xycoords='data', fontsize=fs2)
     plt.annotate("& IFU", xy=(1.5, 3E-8), color='green', xycoords='data', fontsize=fs2)
-    plt.annotate("NIRCam grism", xy=(5,1E-5), color='blue', xycoords='data', fontsize=fs2)
-    
+    plt.annotate("NIRCam grism", xy=(2.5, 2E-5), color='blue', xycoords='data', fontsize=fs2)
+
 def pretty_plot() :
     plt.xlabel("wavelength (micron)", fontsize=fs3)
     plt.ylabel('limiting flux density (Jy)', fontsize=fs3)
     #plt.legend()
     plt.yscale('log')
     plt.xscale('log')
-    plt.annotate('Jane.Rigby@nasa.gov, pandeia v2.0', xy=(0.64,0.16), xycoords='figure fraction')
+    #plt.annotate('Jane.Rigby@nasa.gov, pandeia v2.0', xy=(0.64,0.16), xycoords='figure fraction')
     jrr.plot.force_axisticks_linear((ax.xaxis,))
     plt.xticks(fontsize=fs3)
     plt.yticks(fontsize=fs3)
@@ -105,32 +110,46 @@ def grab_niriss_wfss():
     return(df_line, df_cont)
 
 def spec_compare_to_other_obs(df_lowres_spec):  # compare to other observatories
-    otherspec_df, spec_codes = load_spectroscopy()
-    shortcodes = ('SOFIA', 'Keck', 'VLT', 'Gemini',  'Spitzer')
+    otherspec_df, spec_codes = load_comparison_spectroscopy()    
+    shortcodes = ('SOFIA', 'Spitzer')
+    colors     = {'SOFIA': 'dodgerblue', 'Spitzer': 'darkmagenta'}
     for instr in shortcodes : # spec_codes :
         subset =  otherspec_df.loc[otherspec_df['code'] == spec_codes[instr]]
-        plt.plot(subset['wave'], subset['limflux_cgs'], label=instr, marker='o', linestyle='dashed')
+        if instr == 'Spitzer' : label='Spitzer R=600'
+        elif instr == 'Keck'  : label='Keck MOSFIRE'
+        else                  : label=instr
+        plt.plot(subset['wave'], subset['limflux_cgs'], label=label, marker='o', linestyle='dashed', color=colors[instr])
     subset = df_lowres_spec.loc[df_lowres_spec.telescope == 'Spitzer']      # Add low-resoln spitzer
-    plt.plot(subset.wave, subset.PSSL, color='purple', label='Spitzer lowres', marker='o', linestyle='dashed')
-    plt.legend(loc='upper center')
+    plt.plot(subset.wave, subset.PSSL, color='hotpink', label='Spitzer R=60-100', marker='o', linestyle='dashed')
+
+    # Deal w Keck separately, to split by grating (don't connect Y J H K, it's misleading)
+    subset =  otherspec_df.loc[otherspec_df['code'] == spec_codes['Keck']]
+    keck_gb = subset.groupby('R')    
+    (J, Y, K, H) = [keck_gb.get_group(x) for x in keck_gb.groups]
+    plt.plot(Y.wave, Y.limflux_cgs, label='Keck',  marker='o', linestyle='dashed', color='darkviolet') #only label Y
+    for df in  (J, H, K):
+        plt.plot(df.wave, df.limflux_cgs, label='_nolegend_',  marker='o', linestyle='dashed', color='darkviolet')
+    #plt.legend(loc='upper left')
     return(0)
 
+##############################################################################################################################
+
 
 ###############################################################
-#pandir = '/Users/jrrigby1/MISSIONS/JWST/Sens/pandeia_sensitivities_1.3/'
-#pandir = '/Users/jrrigby1/MISSIONS/JWST/Sens/pandeia_sensitivities_1.5/'
-pandir = '/Users/jrrigby1/MISSIONS/JWST/Sens/Pandeia_v2.0/'  # POST-COMMISSIONING
-fs1 = 14 ; fs2 = 16 ; fs3 = 22 # fontsizes
+pandir = '/Users/jrrigby1/MISSIONS/JWST/Sens/Pandeia_v2.0-sensitivity/'  # post-commissioning sensitivities.
+# These were downloaded from https://github.com/spacetelescope/pandeia-verification/tree/master/2.0
 ###############################################################
+
+dash = (0, (5, 10))  # a loosely dashed line
+fs1 = 13 ; fs2 = 16 ; fs3 = 22 # fontsizes
 
 # Which curves from the IDTs to plot?
 phot_compare_IDT = {'nircam': False, 'niriss': False}
-spec_compare_IDT = {'nircam': False, 'niriss': False, 'nirspec': False}
+spec_compare_IDT = {'nircam': False, 'niriss': True, 'nirspec': False}
 
-
-df_sens = jrr.instruments.load_Klaus_sensitivities(pandir)        # Klaus's sensitivities from Pandeia.  I *think* these are in mJy
-df_disp = jrr.instruments.load_Klaus_dispersions(pandir=None)     # Klaus's spectral resolutions from Pandeia
-print("I think I imported all of Klaus's files:", list(df_sens.keys()))
+df_sens = jrr.instruments.load_Klaus_sensitivities(pandir)        # From pandeia, continuum sensitivity, in mJy, PER PIXEL (not per resoln element)
+df_disp = jrr.instruments.load_Klaus_dispersions(pandir=None)     # From pandeia, spectral resolutions.  Not on same pixel scale, must interpolate
+print("I think I imported all the Pandeia files:", list(df_sens.keys()))
 plt.ion()
 pp = PdfPages("jwst_sensitivity_jrigby_v2.pdf")  # output
 plt.close("all")
@@ -152,27 +171,27 @@ for ii, mode in enumerate(modes) :
     plt.plot(subset['wavelengths'], subset['lim_fluxes']*1E-3, label=labels[ii], color=colors[ii], marker='o', linestyle='-', markersize=7, alpha=1.0)
 
 # Harvesting Jane's sensitivities for previous missions
-(phot_df, phot_codes) = load_photometry()
-df_lowres_spec = load_lowres_spec() # load the prelaunch lowres spec file
+(phot_df, phot_codes) = load_comparison_photometry()
+df_lowres_spec = load_comparison_lowres_spec() # load the prelaunch lowres spec file
 #instrs = ['NIRCam', 'MIRI', 'HST']
 instrs = ['HST', 'Spitzer', 'Gemini']
 for instr in instrs:
     subset =  phot_df.loc[phot_df['code'] == phot_codes[instr]]
     print(subset.head())
-    plt.plot(subset['wave'], subset['limfnu'], label=instr, marker='o', linestyle='-')
+    plt.plot(subset['wave'], subset['limfnu'], label=instr, marker='o', linestyle='dashed')
 plt.xlim(0.5, 28)
 plt.ylim(2E-9, 3E-4)
-plt.title("Photometric sensitivity, pt src, SNR=10 in " + r'$10^4$' + "s", fontsize=fs2) 
+plt.title("Imaging sensitivity, pt src, SNR=10 in " + r'$10^4$' + "s", fontsize=fs2) 
 plt.text(1.1, 2.5E-6, "Gemini", color='green', fontsize=fs3)
 plt.text(0.8, 8E-8, "Hubble", color='#1f77b4', fontsize=fs3)
-plt.text(4.5, 1.5E-8, "NIRISS on-orbit", color='red', fontsize=fs3)
-plt.text(4.5, 7E-9, "NIRCam on-orbit", color='blue', fontsize=fs3)
-plt.text(8., 1E-7, "MIRI on-orbit", color='black', fontsize=fs3)
+plt.text(4.7, 0.5E-7, "JWST MIRI", color='black', fontsize=fs3)
+plt.text(4.7, 1.8E-8, "JWST NIRCam", color='blue', fontsize=fs3)
+plt.text(4.7, 7E-9, "JWST NIRISS", color='red', fontsize=fs3)
 plt.text(8.8, 4.5E-5, "Spitzer", color='orange', fontsize=fs3)
 pretty_plot()
 
 # Compare to post-commissioning sensitivity estimates from NIRCam and NIRISS IDTs
-df_postlaunch_phot = pandas.read_csv("../Postlaunch/jwst_postlaunch.dat", comment='#', delim_whitespace=True)
+df_postlaunch_phot = pandas.read_csv("/Users/jrrigby1/MISSIONS/JWST/Sens/Postlaunch/jwst_postlaunch.dat", comment='#', delim_whitespace=True)
 df_postlaunch_nircam = df_postlaunch_phot.loc[df_postlaunch_phot.instrument.str.contains('nircam')].sort_values(by='wavelength')
 df_postlaunch_niriss = df_postlaunch_phot.loc[df_postlaunch_phot.instrument.str.contains('niriss')].sort_values(by='wavelength')
 subset_M = df_postlaunch_nircam.loc[df_postlaunch_nircam.filtname.str.contains('M')] # just nircam M
@@ -186,8 +205,11 @@ pp.savefig()
 plt.show()
 
 
+
+print("DEBUG, Npixels per spectrally unresolved line.")
 ########################################################################################################################
 # SPECTROSCOPY PLOT IN LINE FLUX
+plot_PSSL = False
 #
 # Plot limiting sensitivity to an unresolved line (in erg/s/cm^2).  What a spectroscopist wants.
 fig2, ax2 = plt.subplots(figsize=(8.5,6))
@@ -199,53 +221,105 @@ df_specsens = {}   # make a smaller dict of sensitivities for the spectroscopic 
 specmodes = ['nirspec_ifu', 'nirspec_msa',  'miri_mrs', 'nircam_wfgrism',  'niriss_wfss']
 just_plot_grisms = ('f444w', 'f322w2')
 
-# Loop through the spectroscopic modes, computing PSSL from PSSC
+# MIRI LRS is pickled weird in pandeia verification.  Treat it separately
+df_lrs_slitless, df_lrs_slit = jrr.instruments.import_miri_lrs_special()
+disp_key = 'jwst_miri_p750l'
+for df in df_lrs_slitless, df_lrs_slit :
+    df['R'] = jrr.spec.rebin_spec_new(df_disp[disp_key]['WAVELENGTH'], df_disp[disp_key]['R'], df.wavelengths.astype('float'))
+    df['PSSL'] = df.lim_fluxes * 3.0E-15 / ( df.R  * df.wavelengths) * 1E3
+    # next lines are from Pandeia verification_tools/calc_limits.py
+    px_width_micron = np.abs(df.wavelengths-np.roll(df.wavelengths,1))
+    px_width_micron[:1] = px_width_micron[1]
+    freqs = 2.99792458e14/df.wavelengths
+    px_width_hz = np.abs(freqs-np.roll(freqs,1))
+    px_width_hz[:1] = px_width_hz[1]
+    line_width_px = df.wavelengths / df.R / px_width_micron
+    print("DEBUG, MIRI LRS", np.round(np.median(line_width_px), 3))
+    df['scale'] = 1e-3*1e-26 * px_width_hz * line_width_px / np.sqrt(line_width_px)  # thing to scale lim_flux by.  in W/m^2
+    df['jrr_linelim'] = df.lim_fluxes * df.scale * 1E3  # last 1E3 converts to cgs
+    
+# Loop through the spectroscopic modes, computing limiting line flux from limiting continuum flux
 for specmode in specmodes:
     thismode = specmode + '_sensitivity'    
     df_specsens[thismode] = df_sens[thismode].copy(deep=True)
-    df_specsens[thismode]['mode'] = mode
-    df_specsens[thismode]['R'] = df_specsens[thismode]['wavelengths'] * 0  # initialize
-    df_specsens[thismode]['PSSL'] = df_specsens[thismode]['wavelengths'] * 0  # initialize
+    df_specsens[thismode]['mode'] = specmode
+    df_specsens[thismode]['R']     = df_specsens[thismode]['wavelengths'] * 0  # initialize
+    df_specsens[thismode]['PSSL']  = df_specsens[thismode]['wavelengths'] * 0  # initialize
+    df_specsens[thismode]['scale'] = df_specsens[thismode]['wavelengths'] * 0  # initialize
+    df_specsens[thismode]['jrr_linelim'] = df_specsens[thismode]['wavelengths'] * 0  # initialize
     for index, row in df_specsens[thismode].iterrows() :     # Go row by row, for each grating, order, etc
-        if 'miri' in thismode :     disp_key = 'jwst_miri_' + row.aperture + '-' + row.disperser
+        if 'miri' in thismode :  
+            if 'lrs' in specmode:  raise Exception("MIRI LRS is pickled weirdly. Don't add to specmodes, treat separately.")
+            else:                  disp_key = 'jwst_miri_' + row.aperture + '-' + row.disperser
         elif 'nircam' in thismode:  disp_key = 'jwst_nircam'
         elif 'nirspec' in thismode: disp_key = 'jwst_' + re.split('_', thismode)[0] + '_' + row.disperser 
         elif 'niriss' in thismode:
-                disp_key = 'jwst_niriss_' + row.configs['disperser'] + '-ord1'  # should have an order attached.  Try first
-                df_disp[disp_key].rename(columns={'Wavelength': 'WAVELENGTH'}, inplace=True)  # regularize this 
+            disp_key = 'jwst_niriss_' + row.configs['disperser'] + '-ord1'  # should have an order attached.  Try first
+            df_disp[disp_key].rename(columns={'Wavelength': 'WAVELENGTH'}, inplace=True)  # regularize this
         rebinnedR = jrr.spec.rebin_spec_new(df_disp[disp_key]['WAVELENGTH'], df_disp[disp_key]['R'], row.wavelengths)
         df_specsens[thismode].loc[index, 'R'] = rebinnedR
+
+        # next lines are from Pandeia verification_tools/calc_limits.py
+        px_width_micron = np.abs(row.wavelengths-np.roll(row.wavelengths,1))
+        px_width_micron[:1] = px_width_micron[1]
+        freqs = 2.99792458e14/row.wavelengths
+        px_width_hz = np.abs(freqs-np.roll(freqs,1))
+        px_width_hz[:1] = px_width_hz[1]
+        line_width_px = row.wavelengths / rebinnedR / px_width_micron
+        print("DEBUG!", specmode, row.configs, np.round(np.median(line_width_px), 3))
+        scale = 1e-3*1e-26 * px_width_hz * line_width_px / np.sqrt(line_width_px)  # thing to scale lim_flux by.  in W/m^2
+        df_specsens[thismode].loc[index, 'scale'] = scale
+        df_specsens[thismode].loc[index, 'jrr_linelim'] = row.lim_fluxes * scale * 1E3  # last 1E3 converts to cgs
         # Now, need to convert to limiting line flux for a spectrally unresolved line.
         # Eqn 2.7 of the Spitzer IRS manual:  PSSL = 3.0E-15 PSSC / (R lambda), where PSSC is in units of mJy, and lambda is in microns.  PSSL is in W/m^2
         df_specsens[thismode].loc[index, 'PSSL'] = row.lim_fluxes * 3.0E-15 / ( row.R  * row.wavelengths) * 1E3  #The last 1E3 converts to cgs
-
+        
 # I'm computing PSSL in cgs units.
 # For MIRI, Pandeia has a column line_limits: Limiting integrated line flux in W/m^2.   So I don't need to recalculate it.
-# But, it disagrees w PSSL.  Have written to Klaus, Maca
+# But, it disagrees w PSSL.  Have written to Klaus, Maca.
+# AHA!  Klaus figured out the reason!  It's because Pandeia reports continuum sensitivity *per pixel*, not per resolution element.
+# So, my PSSLs are wrong.  Remove them after documenting what changed.  This matters most for  MIRI b/c the Npixel sampling of a
+# spectral line changes a lot.  For NIRSpec it's a well-behaved 2 to 2.2.
         
 # Now plot it.  I've separated computing PSSL (above) from plotting it (here)
 for specmode in specmodes:
     thismode = specmode + '_sensitivity'    
     for index, row in df_specsens[thismode].iterrows() :     # Go row by row, for each grating, order, etc
         if 'miri' in thismode :
-            plt.plot(row.wavelengths, row.PSSL, color='k', alpha=1)
-            #plt.plot(row.wavelengths, row.line_limits*1E3, color='pink', alpha=1)
+            threshold = 1.7
+            indices = np.where(row.PSSL < threshold * row.PSSL.min())
+            if plot_PSSL: plt.plot(row.wavelengths[indices], row.PSSL[indices], color='k', alpha=1)
+            #plt.plot(row.wavelengths, row.line_limits*1E3, color='pink', alpha=1) # These agree w my calcs now
+            plt.plot(row.wavelengths[indices], row.jrr_linelim[indices], color='k', linestyle='solid')
+
         elif specmode == 'nircam_wfgrism' :
-            threshold = 2
+            threshold = 5
             indices = np.where(row.PSSL < threshold * row.PSSL.min())
             if row.configs['filter'] in just_plot_grisms:  # only plot predicted grism sens for wide filters!
-                plt.plot(row.wavelengths[indices], row.PSSL[indices], color='blue', alpha=1)
+                if plot_PSSL: plt.plot(row.wavelengths[indices], row.PSSL[indices], color='blue', alpha=1)
+                plt.plot(row.wavelengths[indices], row.jrr_linelim[indices], color='blue', alpha=1, linestyle='solid')
                 #plt.annotate(row.configs['filter'], (np.median(row.wavelengths), row.PSSL.min()), fontsize=10, color='blue')
         elif 'nirspec' in thismode:
-            if 'ifu' in thismode:       plt.plot(row.wavelengths, row.PSSL, color='green', alpha=1)  
-            elif 'msa' in thismode:     plt.plot(row.wavelengths, row.PSSL, color='orange', alpha=1)
+            if 'ifu' in thismode:
+                if plot_PSSL: plt.plot(row.wavelengths, row.PSSL, color='green', alpha=1)
+                plt.plot(row.wavelengths, row.jrr_linelim, color='green', alpha=1, linestyle='solid')
+        
+            elif 'msa' in thismode:
+                if plot_PSSL: plt.plot(row.wavelengths, row.PSSL, color='orange', alpha=1)
+                plt.plot(row.wavelengths, row.jrr_linelim, color='orange', alpha=1, linestyle='solid')
         elif 'niriss' in thismode:
             threshold = 2.5
             indices = np.where(row.PSSL < threshold * row.PSSL.min())
-            plt.plot(row.wavelengths[indices], row.PSSL[indices] * (3./2.), color='red', alpha=1)
+            if plot_PSSL: plt.plot(row.wavelengths[indices], row.PSSL[indices] * (3./2.), color='red', alpha=1)
+            plt.plot(row.wavelengths[indices], row.jrr_linelim[indices] * (3./2.), color='red', alpha=1, linestyle='solid')
             # the factor of 3/2 is because Steph says they assumed line covered 3 pix not 2
         else:
-            plt.plot(row.wavelengths, row.PSSL)
+            if plot_PSSL: plt.plot(row.wavelengths, row.PSSL)
+            plt.plot(row.wavelengths, row.jrr_linelim, linestyle='solid')
+
+for df in df_lrs_slitless, df_lrs_slit :
+    if plot_PSSL: plt.plot(df.wavelengths, df.PSSL, color='grey')
+    plt.plot(df.wavelengths, df.jrr_linelim, color='grey', linestyle='solid')            
 
 plt.ylabel(r"line flux det. at SNR=10 in $10^4$s (erg s$^-1$ cm$^2$)", fontsize=fs2)
 plt.title("Spectroscopic line sensitivity, pt src, SNR=10 in " + r'$10^4$' + "s", fontsize=fs2)
@@ -261,22 +335,29 @@ if spec_compare_IDT['nirspec']:
             # Parse key to get grating
             grating = re.split('-|_', key)[2]
             RR, Rheader = grab_R_for_nirspec(grating)
-            df['R'] = jrr.spec.rebin_spec_new(RR.WAVELENGTH, RR.R, df.wavelength * 1E6)  # Interpolate R onto the sensitivity curve
             df['limflux_mJy'] = df.data *1E3
             df['wave_um'] = df.wavelength *1E6
-            df['PSSL2'] = 3.0E-15 * (df.data * 1E3) / (df.R * df.wavelength *1E6) *1E3  # in cgs
-            jrr.spec.pssc_to_pssl_df(df, PSSLcol='PSSL', PSSCcol='limflux_mJy', wavecol='wave_um', Rcol='R') # should do same as above.  Just checking
+            df['R'] = jrr.spec.rebin_spec_new(RR.WAVELENGTH, RR.R, df.wave_um)  # Interpolate R onto the sensitivity curve
+            # next lines are from Pandeia verification_tools/calc_limits.py
+            px_width_micron = np.abs(df.wave_um-np.roll(df.wave_um,1))
+            px_width_micron[:1] = px_width_micron[1]
+            freqs = 2.99792458e14/df.wave_um
+            px_width_hz = np.abs(freqs-np.roll(freqs,1))
+            px_width_hz[:1] = px_width_hz[1]
+            line_width_px = df.wave_um / df.R / px_width_micron
+            print("DEBUG, NIRSpec IDT", np.round(np.median(line_width_px), 3))
+            df['scale'] = 1e-3*1e-26 * px_width_hz * line_width_px / np.sqrt(line_width_px)  # thing to scale lim_flux by.  in W/m^2
+            df['jrr_linelim'] = df.limflux_mJy * df.scale * 1E3  # last 1E3 converts to cgs
             color = 'green' if ('IFS' in key) else 'orange'
-            subset = df.loc[df.PSSL < threshold * df.PSSL.min()]
-            plt.plot(subset.wavelength *1E6, subset.PSSL, color=color, linestyle='dashed', alpha=0.5) 
-
+            plt.plot(df.wave_um, df.jrr_linelim, color=color, linestyle=dash, alpha=0.5)
+            
 if spec_compare_IDT['nircam']:
     df_nircamgrism = load_nircam_grism_postlaunch() #post-commissioning nircam sensitivities
     threshold = 14 # Don't plot the edges of the filter cuve, just where it has sensitivity
     for key in df_nircamgrism.keys():
         df = df_nircamgrism[key]
         subset = df.loc[ (df['line_flux_E-18']  < threshold * df['line_flux_E-18'].min())]
-        plt.plot(subset.wavelength, subset['line_flux_E-18'] * 1E-18, color='lightblue', linestyle='dashed')  # data is in cgs, unit of 10^-18 erg/s/cm^2.
+        plt.plot(subset.wavelength, subset['line_flux_E-18'] * 1E-18, color='lightblue', linestyle=dash)  # data is in cgs, unit of 10^-18 erg/s/cm^2.
         #plt.annotate(key, (np.median(subset.wavelength), subset['line_flux_E-18'].min() *1E-18), fontsize=10, color='blue', alpha=0.5)
 
 # post-commissioning niriss wfss sensitivity
@@ -284,7 +365,7 @@ if spec_compare_IDT['niriss']:
     df_niriss_wfss_line, df_niriss_wfss_cont  = grab_niriss_wfss()
     for thisfilter in df_niriss_wfss_line.Filter.unique():
         subset = df_niriss_wfss_line.loc[df_niriss_wfss_line.Filter == thisfilter]
-        plt.plot(subset.Wavelength, subset.sens_cgs, color='red', linestyle='dashed', alpha=0.5)
+        plt.plot(subset.Wavelength, subset.sens_cgs, color='red', linestyle=dash, alpha=0.5)
 
 spec_compare_to_other_obs(df_lowres_spec)
 
@@ -292,10 +373,9 @@ pretty_plot()
 plt.ylabel(r'limiting line flux (erg s$^{-1}$ cm$^{-2}$ )', fontsize=fs3)
 
 plt.xlim(0.5,30)
-plt.ylim(5E-19,2E-15)
+plt.ylim(4E-19,2E-15)
 ax2.xaxis.set_major_formatter(ScalarFormatter())
 add_annotations()
-plt.annotate('will update to Keck/MOSFIRE', (2, 5E-17))
 plt.tight_layout()
 pp.savefig()
 plt.show()
@@ -306,6 +386,8 @@ plt.show()
 ### Spectroscopy plot with continuum sensitivity
 # What are the units here? From above, looks like mJy.  Double check!
 #
+
+
 fig, ax = plt.subplots(figsize=(8.5,6))
 for specmode in specmodes:
     thismode = specmode + '_sensitivity'    
@@ -327,7 +409,12 @@ for specmode in specmodes:
         else:
             plt.plot(row.wavelengths, row.lim_fluxes)
 
-# Above are prelaunch predictions.  Now plot the actuals
+
+for df in df_lrs_slitless, df_lrs_slit :  # Better way to plot miri LRS
+    plt.plot(df.wavelengths, df.lim_fluxes *1E-3, color='grey')
+
+
+
 if spec_compare_IDT['nircam'] :      
     for key in df_nircamgrism.keys():
         df = df_nircamgrism[key]
@@ -346,6 +433,7 @@ if spec_compare_IDT['nirspec'] :
             subset = df.loc[df.data < threshold * df.data.min()]
             plt.plot(subset.wavelength *1E6, subset.data, color=color, linestyle='dashed', alpha=0.5) 
 
+            
 # post-commissioning NIRISS sensitivity 
 if spec_compare_IDT['niriss']:
     for thisfilter in df_niriss_wfss_cont.Filter.unique():
@@ -360,7 +448,7 @@ plt.scatter(subset.wave, subset.limflux_Jy, color='red', label='HST')
 subset = df_lowres_spec.loc[df_lowres_spec.telescope == 'Spitzer']
 plt.scatter(subset.wave, subset.limflux_Jy, color='purple', label='Spitzer')             
 #
-plt.title("Spectroscopic sensitivity, pt src, per resoln element, SNR=10 in " + r'$10^4$' + "s", fontsize=fs2)
+plt.title("Spectroscopic sensitivity, pt src, per pixel, SNR=10 in " + r'$10^4$' + "s", fontsize=fs2)
 plt.legend()
 
 add_annotations_lowres()
@@ -379,6 +467,10 @@ for specmode in specmodes:
             plt.plot(row.wavelengths, row.PSSL / (row.line_limits*1E3), color='k')
 plt.xlabel("wavelength (micron)")
 plt.ylabel("PSSL /  (line_limits * 1E3)")
+
+for df in df_lrs_slitless, df_lrs_slit :
+    plt.plot(df.wavelengths, df.PSSL / (df.line_limits*1E3), color='grey')
+  
 pp.savefig()
 plt.show()
             
@@ -401,9 +493,7 @@ bigspec_df.to_pickle(re.sub('readme', 'pcl', outfile))
 # TODO:  
 # DONE Add actual NIRCam and NIRISS sensitivities from Marcia's paper and the SciPerf paper
 # DONE Import actual NIRSpec sensitivities from Torsten
-# Improve comparison to Keck. Have asked John O'M
-# Ask MIRI for the same
-# Ask NIRISS for same
-# Separate plots for pre-launch, post-launch, so easier to powerpoint.  Dotted lines for predicts?
+# DONE, used Gwen Rudie's IDL ETC
+
 
 
